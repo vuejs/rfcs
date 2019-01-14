@@ -35,10 +35,10 @@ What constitutes a "substantial" change is evolving based on community norms, bu
 
 Some changes do not require an RFC:
 
+- Additions that strictly improve objective, numerical quality criteria (speedup, better browser support)
 - Fixing objectively incorrect behavior
 - Rephrasing, reorganizing or refactoring
 - Addition or removal of warnings
-- Additions that strictly improve objective, numerical quality criteria (speedup, better browser support)
 - Additions only likely to be _noticed by_ other implementors-of-Vue, invisible to users-of-Vue.
 
 If you submit a pull request to implement a new feature without going
