@@ -14,7 +14,7 @@ Introducing a new syntax for scoped slots usage:
 
 Using `slot-props` to declare the props passed to the default slot of `<foo>`:
 
-``` vue
+``` html
 <foo slot-props="{ msg }">
   {{ msg }}
 </foo>
@@ -22,7 +22,7 @@ Using `slot-props` to declare the props passed to the default slot of `<foo>`:
 
 Same example, with shorthand (shorthand symbol is tentative):
 
-```
+``` html
 <foo ()="{ msg }">
   {{ msg }}
 </foo>
