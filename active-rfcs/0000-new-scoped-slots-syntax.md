@@ -108,81 +108,87 @@ If we can go back in time, I would probably change the semantics of `slot-scope`
 
 # Detailed design
 
-- Introducing a new special attribute: `slot-props`.
+### Introducing a new special attribute: `slot-props`.
 
-  - It can be used on a component to indicate that the component's default slot is a scoped slot, and that props passed to this slot will be available as the variable declared in its attribute value:
-
-    ``` html
-    <foo slot-props="{ msg }">
-      {{ msg }}
-    </foo>
-    ```
-
-  - It can also be used on `<template>` slot containers (exactly the same usage as `slot-scope` in this case):
-
-    ``` html
-    <foo>
-      <template slot="header" slot-props="{ msg }">
-        Header msg: {{ msg }}
-      </template>
-
-      <template slot="footer" slot-props="{ msg }">
-        Footer msg: {{ msg }}
-      </template>
-    </foo>
-    ```
-
-  - It **can NOT** be used on normal elements. This means for named slots, **a `<template>` wrapper for that slot is required.**
-
-- `slot-props` also has a shorthand syntax: `()` (tentative, open to suggestions).
-
-  The above examples using shorthand syntax:
+- It can be used on a component to indicate that the component's default slot is a scoped slot, and that props passed to this slot will be available as the variable declared in its attribute value:
 
   ``` html
-  <foo ()="{ msg }">
+  <foo slot-props="{ msg }">
     {{ msg }}
   </foo>
+  ```
 
+- It can also be used on `<template>` slot containers (exactly the same usage as `slot-scope` in this case):
+
+  ``` html
   <foo>
-    <template slot="header" ()="{ msg }">
+    <template slot="header" slot-props="{ msg }">
       Header msg: {{ msg }}
     </template>
 
-    <template slot="footer" ()="{ msg }">
+    <template slot="footer" slot-props="{ msg }">
       Footer msg: {{ msg }}
     </template>
   </foo>
   ```
 
-- The shorthand syntax can potentially use its attribute name to denote a named slots as well. The above named slots example can thus be written as:
+- It **can NOT** be used on normal elements. This means for named slots, **a `<template>` wrapper for that slot is required.**
 
-  ``` html
-  <foo>
-    <template (header)="{ msg }">
-      Header msg: {{ msg }}
-    </template>
+### Shorthand Syntax
 
-    <template (footer)="{ msg }">
-      Footer msg: {{ msg }}
-    </template>
-  </foo>
-  ```
+`slot-props` also has a shorthand syntax: `()` (tentative, open to suggestions).
 
-- It can even be applied to normal, non-scoped slots, effectively unifying both types of slots in a single syntax:
+The above examples using shorthand syntax:
 
-  ``` html
-  <foo>
-    <template (header)>
-      This is header
-    </template>
+``` html
+<foo ()="{ msg }">
+  {{ msg }}
+</foo>
 
-    <template (footer)>
-      This is footer
-    </template>
-  </foo>
-  ```
+<foo>
+  <template slot="header" ()="{ msg }">
+    Header msg: {{ msg }}
+  </template>
 
-  Considering in v3 we plan to eliminate the conceptual difference between normal vs. scoped slots, this syntax unification seems like a good match.
+  <template slot="footer" ()="{ msg }">
+    Footer msg: {{ msg }}
+  </template>
+</foo>
+```
+
+### Shorthand Syntax for Named Slots
+
+The shorthand syntax can potentially use its attribute name to denote a named slots as well. The above named slots example can thus be written as:
+
+``` html
+<foo>
+  <template (header)="{ msg }">
+    Header msg: {{ msg }}
+  </template>
+
+  <template (footer)="{ msg }">
+    Footer msg: {{ msg }}
+  </template>
+</foo>
+```
+
+### Shorthand Syntax for Normal Slots
+
+It can even be applied to normal, non-scoped slots, effectively unifying both types of slots in a single syntax:
+
+``` html
+<foo>
+  <template (header)>
+    This is header
+  </template>
+
+  <template (footer)>
+    This is footer
+  </template>
+</foo>
+```
+
+Considering in v3 we plan to eliminate the conceptual difference between normal vs. scoped slots, this syntax unification seems like a good match.
 
 ### Note on shorthand syntax
 
