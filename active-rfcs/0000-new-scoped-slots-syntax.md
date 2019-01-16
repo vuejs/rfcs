@@ -7,24 +7,25 @@
 
 Introducing a new syntax for scoped slots usage:
 
-- `slot-props` replaces `slot-scope` with slightly different semanticsp;
-- Shorthand for `slot-props` that can potentially unify the usage of both scoped and normal slots.
+- New directive `v-slot` that unifies `slot` and `slot-scope` in a single directive syntax.
+
+- Shorthand for `v-slot` that can potentially unify the usage of both scoped and normal slots.
 
 # Basic example
 
-Using `slot-props` to declare the props passed to the default slot of `<foo>`:
+Using `v-slot` to declare the props passed to the scoped slots of `<foo>`:
 
 ``` html
-<foo slot-props="{ msg }">
+<!-- default slot -->
+<foo v-slot="{ msg }">
   {{ msg }}
 </foo>
-```
 
-Same example, with shorthand (shorthand symbol is tentative):
-
-``` html
-<foo ()="{ msg }">
-  {{ msg }}
+<!-- named slot -->
+<foo>
+  <template v-slot:one="{ msg }">
+    {{ msg }}
+  </template>
 </foo>
 ```
 
@@ -98,103 +99,57 @@ Unfortunately, this cannot work as it would lead to ambiguity with component nes
 
 This is why I now believe allowing using `slot-scope` without a template was a mistake.
 
-### Why a new attribute instead of fixing `slot-scope`?
+### Why a new directive instead of fixing `slot-scope`?
 
 If we can go back in time, I would probably change the semantics of `slot-scope` - but:
 
 1. That would be a breaking change now, and that means we will never be able to ship it in 2.x.
 
-2. Even if we change in in 3.x, changing the semantics of existing syntax can cause a LOT of confusion for future learners that Google into outdated learning materials. We definitely want to avoid that. So, we have to introduce a new attribute to differentiate from `slot-scope`.
+2. Even if we change in in 3.x, changing the semantics of existing syntax can cause a LOT of confusion for future learners that Google into outdated learning materials. We definitely want to avoid that. So, we have to introduce something new to differentiate from `slot-scope`.
+
+3. In 3.x, we plan to unify slot types so it's no longer necessary to differentiate between scoped vs. non-scoped slots (conceptually). A slot may or may not receive props, but they are all just slots. With this conceptual unification, having `slot` and `slot-scope` being two special attributes seems unnecessary, and it would be nice to unify the syntax under a single construct as well.
 
 # Detailed design
 
-### Introducing a new special attribute: `slot-props`.
+### Introducing a new directive: `v-slot`.
 
-- It can be used on a component to indicate that the component's default slot is a scoped slot, and that props passed to this slot will be available as the variable declared in its attribute value:
-
-  ``` html
-  <foo slot-props="{ msg }">
-    {{ msg }}
-  </foo>
-  ```
-
-- It can also be used on `<template>` slot containers (exactly the same usage as `slot-scope` in this case):
+- It can be used on `<template>` slot containers to denote slots passed to a component, where the slot name is expressed via the **directive argument**:
 
   ``` html
   <foo>
-    <template slot="header" slot-props="{ msg }">
-      Header msg: {{ msg }}
+    <template v-slot:header>
+      <div class="header"></div>
     </template>
 
-    <template slot="footer" slot-props="{ msg }">
-      Footer msg: {{ msg }}
+    <template v-slot:body>
+      <div class="body"></div>
+    </template>
+
+    <template v-slot:footer>
+      <div class="footer"></div>
     </template>
   </foo>
   ```
 
-- It **can NOT** be used on normal elements. This means for named slots, **a `<template>` wrapper for that slot is required.**
+  If any slot is a scoped slot which receives props, the received slot props can be declared using the directive's attribute value. The value of `v-slot` works the same way as `slot-scope`, so JavaScript argument destructuring is supported:
 
-### Shorthand Syntax
+  ``` html
+  <foo>
+    <template v-slot:header="{ msg }">
+      <div class="header">
+        Message from header slot: {{ msg }}
+      </div>
+    </template>
+  </foo>
+  ```
 
-`slot-props` also has a shorthand syntax: `()` (tentative, open to suggestions).
+- `v-slot` can be used directly on a component, without an argument, to indicate that the component's default slot is a scoped slot, and that props passed to the default slot should be available as the variable declared in its attribute value:
 
-The above examples using shorthand syntax:
-
-``` html
-<foo ()="{ msg }">
-  {{ msg }}
-</foo>
-
-<foo>
-  <template slot="header" ()="{ msg }">
-    Header msg: {{ msg }}
-  </template>
-
-  <template slot="footer" ()="{ msg }">
-    Footer msg: {{ msg }}
-  </template>
-</foo>
-```
-
-### Shorthand Syntax for Named Slots
-
-The shorthand syntax can potentially use its attribute name to denote a named slots as well. The above named slots example can thus be written as:
-
-``` html
-<foo>
-  <template (header)="{ msg }">
-    Header msg: {{ msg }}
-  </template>
-
-  <template (footer)="{ msg }">
-    Footer msg: {{ msg }}
-  </template>
-</foo>
-```
-
-### Shorthand Syntax for Normal Slots
-
-It can even be applied to normal, non-scoped slots, effectively unifying both types of slots in a single syntax:
-
-``` html
-<foo>
-  <template (header)>
-    This is header
-  </template>
-
-  <template (footer)>
-    This is footer
-  </template>
-</foo>
-```
-
-Considering in v3 we plan to eliminate the conceptual difference between normal vs. scoped slots, this syntax unification seems like a good match.
-
-### Note on shorthand syntax
-
-The tentative shorthand is `()` because it resembles the starting parens of an arrow function and loosely relates to "creating a scope". An arrow function is also typically used for render props, the equivalent of scoped slots in JSX.
-
-Potential drawback: Angular uses `()` in their templates for a different use case. This may confuse users coming from Angular or have to work with both frameworks.
+  ``` html
+  <foo v-slot="{ msg }">
+    {{ msg }}
+  </foo>
+  ```
 
 ### Comparison: New vs. Old
 
@@ -203,7 +158,7 @@ Let's review whether this proposal achieves our goals outlined above:
 - Still provide succinct syntax for most common use cases of scoped slots (single default slot):
 
   ``` html
-  <foo ()="{ msg }">{{ msg }}</foo>
+  <foo v-slot="{ msg }">{{ msg }}</foo>
   ```
 
 - Clearer connection between scoped variable and the component that is providing it:
@@ -225,9 +180,9 @@ Let's review whether this proposal achieves our goals outlined above:
   This is the equivalent using the new syntax:
 
   ``` html
-  <foo ()="foo">
-    <bar ()="bar">
-      <baz ()="baz">
+  <foo v-slot="foo">
+    <bar v-slot="bar">
+      <baz v-slot="baz">
         {{ foo }} {{ bar }} {{ baz }}
       </baz>
     </bar>
@@ -238,7 +193,125 @@ Let's review whether this proposal achieves our goals outlined above:
 
 ### More Usage Comparisons
 
-Here are [some more usage examples](https://gist.github.com/yyx990803/c6a7f63219825cb90105aad1a8a17e3b) using both the new and old syntax.
+#### Default slot with text
+
+``` html
+<!-- old -->
+<foo>
+  <template slot-scope="{ msg }">
+    {{ msg }}
+  </template>
+</foo>
+
+<!-- new -->
+<foo v-slot="{ msg }">
+  {{ msg }}
+</foo>
+```
+
+#### Default slot with element
+
+``` html
+<!-- old -->
+<foo>
+  <div slot-scope="{ msg }">
+    {{ msg }}
+  </div>
+</foo>
+
+<!-- new -->
+<foo v-slot="{ msg }">
+  <div>
+    {{ msg }}
+  </div>
+</foo>
+```
+
+#### Nested default slots
+
+``` html
+<!-- old -->
+<foo>
+  <bar slot-scope="foo">
+    <baz slot-scope="bar">
+      <template slot-scope="baz">
+        {{ foo }} {{ bar }} {{ baz }}
+      </template>
+    </baz>
+  </bar>
+</foo>
+
+<!-- new -->
+<foo v-slot="foo">
+  <bar v-slot="bar">
+    <baz v-slot="baz">
+      {{ foo }} {{ bar }} {{ baz }}
+    </baz>
+  </bar>
+</foo>
+```
+
+#### Named slots
+
+``` html
+<!-- old -->
+<foo>
+  <template slot="one" slot-scope="{ msg }">
+    text slot: {{ msg }}
+  </template>
+
+  <div slot="two" slot-scope="{ msg }">
+    element slot: {{ msg }}
+  </div>
+</foo>
+
+<!-- new -->
+<foo>
+  <template v-slot:one="{ msg }">
+    text slot: {{ msg }}
+  </template>
+
+  <template v-slot:two="{ msg }">
+    <div>
+      element slot: {{ two }}
+    </div>
+  </template>
+</foo>
+```
+
+#### Nested & mixed usage of named / default slots
+
+``` html
+<!-- old -->
+<foo>
+  <bar slot="one" slot-scope="one">
+    <div slot-scope="bar">
+      {{ one }} {{ bar }}
+    </div>
+  </bar>
+
+  <bar slot="two" slot-scope="two">
+    <div slot-scope="bar">
+      {{ two }} {{ bar }}
+    </div>
+  </bar>
+</foo>
+
+<!-- new -->
+<foo>
+  <template v-slot:one="one">
+    <bar v-slot="bar">
+      <div>{{ one }} {{ bar }}</div>
+    </bar>
+  </template>
+
+  <template v-slot:two="two">
+    <bar v-slot="bar">
+      <div>{{ two }} {{ bar }}</div>
+    </bar>
+  </template>
+</foo>
+```
 
 # Drawbacks
 
@@ -246,10 +319,11 @@ Here are [some more usage examples](https://gist.github.com/yyx990803/c6a7f63219
 
   - We need good documentation updates on scoped slots to help with this.
 
-- Some may think this aesthetically is "non-HTML", but we already have shorthands like `:` and `@`. Slots is an important component mechanism which I think having its own dedicated shorthand seems justified.
+- The default slot usage `v-slot="{ msg }"` doesn't precisely convey the concept that `msg` is being passed to the slot as a prop.
 
 # Alternatives
 
+- New special attribute `slot-props` ([as a previous version of this draft](https://github.com/vuejs/rfcs/blob/8575e72d5a401db5d7206e127e3a6012491d68ed/active-rfcs/0000-new-scoped-slots-syntax.md))
 - Directive (`v-scope`) instead of a special attribute as originally proposed in [#9180](https://github.com/vuejs/vue/issues/9180);
 - Alternative shorthand symbol (`&`) as suggested by @rellect [here](https://github.com/vuejs/vue/issues/9306#issuecomment-453946190)
 
@@ -259,10 +333,90 @@ The change is fully backwards compatible, so we can roll it out in a minor relea
 
 `slot-scope` is going to be soft-deprecated: it will be marked deprecated in the docs, and we would encourage everyone to use / switch to the new syntax, but we won't bug you with deprecation messages just yet because we know it's not a top priority for everyone to always migrate to the newest stuff.
 
-In 3.0 we do plan to eventually remove `slot-scope`, and only support `slot-props` and its shorthand. We will start emitting deprecation messages for `slot-scope` usage in the next 2.x minor release to ease the migration to 3.0.
+In 3.0 we do plan to eventually remove `slot-scope`, and only support the new syntax. We will start emitting deprecation messages for `slot-scope` usage in the next 2.x minor release to ease the migration to 3.0.
 
 Since this is a pretty well defined syntax change, we can potentially provide a migration tool that can automatically convert your templates to the new syntax.
 
 # Unresolved questions
 
-- Settle on a good shorthand symbol
+### Shorthand Syntax
+
+In a previous draft of this proposal, we proposed a shorthand for the new syntax:
+
+``` html
+<foo ()="{ msg }">
+  {{ msg }}
+</foo>
+
+<foo>
+  <template (header)="{ msg }">
+    Message from header: {{ msg }}
+  </template>
+
+  <template (footer)>
+    A static footer
+  </template>
+</foo>
+```
+
+Here the `v-slot:arg` is translated into `(arg)`.
+
+However, there were very mixed opinions on which symbol should be used for the shorthand, or whether a shorthand is needed at all. Two most favored alternative symbols for the shorthand are listed below:
+
+### `#`
+
+``` html
+<foo #="{ msg }">
+  {{ msg }}
+</foo>
+
+<foo>
+  <template #header="{ msg }">
+    Message from header: {{ msg }}
+  </template>
+
+  <template #footer>
+    A static footer
+  </template>
+</foo>
+```
+
+### `&`
+
+``` html
+<foo &="{ msg }">
+  {{ msg }}
+</foo>
+
+<foo>
+  <template &header="{ msg }">
+    Message from header: {{ msg }}
+  </template>
+
+  <template &footer>
+    A static footer
+  </template>
+</foo>
+```
+
+Personally, I think a shorthand is a beneficial addition, as it makes the slot designation jump out from normal props and directives and makes the template easier to scan.
+
+After the initial round of feedback I agree that `()` as the shorthand can be potentially confusing to beginners, and am now leaning towards `#`. Some examples of the usage in a real-world library that relies on scoped slots ([vue-promised](https://github.com/posva/vue-promised)):
+
+``` html
+<Promised :promise="usersPromise">
+  <template #pending>
+    <p>Loading...</p>
+  </template>
+
+  <template #="users">
+    <ul slot-scope="users">
+      <li v-for="user in users">{{ user.name }}</li>
+    </ul>
+  </template>
+
+  <template #rejected="error">
+    <p>Error: {{ error.message }}</p>
+  </template>
+</Promised>
+```
