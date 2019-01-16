@@ -401,6 +401,8 @@ However, there were very mixed opinions on which symbol should be used for the s
 
 Personally, I think a shorthand is a beneficial addition, as it makes the slot designation jump out from normal props and directives and makes the template easier to scan.
 
+Some may argue that scoped slots are not that commonly used and therefore don't really need a shorthand. On that front, I actually believe scoped slot is an important mechanism for building 3rd party component suites that are highly customizable. For a user using a component collection with an API that relies heavily on slots, a shorthand will become quite valuable.
+
 After the initial round of feedback I agree that `()` as the shorthand can be potentially confusing to beginners, and am now leaning towards `#`. Some examples of the usage in a real-world library that relies on scoped slots ([vue-promised](https://github.com/posva/vue-promised)):
 
 ``` html
