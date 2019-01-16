@@ -35,8 +35,8 @@ In Vue we currently provide shorthands only for two directives: `v-bind` and `v-
 <div v-bind:id="id"></div>
 <div :id="id"></div>
 
-<button v-on:click="onClick"></div>
-<button @click="onClick"></div>
+<button v-on:click="onClick"></button>
+<button @click="onClick"></button>
 ```
 
 `v-bind` and `v-on` often get used repeatedly on the same element, and can get verbose when the information differing between each is **the directive argument** instead of the directive itself. **Shorthands thus help improve the signal/noise ratio by shortening the parts that are duplicated (`v-xxx`) and highlighting the parts that are different (the arguments).**
