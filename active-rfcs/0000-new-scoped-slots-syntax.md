@@ -412,7 +412,7 @@ After the initial round of feedback I agree that `()` as the shorthand can be po
   </template>
 
   <template #="users">
-    <ul slot-scope="users">
+    <ul>
       <li v-for="user in users">{{ user.name }}</li>
     </ul>
   </template>
