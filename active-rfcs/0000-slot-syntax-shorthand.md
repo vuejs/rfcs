@@ -10,11 +10,7 @@ Add shorthand syntax for the `v-slot` syntax proposed in [rfc-0001](https://gith
 # Basic example
 
 ``` html
-<foo #="{ msg }">
-  {{ msg }}
-</foo>
-
- <foo>
+<foo>
   <template #header="{ msg }">
     Message from header: {{ msg }}
   </template>
@@ -67,22 +63,6 @@ The shorthand helps slot names to be more easily scan-able:
 
 The shorthand follows very similar rules to the shorthand of `v-bind` and `v-on`: replace the directive name plus the colon with the shorthand symbol (`#`).
 
-For default slot on component:
-
-``` html
-<!-- full syntax -->
-<foo v-slot="{ msg }">
-  {{ msg }}
-</foo>
-
-<!-- shorthand -->
-<foo #="{ msg }">
-  {{ msg }}
-</foo>
-```
-
-For named slots:
-
 ``` html
 <!-- full syntax -->
 <foo>
@@ -107,6 +87,18 @@ For named slots:
 </foo>
 ```
 
+**Similar to `v-bind` and `v-on`, the shorthand only works when an argument is present. This means `v-slot` without an argument cannot be simplified to `#=`.** For default slots, either the full syntax (`v-slot`) or an explicit name (`#default`) should be used.
+
+``` html
+<foo v-slot="{ msg }">
+  {{ msg }}
+</foo>
+
+<foo #default="{ msg }">
+  {{ msg }}
+</foo>
+```
+
 The choice of `#` is a selection based on the feedback collected in the previous RFC. It holds a resemblance to the id selector in CSS and translates quite well conceptually to stand for a slot's name.
 
 Some example usage in a real-world library that relies on scoped slots ([vue-promised](https://github.com/posva/vue-promised)):
@@ -117,7 +109,7 @@ Some example usage in a real-world library that relies on scoped slots ([vue-pro
     <p>Loading...</p>
   </template>
 
-   <template #="users">
+   <template #default="users">
     <ul>
       <li v-for="user in users">{{ user.name }}</li>
     </ul>
@@ -131,16 +123,6 @@ Some example usage in a real-world library that relies on scoped slots ([vue-pro
 
 # Drawbacks
 
-- The `#` symbol doesn't translate that well conceptually when used on a component for default slot:
-
-  ``` html
-  <foo #="{ msg }">
-    {{ msg }}
-  </foo>
-  ```
-
-  Maybe we only support the shorthand for named slots? For default slot usage on component, full `v-slot` usage is required. It would also be consistent with `v-on` and `v-bind` where the shorthand does not apply if there is no argument.
-
 - Some may argue that slots are not that commonly used and therefore don't really need a shorthand, and it could result in extra learning curve for beginners. In response to that:
 
   1. I believe scoped slot is an important mechanism for building 3rd party component suites that are highly customizable and composable. I think we will see more component libraries relying on slots for customization and composition in the future. For a user using such a component library, a shorthand will become quite valuable (as demonstrated in the examples).
@@ -152,11 +134,7 @@ Some example usage in a real-world library that relies on scoped slots ([vue-pro
 Some alternative symbols have been presented and discussed in the previous RFC. The only other one with similarly positive interest is `&`:
 
 ``` html
-<foo &="{ msg }">
-  {{ msg }}
-</foo>
-
- <foo>
+<foo>
   <template &header="{ msg }">
     Message from header: {{ msg }}
   </template>
@@ -173,4 +151,4 @@ This should be a natural extension on top of the new `v-slot` syntax. Ideally, w
 
 # Unresolved questions
 
-- See Drawbacks No.1.
+N/A
