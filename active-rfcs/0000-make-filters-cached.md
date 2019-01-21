@@ -61,7 +61,7 @@ This way it will not be a breaking change, but this will create another syntax f
 
 # Adoption strategy
 
-Making filters evaluated only when inputs change should improve performance for all apps that are using filters without need for any changes to apps.
+Making filters evaluated only when inputs change should improve performance for all apps that are using filters without need for any changes to most apps.
 
 If different symbol is used for pure filters it is easy to write codemod.
 
