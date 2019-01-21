@@ -99,6 +99,10 @@ In addition, `v-slot` doesn't have an equivalent object syntax, since it's value
 
   That said, complex dynamic key bindings should probably be pre-transformed in JavaScript via a computed property.
 
+- Allowing dynamic arguments for all directives means custom directive implementations now also need to account for potential argument changes in addition to value changes.
+
+  This also requires the addition of `binding.oldArgs` to the custom directive binding context.
+
 # Alternatives
 
 N/A
