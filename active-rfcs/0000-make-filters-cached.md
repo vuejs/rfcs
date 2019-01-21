@@ -41,7 +41,7 @@ and it will be possible to do this:
 
 # Detailed design
 
-Idea how it can be implemented in Vue: when Vue compiler encounters filter in mustache interpolation it could create computed property under a hood.
+Idea how it can be implemented in Vue: when Vue compiler encounters filter in mustache interpolation it could create computed property that calls filter method.
 
 # Drawbacks
 
