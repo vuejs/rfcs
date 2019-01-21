@@ -83,25 +83,31 @@ In addition, `v-slot` doesn't have an equivalent object syntax, since it's value
 </foo>
 ```
 
-# Drawbacks
+# Drawbacks / Considerations
 
-- Theoretically this opens up the directive argument to arbitrarily complex JavaScript expressions, but html attribute names cannot contain spaces and quotes, so in some cases the user may get tripped up with something like:
+### Constraints on expressions
 
-  ``` html
-  <div :[key + 'foo']="value"></div>
-  ```
+Theoretically this opens up the directive argument to arbitrarily complex JavaScript expressions, but html attribute names cannot contain spaces and quotes, so in some cases the user may get tripped up with something like:
 
-  Which does not work as expected. A workaround would be:
+``` html
+<div :[key + 'foo']="value"></div>
+```
 
-  ``` html
-  <div :[`key${foo}`]="value"></div>
-  ```
+Which does not work as expected. A workaround would be:
 
-  That said, complex dynamic key bindings should probably be pre-transformed in JavaScript via a computed property.
+``` html
+<div :[`key${foo}`]="value"></div>
+```
 
-- Allowing dynamic arguments for all directives means custom directive implementations now also need to account for potential argument changes in addition to value changes.
+That said, complex dynamic key bindings should probably be pre-transformed in JavaScript via a computed property.
 
-  This also requires the addition of `binding.oldArgs` to the custom directive binding context.
+**Update:**: it should also be possible to detect such usage and provide proper warnings in the parser (by checking for arguments that are missing the closing bracket).
+
+### Custom Directives
+
+Allowing dynamic arguments for all directives means custom directive implementations now also need to account for potential argument changes in addition to value changes.
+
+This also requires the addition of `binding.oldArgs` to the custom directive binding context.
 
 # Alternatives
 
@@ -113,4 +119,26 @@ This is non-breaking and should be straightforward to introduce with appropriate
 
 # Unresolved questions
 
-What kind of expressions should be allowed
+### Behavior when the argument expression value is falsy
+
+Brought up by @jacekkarczmarczyk.
+
+It could be useful to explicitly ignore/remove a binding by passing a falsy argument - but in many cases, this may also be a mistake so maybe we should warn against it.
+
+If we directly generate the following code:
+
+``` js
+on: {
+  [null]: handler
+}
+```
+
+`null` would have been converted to the string `"null"` and Vue cannot tell whether the user is really trying to bind to `"null"` or is trying to void the handler.
+
+Whether we want to treat falsy values as special values or throw warnings, we'd have to generate different code, something like:
+
+``` js
+on: bindDynamicArguments({}, [null, handler])
+```
+
+And inside the `bindDynamicArguments` runtime helper, we check each argument. This would be slightly less efficient than a native dynamic key.
