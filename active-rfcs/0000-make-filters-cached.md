@@ -1,5 +1,5 @@
 - Start Date: 2019-01-21
-- Target Major Version: 3.x
+- Target Major Version: 2.x & 3.x
 - Reference Issues: https://github.com/vuejs/vue/issues/8880, https://github.com/vuejs/vue/issues/8497, https://github.com/vuejs/vue/issues/7556, https://github.com/vuejs/vue/issues/5682
 - Implementation PR: (leave this empty)
 
