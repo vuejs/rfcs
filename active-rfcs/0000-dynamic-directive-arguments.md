@@ -83,6 +83,12 @@ In addition, `v-slot` doesn't have an equivalent object syntax, since it's value
 </foo>
 ```
 
+### Handling of `null` as Special Value
+
+Dynamic argument values are expected to be strings. However, it would be convenient if we allow `null` as a special value that explicitly indicates that the binding should be removed. Any other non-string values are likely mistakes and will trigger a warning.
+
+`null` as a special value only applies only to `v-bind` and `v-on`, since `v-slot` is not a binding and cannot be removed. Custom directives have the liberty of deciding how to handle non-string arguments, but are expected to follow the convention when it applies.
+
 # Drawbacks / Considerations
 
 ### Constraints on expressions
@@ -101,7 +107,7 @@ Which does not work as expected. A workaround would be:
 
 That said, complex dynamic key bindings should probably be pre-transformed in JavaScript via a computed property.
 
-**Update:**: it should also be possible to detect such usage and provide proper warnings in the parser (by checking for arguments that are missing the closing bracket).
+**Update:**: it is possible to detect such usage and provide proper warnings in the parser (by checking for arguments that are missing the closing bracket).
 
 ### Custom Directives
 
