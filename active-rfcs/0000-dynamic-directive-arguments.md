@@ -87,7 +87,7 @@ In addition, `v-slot` doesn't have an equivalent object syntax, since it's value
 
 Dynamic argument values are expected to be strings. However, it would be convenient if we allow `null` as a special value that explicitly indicates that the binding should be removed. Any other non-string values are likely mistakes and will trigger a warning.
 
-`null` as a special value only applies only to `v-bind` and `v-on`, since `v-slot` is not a binding and cannot be removed. Custom directives have the liberty of deciding how to handle non-string arguments, but are expected to follow the convention when it applies.
+`null` as a special value only applies to `v-bind` and `v-on`, but not `v-slot`. This is because `v-slot` is not a binding and cannot be removed. Custom directives have the liberty of deciding how to handle non-string arguments, but are expected to follow the convention when it applies.
 
 # Drawbacks / Considerations
 
@@ -125,26 +125,4 @@ This is non-breaking and should be straightforward to introduce with appropriate
 
 # Unresolved questions
 
-### Behavior when the argument expression value is falsy
-
-Brought up by @jacekkarczmarczyk.
-
-It could be useful to explicitly ignore/remove a binding by passing a falsy argument - but in many cases, this may also be a mistake so maybe we should warn against it.
-
-If we directly generate the following code:
-
-``` js
-on: {
-  [null]: handler
-}
-```
-
-`null` would have been converted to the string `"null"` and Vue cannot tell whether the user is really trying to bind to `"null"` or is trying to void the handler.
-
-Whether we want to treat falsy values as special values or throw warnings, we'd have to generate different code, something like:
-
-``` js
-on: bindDynamicArguments({}, [null, handler])
-```
-
-And inside the `bindDynamicArguments` runtime helper, we check each argument. This would be slightly less efficient than a native dynamic key.
+N/A
