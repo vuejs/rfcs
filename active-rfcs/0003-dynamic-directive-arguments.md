@@ -1,8 +1,7 @@
 - Start Date: 2019-01-16
 - Target Major Version: (2.x / 3.x)
 - Reference Issues: https://github.com/vuejs/rfcs/pull/2, https://github.com/vuejs/rfcs/pull/3
-- Implementation PR: (leave this empty)
-
+- Implementation PR: https://github.com/vuejs/vue/pull/9373
 # Summary
 
 Support dynamic values in directive arguments.
