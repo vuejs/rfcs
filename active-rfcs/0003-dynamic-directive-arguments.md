@@ -101,7 +101,7 @@ Theoretically this opens up the directive argument to arbitrarily complex JavaSc
 Which does not work as expected. A workaround would be:
 
 ``` html
-<div :[`key${foo}`]="value"></div>
+<div :[`${key}foo`]="value"></div>
 ```
 
 That said, complex dynamic key bindings should probably be pre-transformed in JavaScript via a computed property.
