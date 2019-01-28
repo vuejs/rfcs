@@ -52,7 +52,7 @@ Which brings me to the question: if it helps to tell users _not_ to think of `v-
 <!-- INVALID: should throw a compile time error -->
 ```
 
-Note that `v-bind:aaa.sync="xxx"` does _not_ currently throw a compile time error, though it probably should since `
+Note that `v-bind:aaa.sync="xxx"` does _not_ currently throw a compile time error, though it probably should.
 
 ### On a component
 
