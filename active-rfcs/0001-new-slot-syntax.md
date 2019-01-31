@@ -105,7 +105,7 @@ If we can go back in time, I would probably change the semantics of `slot-scope`
 
 1. That would be a breaking change now, and that means we will never be able to ship it in 2.x.
 
-2. Even if we change in in 3.x, changing the semantics of existing syntax can cause a LOT of confusion for future learners that Google into outdated learning materials. We definitely want to avoid that. So, we have to introduce something new to differentiate from `slot-scope`.
+2. Even if we change it in 3.x, changing the semantics of existing syntax can cause a LOT of confusion for future learners that Google into outdated learning materials. We definitely want to avoid that. So, we have to introduce something new to differentiate from `slot-scope`.
 
 3. In 3.x, we plan to unify slot types so it's no longer necessary to differentiate between scoped vs. non-scoped slots (conceptually). A slot may or may not receive props, but they are all just slots. With this conceptual unification, having `slot` and `slot-scope` being two special attributes seems unnecessary, and it would be nice to unify the syntax under a single construct as well.
 
