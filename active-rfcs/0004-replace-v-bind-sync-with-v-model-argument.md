@@ -5,7 +5,7 @@
 
 ## Summary
 
-Deprecating `v-bind`'s `.sync` modifier and replacing it with an argument on `v-model`.
+Removing `v-bind`'s `.sync` modifier and replacing it with an argument on `v-model`.
 
 ## Basic example
 
