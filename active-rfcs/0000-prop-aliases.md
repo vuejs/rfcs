@@ -1,5 +1,6 @@
 - Start Date: 2019-02-01
 - Target Major Version: 2.x
+- Reference Issues: [vuejs/vue#7943](https://github.com/vuejs/vue/issues/7943)
 - Implementation PR: (leave this empty)
 
 # Summary
