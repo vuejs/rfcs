@@ -108,21 +108,19 @@ The new modifier could be chained with the rest of the modifiers too:
 ```
 
 #### Templating engine
-Currently, it is not allowed to create a handler without a value (`@click`). So the template compiler has to be modified in order to allow empty values when `.emit` modifier is present.
-
-Another thing to take into consideration is the opposite. I think it doesn't make sense to have a handler with the `.emit` modifier (`@click.emit="onClick"`). Maybe a warning indicating that `.emit` modifier is meant to avoid handling the event in the current component is enough.
+I think it doesn't make sense to have a handler with the `.emit` modifier (`@click.emit="onClick"`). Maybe a warning indicating that `.emit` modifier is meant to avoid handling the event in the current component is enough.
 
 #### Render Function
 For this case, I'd say that `.emit` doesn't need to be implemented in any way because of the nature of the render function.
 
-I'd leave to the user to implement it as the docs say for `.stop` or `.prevent`.
+I'd leave to the user to implement it as the docs say for `.stop` or `.prevent` modifiers.
 
 # Drawbacks
 
 ##### Another modifier
 It's something "new" to learn and could confuse the newcomers.
 
-##### It's a less explicit way of emitting an event
+##### It's less explicit
 Although I think the `.emit` modifier is a readable way of re-emitting an event, I understand that anyone could see this as a way of obfuscating what is happening.
 
 ##### The relation with the rest of modifiers
@@ -153,6 +151,9 @@ If this RFC is rejected, the alternative is to keep things as is right now.
 The strategy is simple. This RFC only adds a feature on top of Vue, so it only needs to be documented and explained (Similar as v-model is explained).
 
 # Unresolved questions
+
+##### Template handlers without value
+I'm not really sure if the template engine allows to have handlers without value. I know that `@click.stop` works because I  have used it a few times, but I don't know if it's an exception. I'd need any with more expertise to answer this question.
 
 ##### Alternative names of the modifier
 I think the word `emit` makes sense, especially in Vue ecosystem. It's a known word and it's a known behaviour. The word `emit` is directly related to the events, so putting it next to an event handler, makes clear what the component it's trying to do. (`@click.emit`)
