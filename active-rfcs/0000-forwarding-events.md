@@ -107,23 +107,23 @@ The new modifier could be chained with the rest of the modifiers too:
 <button @click.stop.emit> ... </button>
 ```
 
-#### Templating engine
-I think it doesn't make sense to have a handler with the `.emit` modifier (`@click.emit="onClick"`). Maybe a warning indicating that `.emit` modifier is meant to avoid handling the event in the current component is enough.
+Things to take into consideration when implementing:
 
-#### Render Function
-For this case, I'd say that `.emit` doesn't need to be implemented in any way because of the nature of the render function.
+1. At first sight, It doesn't make sense to have a handler with the `.emit` modifier (`@click.emit="onClick"`). Vue should throw a warning indicating that `.emit` modifier is meant to avoid handling the event in the current component and should not receive a value.
 
-I'd leave to the user to implement it as the docs say for `.stop` or `.prevent` modifiers.
+1. The order of the modifiers matters in this case. Check [Chaining with the rest of modifiers](https://github.com/Aferz/rfcs/blob/master/active-rfcs/0000-forwarding-events.md#the-relation-with-the-rest-of-modifiers) in Drawbacks section.
+
+1. Render function shouldn't be directly affected, but I'd reflect in the docs this is a modifier to implement in userland (Exactly as `.stop` or `.prevent` modifiers).
 
 # Drawbacks
 
 ##### Another modifier
-It's something "new" to learn and could confuse the newcomers.
+It's not really a new concept and it's totally optional but it's something new to learn.
 
 ##### It's less explicit
 Although I think the `.emit` modifier is a readable way of re-emitting an event, I understand that anyone could see this as a way of obfuscating what is happening.
 
-##### The relation with the rest of modifiers
+##### Chaining with the rest of modifiers
 Vue has more modifiers as _key modifiers_, _mouse modifiers_, _system modifiers_, etc... In some edge cases could be confusing because of the verbosity.
 
 ```html
@@ -141,6 +141,18 @@ Vue has more modifiers as _key modifiers_, _mouse modifiers_, _system modifiers_
 
 <input @click.ctrl.exact="$emit('keyup', $event') />"
 ```
+
+Furthermore, with `.emit`, the order matters: 
+
+```html
+<!-- Prevent default and then $emit -->
+<input @click.prevent.emit />
+
+<!-- $emit and then prevent default. Senseless?.  -->
+<input @click.emit.prevent />
+```
+
+This is something could be avoided with a warning, indicating if `.emit` is used, it should be used the last one. The Vue docs already reflect that the order of the modifiers matter, but this might be a very special case.
 
 # Alternatives
 
