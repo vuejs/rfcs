@@ -273,7 +273,7 @@ Let's review whether this proposal achieves our goals outlined above:
 
   <template v-slot:two="{ msg }">
     <div>
-      element slot: {{ two }}
+      element slot: {{ msg }}
     </div>
   </template>
 </foo>
