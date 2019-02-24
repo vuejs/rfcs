@@ -62,7 +62,7 @@ class CounterMutations extends Mutations {
    * The first argument is a payload.
    */
   increment(payload) {
-    this.state.count + payload.value
+    this.state.count += payload.value
   }
 }
 
