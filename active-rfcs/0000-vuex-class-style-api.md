@@ -1,5 +1,5 @@
 - Start Date: 2019-02-24
-- Target Major Version: 3.x or 4.x
+- Target Major Version: Vuex 3.x
 - Reference Issues:
   - https://github.com/vuejs/vuex/issues/532
   - https://github.com/vuejs/vuex/issues/564
