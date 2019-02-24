@@ -174,7 +174,7 @@ another module yet. This will covered by another proposal that is using module t
 
 The class-style API also solves the case that we need to manage some external object in actions which is not suitable
 to be in state. In the current object-style API, we need to put a variable to retain such object out of actions object
-but the the variable is actually shared if the actions are reused on the multiple places in a store.
+but the variable is actually shared if the actions are reused on the multiple places in a store.
 
 ```js
 // The current work around for managing an external object in actions.
@@ -361,7 +361,7 @@ But it would be worth adding to the core because the need of type safety in Vuex
 ## Possible abuse of `this`
 
 Since the user can access other method and properties via `this`, there is a concern that it is abused.
-For example, they can call some mutation in another mutation which is forbidden in Vuex:
+For example, they can technically call some mutation in another mutation which is forbidden in Vuex:
 
 ```js
 class CounterMutations extends Mutations {
