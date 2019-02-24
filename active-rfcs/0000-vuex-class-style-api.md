@@ -381,6 +381,34 @@ The same goes for getters and actions.
 
 We can set runtime check to prohibit such kind of usage in the development build though.
 
+## Cannot define root action in namespaced module
+
+The current object-style API support the following usage:
+
+```js
+const actions = {
+  rootAction: {
+    root: true,
+    handler(context) {
+      // ...
+    }
+  }
+}
+```
+
+Class-style syntax cannot represent this kind of action without ES decorator. With ES decorator we can provide something like `@Root` decorator.
+
+```js
+import { Root, Actions } from 'vuex'
+
+class TestActions extends Actions {
+  @Root
+  rootAction() {
+    // ...
+  }
+}
+```
+
 # Alternatives
 
 <!--
@@ -388,6 +416,8 @@ What other designs have been considered? What is the impact of not doing this?
 -->
 
 - Creating modules by using ES decorator like [vuex-module-decorators](https://github.com/championswimmer/vuex-module-decorators).
+  It will be shorter way to write a module in class-style but we may need to change API surface of getters, actions and mutations as
+  we cannot type `getters`, `dispatch` and `commit` from decorated class type.
 
 # Adoption strategy
 
