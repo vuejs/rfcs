@@ -16,7 +16,7 @@ The module object has:
 
 They will be strictly typed by utilizing module object type in TypeScript.
 
-This proposal is based on class-style API proposal because it needs that
+This proposal is based on [class-style API proposal](https://github.com/vuejs/rfcs/pull/14) because it needs that
 the module assets are strictly typed which can be achieved the class-style API.
 
 # Basic example
@@ -96,6 +96,9 @@ Currently, it is not typed at all because:
 1. `mapXXX` helpers cannot know the type of module assets,
 2. It is impossible to deal with namespace string on type level and
 3. typing store instance is too complicated as it has nested structure and needs strinc concatnation on type level.
+
+To solve these problem, we utilize a module object which is fully typed by class-style syntax. And automatically resolve
+namespace string in the module object.
 
 # Detailed design
 
