@@ -170,7 +170,7 @@ It could be also verbose as we need to write action name both on action type and
 The class-style API itself provides type-safety **in** modules themselves which means all usage for local state, getters,
 actions and mutations are strictly typed. However it is not typed that accessing a module asset from a component or
 another module yet. This will covered by another proposal that is using module type information which class-style syntax provides.
-[TODO: refer to the proposal]
+https://github.com/vuejs/rfcs/pull/15
 
 The class-style API also solves the case that we need to manage some external object in actions which is not suitable
 to be in state. In the current object-style API, we need to put a variable to retain such object out of actions object
