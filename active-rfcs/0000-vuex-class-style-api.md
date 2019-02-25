@@ -9,7 +9,7 @@
 
 <!-- Brief explanation of the feature. -->
 
-Supporting class-style API for Vuex module so that we write a module in type safe mannar in TypeScript.
+Supporting class-style API for Vuex module so that we write a module in type safe manner in TypeScript.
 
 # Basic example
 
