@@ -449,6 +449,10 @@ For users who already have a preference, it is not really an issue. The real iss
 
 One way to deal with it is providing examples for both syntaxes in the new docs and allow switching between them. This allows users to pick a preferred syntax during the learning process.
 
+## Isn't React Moving Away from Classes?
+
+Yes, but that's because classes isn't as nicely a fit for React's component conceptual model, especially with hooks being the alternative. Classes aren't inherently bad, and Vue's component conceptual model (with mutable state) maps better to a class than a React component. We also have plans to offer a mechanism with hooks-like logic composition capabilities that works in both class and object-based components, but that will be in a separate future RFC.
+
 # Alternatives
 
 ## Options via Decorator
