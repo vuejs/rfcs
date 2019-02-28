@@ -477,13 +477,13 @@ class Foo extends Vue {
 }
 ```
 
-This can be worked around by exposing the raw, original instance as a speical property (naming tentative):
+This can be worked around by exposing the raw, original instance as a special property (naming tentative):
 
 ``` js
 class Foo extends Vue {
   #count = 0
   created() {
-    this.$self.#count // confirmed to work in Chrome 73
+    this.$private.#count // confirmed to work in Chrome 73
   }
 }
 ```
