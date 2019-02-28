@@ -9,16 +9,14 @@ Introduce built-in support for authoring components as native ES2015 classes.
 
 # Basic example
 
-## In Browser
-
 ``` js
-class App extends Vue {
+import Vue from 'vue'
+
+export default class App extends Vue {
   // options declared via static properties (stage 3)
   // more details below
   static template = `
-    <div @click="increment">
-      {{ count }} {{ plusOne }}
-    </div>
+    <div>{{ count }}</div>
   `
 
   // reactive data declared via class fields (stage 3)
@@ -40,44 +38,6 @@ class App extends Vue {
     this.count++
   }
 }
-```
-
-The component will be mounted using a new global API instead of `new Vue()` - this will be discussed in a separate RFC.
-
-## In Single File Components
-
-``` html
-<template>
-  <div @click="increment">
-    {{ count }} {{ plusOne }}
-    <Foo />
-  </div>
-</template>
-
-<script>
-import Vue from 'vue'
-import Foo from './Foo.vue'
-
-export default class App extends Vue {
-  static components = {
-    Foo
-  }
-
-  count = 0
-
-  created() {
-    console.log(this.count)
-  }
-
-  get plusOne() {
-    return this.count + 1
-  }
-
-  increment() {
-    this.count++
-  }
-}
-</script>
 ```
 
 # Motivation
@@ -393,11 +353,32 @@ class MyComponent extends Vue<MyProps, MyData> {
 }
 ```
 
+
+## Inheritance
+
+Class inheritance works as expected:
+
+``` js
+class A extends Vue {}
+class B extends A {}
+class C extends B
+```
+
+This is equivalent to the following in Vue 2:
+
+``` js
+const A = Vue.extend({})
+const B = A.extend({})
+const C = B.extend({})
+```
+
+However, direct inheritance is not very useful when it comes to UI components, as it only handles linear inheritance of logic and does not cover composition in the rendering output. It is therefore not recommended to rely heavily on class inheritance. Instead, prefer composition via mixins and slots.
+
 ## Mixins
 
 Mixins work a bit differently with classes, primarily to ensure proper type inference:
 
-1. If type inference is needed, mixins must be declared as classes extending the base `Vue` class (otherwise, the object format also works).
+1. If type inference is needed, mixins must be declared as classes extending the base `Vue` class (otherwise, the object format also works). The fact that classes can be used as mixins also means any existing component can be used as a mixin.
 
 2. To use mixins, the final component should extend a class created from the `mixins` method instead of the base `Vue` class.
 
@@ -418,6 +399,8 @@ class MyComponent extends mixins(MixinA, MixinB) {
 ```
 
 The class returned from `mixins` also accepts the same generics arguments as the base `Vue` class.
+
+There is also a [stage-1 proposal for native mixin syntax](https://github.com/justinfagnani/proposal-mixins) which is essentially syntax sugar for nested inheritance. Vue 3 should be able to work out of the box with that.
 
 ## Difference from 2.x Constructors
 
@@ -481,6 +464,30 @@ class MyComponent extends Vue {
 
 In practice, there shouldn't be cases where you must use the `constructor`, so the best practice is to simply avoid it and always use component lifecycle hooks.
 
+## Usage with Private Fields
+
+Due to `this` being Proxies, this API won't work directly with [Private Class Fields](https://github.com/tc39/proposal-private-methods) (stage 3 proposal), because private fields by design are not exposed on Proxies of the original instance. So the following will not work:
+
+``` js
+class Foo extends Vue {
+  #count = 0
+  created() {
+    this.#count // Error because `this` is a Proxy
+  }
+}
+```
+
+This can be worked around by exposing the raw, original instance as a speical property (naming tentative):
+
+``` js
+class Foo extends Vue {
+  #count = 0
+  created() {
+    this.$self.#count // confirmed to work in Chrome 73
+  }
+}
+```
+
 ## Two Ways of Doing the Same Thing
 
 This may cause beginners to face a choice early on: to go with the object syntax, or the class syntax?
@@ -488,10 +495,6 @@ This may cause beginners to face a choice early on: to go with the object syntax
 For users who already have a preference, it is not really an issue. The real issue is that for beginners who are not familiar with classes, the syntax raises the learning barrier. In the long run, as ES classes stabilize and get more widely used, it may eventually become a basic pre-requisite for all JavaScript users, but now is probably not the time yet.
 
 One way to deal with it is providing examples for both syntaxes in the new docs and allow switching between them. This allows users to pick a preferred syntax during the learning process.
-
-## Isn't React Moving Away from Classes?
-
-Yes, but that's because classes isn't as nicely a fit for React's component conceptual model, especially with hooks being the alternative. Classes aren't inherently bad, and Vue's component conceptual model (with mutable state) maps better to a class than a React component. We also have plans to offer a mechanism with hooks-like logic composition capabilities that works in both class and object-based components, but that will be in a separate future RFC.
 
 # Alternatives
 
