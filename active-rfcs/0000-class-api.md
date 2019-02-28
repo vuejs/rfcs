@@ -9,14 +9,16 @@ Introduce built-in support for authoring components as native ES2015 classes.
 
 # Basic example
 
-``` js
-import Vue from 'vue'
+## In Browser
 
-export default class App extends Vue {
+``` js
+class App extends Vue {
   // options declared via static properties (stage 3)
   // more details below
   static template = `
-    <div>{{ count }}</div>
+    <div @click="increment">
+      {{ count }} {{ plusOne }}
+    </div>
   `
 
   // reactive data declared via class fields (stage 3)
@@ -38,6 +40,44 @@ export default class App extends Vue {
     this.count++
   }
 }
+```
+
+The component will be mounted using a new global API instead of `new Vue()` - this will be discussed in a separate RFC.
+
+## In Single File Components
+
+``` html
+<template>
+  <div @click="increment">
+    {{ count }} {{ plusOne }}
+    <Foo />
+  </div>
+</template>
+
+<script>
+import Vue from 'vue'
+import Foo from './Foo.vue'
+
+export default class App extends Vue {
+  static components = {
+    Foo
+  }
+
+  count = 0
+
+  created() {
+    console.log(this.count)
+  }
+
+  get plusOne() {
+    return this.count + 1
+  }
+
+  increment() {
+    this.count++
+  }
+}
+</script>
 ```
 
 # Motivation
