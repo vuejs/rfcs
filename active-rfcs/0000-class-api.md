@@ -517,13 +517,13 @@ class Foo extends Vue {
 }
 ```
 
-This can be worked around by exposing the raw, original instance as a special property (naming tentative):
+The runtime is able to detect this type of Errors and provide appropriate warnings. We can expose the raw, original instance as a special property on the proxy (naming tentative):
 
 ``` js
 class Foo extends Vue {
   #count = 0
   created() {
-    this.$private.#count // confirmed to work in Chrome 73
+    this.$self.#count // confirmed to work in Chrome 73
   }
 }
 ```
