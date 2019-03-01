@@ -296,7 +296,7 @@ class MyComponent extends Vue {
 For props, we intend to provide a decorator that internally transforms decorated fields in to corresponding runtime options (similar to [the `@Prop` decorator in `vue-property-decorators`](https://github.com/kaorun343/vue-property-decorator#Prop)):
 
 ``` ts
-import { prop } from 'vue'
+import { prop } from '@vue/decorators'
 
 class MyComponent extends Vue {
   @prop count: number
@@ -322,7 +322,7 @@ class MyComponent extends Vue {
 The decorator can also be called with additional options for more specific runtime behavior:
 
 ``` ts
-import { prop } from 'vue'
+import { prop } from '@vue/decorators'
 
 class MyComponent extends Vue {
   @prop({
