@@ -64,7 +64,7 @@ import { h, Transition, applyDirectives, vShow } from 'vue'
 
 export function render() {
   return h(Transition, [
-    applyDirectives(h('div'), this, [vShow, this.ok])
+    applyDirectives(h('div', 'hello'), this, [vShow, this.ok])
   ])
 }
 ```
