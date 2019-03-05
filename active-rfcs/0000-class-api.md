@@ -142,6 +142,16 @@ class MyComponent extends Vue {
 }
 ```
 
+#### Usage with Private Fields
+
+Note that private fields are **NOT** reactive, because they are private to the class and thus cannot be inspected by framework code, which is required to create reactive state for them. Incidentally, they can be used to declare properties that should not be observed by Vue:
+
+``` js
+class MyComponent extends Vue {
+  #renderer = new 3DRenderer() // will not be observed by Vue
+}
+```
+
 #### A Note on `[[Set]]` vs `[[Define]]`
 
 The class field syntax uses `[[Define]]` semantics in both native and transpiled implementations (Babel already conforms to the latest spec and TS will have to follow suite). This means `count = 0` in the class body is executed with the semantics of `Object.defineProperty` and will always overwrite a property of the same name inherited from a parent class, regardless of whether it has a setter or not.
@@ -480,53 +490,6 @@ The decision to go with decorators for props in TypeScript is due to the followi
 4. The decorator-based usage is opt-in and built on top of the `static props` based usage. So even if the proposal changes drastically or gets abandoned we still have something to fallback to.
 
 5. If users are using TypeScript, they already have decorators available to them via TypeScript's tool chain so unlike vanilla JavaScript there's no need for additional tooling.
-
-## `this` Identity in `constructor`
-
-In Vue 3 component classes, the `this` context in all lifecycle hooks and methods are in fact a Proxy to the actual underlying instance. This Proxy is responsible for returning proper values for the data, props and computed properties defined on the current component, and provides runtime warning checks. It is important for performance reasons as it avoids many expensive `Object.defineProperty` calls when instantiating components.
-
-In practice, your code will work exactly the same - the only cases where you need to pay attention is if you are using `this` inside the native `constructor` - this is the only place where Vue cannot swap the identity of `this` so it will not be equal to the `this` exposed everywhere else:
-
-``` js
-let instance
-
-class MyComponent extends Vue {
-  constructor() {
-    super()
-    instance = this // actual instance
-  }
-
-  created() {
-    console.log(this === instance) // false, `this` here is the Proxy
-  }
-}
-```
-
-In practice, there shouldn't be cases where you must use the `constructor`, so the best practice is to simply avoid it and always use component lifecycle hooks.
-
-## Usage with Private Fields
-
-Due to `this` being Proxies, this API won't work directly with [Private Class Fields](https://github.com/tc39/proposal-private-methods) (stage 3 proposal), because private fields by design are not exposed on Proxies of the original instance. So the following will not work:
-
-``` js
-class Foo extends Vue {
-  #count = 0
-  created() {
-    this.#count // Error because `this` is a Proxy
-  }
-}
-```
-
-The runtime is able to detect this type of Errors and provide appropriate warnings. We can expose the raw, original instance as a special property on the proxy (naming tentative):
-
-``` js
-class Foo extends Vue {
-  #count = 0
-  created() {
-    this.$self.#count // confirmed to work in Chrome 73
-  }
-}
-```
 
 ## Two Ways of Doing the Same Thing
 
