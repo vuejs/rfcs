@@ -23,6 +23,8 @@ As Vue's API grows, we are constantly trying to balance the tradeoff between fea
 
 With ES modules' static analysis friendly design, modern bundlers combined with minifiers can now eliminate ES modules exports that are not used anywhere in the bundle. We can restructure Vue's global and internal APIs to take advantage of this so that users only pay for the features they actually use.
 
+In addition, knowing that optional features won't increase the bundle size for users not using them, we now have more room to include optional features in the core.
+
 # Detailed design
 
 Currently in 2.x, all global APIs are exposed on the single Vue object:
