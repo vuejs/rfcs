@@ -33,6 +33,59 @@ Slots unification involves two parts:
 
   - In 2.x, all slots using `v-slot` syntax are already compiled as functions internally. `this.$scopedSlots` also proxies to normal slots and expose them as functions.
 
+## Usage in Render Functions
+
+Existing render function usage will remain supported. When passing children to a component, both VNodes and functions are supported:
+
+``` js
+h(Comp, [
+  h('div', this.msg)
+])
+
+// equivalent:
+h(Comp, () => [
+  h('div', this.msg)
+])
+```
+
+Inside `Comp`, `this.$slots.default` will be a function in both cases and returns the same VNodes. However, the 2nd case will be more performant as `this.msg` will be registered as a dependency of the child component only.
+
+Named slots usage has changed - instead of a special `slot` data property on the content nodes, pass them to the component's `slots`:
+
+``` js
+// 2.x
+h(Comp, [
+  h('div', { slot: 'foo' }, this.foo),
+  h('div', { slot: 'bar' }, this.bar)
+])
+
+// 3.0
+h(Comp, {
+  slots: {
+    foo: () => h('div', this.foo),
+    bar: () => h('div', this.bar)
+  }
+})
+```
+
+### Further Manual Optimization
+
+Note that when the parent component updates, `Comp` is always forced to also update because without the compile step Vue doesn't have enough information to tell whether `slots` may have changed.
+
+The compiler can detect `v-slot` and compile content as functions, but in render functions this won't happen automatically. We may also be able to perform similar optimizations in our JSX babel plugin. But for users writing direct render functions, they need to do it manually in performance sensitive use cases.
+
+Slots can be manually annotated so that Vue won't force the child to update when the parent updates:
+
+``` js
+h(Comp, {
+  slots: {
+    $stable: true,
+    foo: () => h('div', this.foo),
+    bar: () => h('div', this.bar)
+  }
+})
+```
+
 # Adoption strategy
 
 Majority of the change has already been shipped in 2.6. The only thing left is the removal of `this.$scopedSlots` from the API. In practice, the current `this.$scopedSlots` in 2.6 works exactly like `this.$slots` in 3.0, so the migration can happen in 2 steps:
