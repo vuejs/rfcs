@@ -146,7 +146,7 @@ export default new Store(counter, {
 ```
 
 After registering a module object, it will store the registered module path and namespace string under the hood so that the user do not have to specify it by their hand.
-The module object has to be unique in a store because of this behaviour.
+The module object has to be unique in a store because of this behaviour. A warning message will be printed if the user uses one module object in multiple places in a store.
 
 If the user wants to reuse a module in serveral places in a store, they need to clone it by using `clone` method:
 
