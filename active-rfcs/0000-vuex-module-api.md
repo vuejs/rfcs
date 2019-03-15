@@ -95,7 +95,7 @@ Currently, it is not typed at all because:
 
 1. `mapXXX` helpers cannot know the type of module assets,
 2. It is impossible to deal with namespace string on type level and
-3. typing store instance is too complicated as it has nested structure and needs string concatnation on type level.
+3. typing store instance is too complicated as it has nested structure and needs string concatenation on type level.
 
 To solve these problem, we utilize a module object which is fully typed by class-style syntax. And automatically resolve
 namespace string in the module object.
@@ -134,7 +134,7 @@ export const counter = new Module({
 })
 ```
 
-The module object can be passed to the store constructore's first argument. If the first argument is the module object, the second argument will be store options:
+The module object can be passed to the store constructor's first argument. If the first argument is the module object, the second argument will be store options:
 
 ```js
 import { Store } from 'vuex'
