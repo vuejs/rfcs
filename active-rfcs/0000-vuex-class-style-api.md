@@ -11,6 +11,8 @@
 
 Supporting class-style API for Vuex module so that we write a module in type safe manner in TypeScript.
 
+This syntax will not replace existing syntax. Both class and existing object style syntax will be accepted.
+
 # Basic example
 
 <!-- If the proposal involves a new or changed API, include a basic code example.
