@@ -51,6 +51,17 @@ const obj = observable({})
 
 By not attaching all APIs on the `Vue` default export, any unused APIs can be dropped in the final bundle produced by a bundler that supports tree-shaking.
 
+## Affected 2.x APIs
+
+- `Vue.nextTick`
+- `Vue.observable`
+- `Vue.version`
+- `Vue.compile` (only in full builds)
+- `Vue.set` (only in compat builds)
+- `Vue.delete` (only in compat builds)
+
+## Internal Helpers
+
 In addition to public APIs, many of the internal components / helpers can be exported as named exports as well. This allows the compiler to output code that only imports features when they are used. For example the following template:
 
 ``` html
