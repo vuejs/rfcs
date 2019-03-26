@@ -21,13 +21,13 @@ watch(() => obj.a, value => {
   console.log(`obj.a is: ${value}`)
 })
 
-// a "ref" object that has a .value property
+// a "pointer" object that has a .value property
 const count = value(0)
 
-// computed "ref" with a read-only .value property
+// computed "pointer" with a read-only .value property
 const plusOne = computed(() => count.value + 1)
 
-// refs can be watched directly
+// pointers can be watched directly
 watch(count, (count, oldCount) => {
   console.log(`count is: ${count}`)
 })
@@ -71,7 +71,7 @@ const object = state({
 
 This works exactly like 2.6 `Vue.observable`. The returned object behaves just like a normal object, and when its properties are accessed in **reactive computations** (render functions, computed property getters and watcher getters), they are tracked as dependencies. Mutation to these properties will cause corresponding computations to re-run.
 
-## Value Refs
+## Value Pointers
 
 The `state` API cannot be used for primitive values because:
 
@@ -84,24 +84,24 @@ The simple solution is wrapping the value in an object wrapper that can be passe
 ``` js
 import { value } from 'vue'
 
-const countRef = value(0)
+const countPointer = value(0)
 ```
 
-The `value` API creates a wrapper object for a value, called a **ref**. A ref is a reactive object with a single property: `.value`. The property points to the actual value being held and is writable:
+The `value` API creates a wrapper object for a value, called a **pointer** (This is not technically a C pointer, but the concept is quite close). A pointer is a reactive object with a single property: `.value`. The property points to the actual value being held and is writable:
 
 ``` js
 // read the value
-console.log(countRef.value) // 0
+console.log(countPointer.value) // 0
 
 // mutate the value
-countRef.value++
+countPointer.value++
 ```
 
-Refs are primarily used for holding primitive values, but it can also hold any other values including deeply nested objects and arrays. Non-primitive values held inside a ref behave like normal reactive objects created via `state`.
+Pointers are primarily used for holding primitive values, but it can also hold any other values including deeply nested objects and arrays. Non-primitive values held inside a pointer behave like normal reactive objects created via `state`.
 
-## Computed Refs
+## Computed Pointers
 
-In addition to plain value refs, we can also create computed refs:
+In addition to plain value pointers, we can also create computed pointers:
 
 ``` js
 import { value, computed } from 'vue'
@@ -114,12 +114,12 @@ count.value++
 console.log(countPlusOne.value) // 2
 ```
 
-Computed refs are readonly by default - assigning to its `value` property will result in an error.
+Computed pointers are readonly by default - assigning to its `value` property will result in an error.
 
-Computed refs can be made writable by passing a write callback as the 2nd argument:
+Computed pointers can be made writable by passing a write callback as the 2nd argument:
 
 ``` js
-const writableRef = computed(
+const writablePointer = computed(
   // read
   () => count.value + 1,
   // write
@@ -129,7 +129,7 @@ const writableRef = computed(
 )
 ```
 
-Computed refs behaves like computed properties in a component: it tracks its dependencies and only re-evaluates when dependencies have changed.
+Computed pointers behave like computed properties in a component: it tracks its dependencies and only re-evaluates when dependencies have changed.
 
 ## Watchers
 
@@ -174,15 +174,15 @@ count.value++
 // -> count + 1 is: 2
 ```
 
-### Watching Refs
+### Watching Pointers
 
-The 1st argument can also be a ref:
+The 1st argument can also be a pointer:
 
 ``` js
-// double is a computed ref
+// double is a computed pointer
 const double = computed(() => count.value * 2)
 
-// watch a ref directly
+// watch a pointer directly
 watch(double, value => {
   console.log('double the count is: ', value)
 })
@@ -224,7 +224,7 @@ The **effect** callback can also return a cleanup function which gets called eve
 - the watcher is stopped
 
 ``` js
-watch(idRef, id => {
+watch(idPointer, id => {
   const token = performAsyncOperation(id)
 
   return () => {
@@ -249,11 +249,11 @@ watch(
 )
 ```
 
-## Exposing Refs to Components
+## Exposing Pointers to Components
 
 While this proposal is focused on working with reactive state outside of components, such state should also be usable inside components as well.
 
-Refs can be returned in a component's `data()` function:
+Pointers can be returned in a component's `data()` function:
 
 ``` js
 import { value } from 'vue'
@@ -267,7 +267,7 @@ export default {
 }
 ```
 
-**When a `ref` is returned as a root-level property in `data()`, it is bound to the component instance as a direct property.** This means there's no need to access the value via `.value` - the value can be accessed and mutated directly as `this.count`, and directly as `count` inside templates:
+**When a pointer is returned as a root-level property in `data()`, it is bound to the component instance as a direct property.** This means there's no need to access the value via `.value` - the value can be accessed and mutated directly as `this.count`, and directly as `count` inside templates:
 
 ``` html
 <div @click="count++">
@@ -281,7 +281,7 @@ The APIs proposed here are just low-level building blocks. Technically, they pro
 
 # Drawbacks
 
-- To pass state around while keeping them "trackable" and "reactive", values must be passed around in the form of ref containers. This is a new concept and can be a bit more difficult to learn than the base API. However, these APIs are intended for advanced use cases so the learning cost should be acceptable.
+- To pass state around while keeping them "trackable" and "reactive", values must be passed around in wrapper objects (pointers). This is a new concept and can be a bit more difficult to learn than the base API. However, these APIs are intended for advanced use cases so the learning cost should be acceptable.
 
 # Alternatives
 
@@ -299,4 +299,4 @@ This is mostly new APIs that expose existing internal capabilities. Users famili
 
   Sidenote: removing `this.$watch` and the `watch` option also makes the entire `watch` API completely tree-shakable.
 
-- We probably need to also expose a `isRef` method to check whether an object is a value/computed ref.
+- We probably need to also expose a `isPointer` method to check whether an object is a value/computed pointer.
