@@ -277,7 +277,7 @@ export default {
 
 ## Beyond the API
 
-The APIs proposed here are just low-level building blocks. Technically, they provide everything we need for global state management, so Vuex can be rewritten as a very thin layer on top of these APIs. In addition, when combined with [the ability to programmatically hook into the component lifecycle](TODO), we can offer a logic reuse mechanism with capabilities similar to React hooks.
+The APIs proposed here are just low-level building blocks. Technically, they provide everything we need for global state management, so Vuex can be rewritten as a very thin layer on top of these APIs. In addition, when combined with [the ability to programmatically hook into the component lifecycle](https://github.com/vuejs/rfcs/pull/23), we can offer a logic reuse mechanism with capabilities similar to React hooks.
 
 # Drawbacks
 
