@@ -12,7 +12,16 @@ Some changes though are "substantial", and we ask that these be put
 through a bit of a design process and produce a consensus among the Vue
 core team and the community.
 
-[Active RFC List](https://github.com/vuejs/rfcs/pulls)
+## The RFC life-cycle
+
+An RFC goes through the following stages:
+
+- **Pending:** when the RFC is submitted as a PR.
+- **Active:** when an RFC PR is merged and undergoing implementation.
+- **Landed:** when an RFC's proposed changes are shipped in an actual release.
+- **Rejected:** when an RFC PR is closed without being merged.
+
+[Pending RFC List](https://github.com/vuejs/rfcs/pulls)
 
 ## When to follow this process
 
@@ -94,7 +103,7 @@ and comments have been made summarizing the rationale for rejection. A member of
 
 * An RFC may be accepted at the close of its final comment period. A [core team] member will merge the RFC's associated pull request, at which point the RFC will become 'active'.
 
-## The RFC life-cycle
+## Details on Active RFCs
 
 Once an RFC becomes active then authors may implement it and submit the
 feature as a pull request to the Vue repo. Becoming 'active' is not a rubber
