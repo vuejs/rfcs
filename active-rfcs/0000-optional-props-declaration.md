@@ -41,7 +41,7 @@ export default {}
 
 ## Functional Components
 
-This is based on plain-function functional components proposed in [Functional and Async Component API Change](TODO).
+This is based on plain-function functional components proposed in [Functional and Async Component API Change](https://github.com/vuejs/rfcs/pull/27).
 
 ``` js
 const FunctionalComp = props => {
@@ -69,7 +69,7 @@ FunctionalComp.props = {
 }
 ```
 
-For mode details on the new functional component signature, see [Render Function API Change](TODO).
+For mode details on the new functional component signature, see [Render Function API Change](https://github.com/vuejs/rfcs/pull/28).
 
 # Drawbacks
 
