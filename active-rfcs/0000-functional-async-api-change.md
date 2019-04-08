@@ -67,7 +67,7 @@ const FunctionalComp = (props, slots) => {
 
 - SFCs will no longer support `<template functional>` - if you need anything more than a function, just use a normal component.
 
-- The function signature has also changed - `h` is now imported globally. Instead of a render context, props and slots and other values are passed in. For more details on how the new arguments can replace 2.x functional render context, see the [Render Function API Change RFC](TODO).
+- The function signature has also changed - `h` is now imported globally. Instead of a render context, props and slots and other values are passed in. For more details on how the new arguments can replace 2.x functional render context, see the [Render Function API Change RFC](https://github.com/vuejs/rfcs/pull/28).
 
 ## Runtime Props Validation
 
