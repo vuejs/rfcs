@@ -75,7 +75,7 @@ In 3.0, we are planning to make attribute fallthrough an explicit decision of co
 
   Both `bar="2"` AND `class="bar"` on `<child>` will be ignored.
 
-- `this.$attrs` now contains **everything** passed to the component except those that are declared as props or custom events. **This includes `class`, `style`, `v-on` listeners (as `onXXX` properties)**. The object will be flat (no nesting) - this is possible thanks to the new flat VNode data structure (discussed in [Render Function API Change](https://github.com/vuejs/vue-next/issues/29)).
+- `this.$attrs` now contains **everything** passed to the component except those that are declared as props or custom events. **This includes `class`, `style`, `v-on` listeners (as `onXXX` properties)**. The object will be flat (no nesting) - this is possible thanks to the new flat VNode data structure (discussed in [Render Function API Change](https://github.com/vuejs/rfcs/pull/28)).
 
   To explicitly inherit additional attributes passed by the parent, the child component should apply it with `v-bind`:
 
