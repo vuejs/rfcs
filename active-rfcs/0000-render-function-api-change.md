@@ -131,9 +131,9 @@ export default {
 }
 ```
 
-- `props` and `attrs` will be equivalent to `this.$props` and `this.$attrs` - also see [Optional Props Declaration](TODO) and [Attribute Fallthrough](TODO)
+- `props` and `attrs` will be equivalent to `this.$props` and `this.$attrs` - also see [Optional Props Declaration](https://github.com/vuejs/rfcs/pull/25) and [Attribute Fallthrough](https://github.com/vuejs/rfcs/pull/26)
 
-- `slots` will be equivalent to `this.$slots` - also see [Slots Unification](https://github.com/vuejs/rfcs/blob/slots-unification/active-rfcs/0000-slots-unification.md)
+- `slots` will be equivalent to `this.$slots` - also see [Slots Unification](https://github.com/vuejs/rfcs/pull/20)
 
 - `vnode` will be equivalent to `this.$vnode`, which is the raw vnode that represents this component in parent scope, i.e. the return value of `h(MyComponent, { ... })`.
 
