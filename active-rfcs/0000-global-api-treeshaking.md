@@ -86,9 +86,45 @@ This means the `Transition` component only gets imported when the application ac
 
 **Note the above only applies to the ES Modules builds for use with tree-shaking capable bundlers - the UMD build still includes all features and exposes everything on the `Vue` global variable (and the compiler will produce appropriate output to use APIs off the global instead of importing).**
 
-# Drawbacks
+# Drawbacks 
 
 Users can no longer import a single `Vue` variable and then use APIs off of it. However this should be a worthwhile tradeoff for minimal bundle sizes.
+
+## Global API usage in plugins
+
+Some plugins may rely on global APIs originally exposed on `Vue`:
+
+``` js
+const plugin = {
+  install: Vue => {
+    Vue.nextTick(() => {
+      // ...
+    })
+  }
+}
+```
+
+In 3.0 they will need to import these explicitly:
+
+``` js
+import { nextTick } from 'vue'
+
+const plugin = {
+  install: app => {
+    nextTick(() => {
+      // ...
+    })
+  }
+}
+```
+
+This creates a bit of overhead since it requires library authors to properly configure the externalization of Vue in their build setup:
+
+- Vue should not be bundled into the library;
+- For module builds, the import should be left alone and be handled by the end user bundler;
+- For UMD / browser builds, it should try the global `Vue.h` first and fallback to `require` calls.
+
+This is common practice for React libs and possible with both webpack and Rollup. A decent number of Vue libs also already does this. We just need to provide proper documentation and tooling support.
 
 # Alternatives
 
