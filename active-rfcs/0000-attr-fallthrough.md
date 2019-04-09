@@ -108,25 +108,17 @@ In 3.0, we are planning to make attribute fallthrough an explicit decision of co
   }
   ```
 
-  In render functions, if simple overwrite is acceptable, `$attrs` can be merged using object spread. But in most cases, special handling is required (e.g. for `class`, `style` and `onXXX` listeners). Therefore a `cloneVNode` helper will be provided. It handles the proper merging of VNode data:
+  In render functions, if simple overwrite is acceptable, `$attrs` can be merged using object spread. But in most cases, special handling is required (e.g. for `class`, `style` and `onXXX` listeners). Therefore a `mergeData` helper will be provided. It handles the proper merging of VNode data:
 
   ``` js
-  import { h, cloneVNode } from 'vue'
+  import { h, mergeData } from 'vue'
 
   const Child = {
     render() {
-      const inner = h(InnerComponent, {
-        foo: 'bar'
-      })
-      return cloneVNode(inner, this.$attrs)
+      return h(InnerComponent, mergeData({ foo: 'bar' }, this.$attrs))
     }
   }
   ```
-
-  The 2nd argument to `cloneVNode` is optional. It means "clone the vnode and add these additional props". The `cloneVNode` helper serves two purposes:
-
-  - Avoids mutating the original VNode
-  - Handles special merging logic for `class`, `style` and event listeners
 
   Inside render functions, the user also has the full flexibility to pluck / omit any props from `$attrs` using 3rd party helpers, e.g. lodash.
 
