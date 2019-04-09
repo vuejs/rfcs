@@ -39,6 +39,14 @@ export default {}
 </script>
 ```
 
+If the component has no other options, the entire `<script>` block can be dropped, so the following would be a valid SFC:
+
+``` html
+<template>
+  <div>{{ $props.foo }}</div>
+</template>
+```
+
 ## Functional Components
 
 This is based on plain-function functional components proposed in [Functional and Async Component API Change](https://github.com/vuejs/rfcs/pull/27).
