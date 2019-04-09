@@ -181,7 +181,7 @@ This will be one of the changes that will have a bigger impact on existing code 
 
   - Declare props and events that are consumed by the HOC itself (thus removing them from `$attrs`)
 
-  - Refactor the component and explicitly add `v-bind="$attrs"` to the target inner component or element. For render functions, apply `$attrs` with the `cloneVNode` helper.
+  - Refactor the component and explicitly add `v-bind="$attrs"` to the target inner component or element. For render functions, apply `$attrs` with the `mergeData` helper.
 
   - If a component is already using `inheritAttrs: false`, the migration should be relatively straightforward.
 
