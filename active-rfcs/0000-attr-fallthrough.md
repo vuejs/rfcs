@@ -55,7 +55,7 @@ In 3.0, we are planning to make attribute fallthrough an explicit decision of co
 
 - `inheritAttrs` option will be removed.
 
-- `.native` modifier will be removed.
+- `.native` modifier for `v-on` will be removed.
 
 - Non-prop attributes no longer automatically fallthrough to the root element of the child component (including `class` and `style`). This is the same for both stateful and functional components.
 
@@ -74,6 +74,8 @@ In 3.0, we are planning to make attribute fallthrough an explicit decision of co
   ```
 
   Both `bar="2"` AND `class="bar"` on `<child>` will be ignored.
+ 
+- `this.$listeners` will be removed.
 
 - `this.$attrs` now contains **everything** passed to the component except those that are declared as props or custom events. **This includes `class`, `style`, `v-on` listeners (as `onXXX` properties)**. The object will be flat (no nesting) - this is possible thanks to the new flat VNode data structure (discussed in [Render Function API Change](https://github.com/vuejs/rfcs/pull/28)).
 
