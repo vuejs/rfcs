@@ -106,7 +106,7 @@ TODO
 
 ## Usage on Custom Elements
 
-Reference: vuejs/vue#7830
+Reference: [vuejs/vue#7830](https://github.com/vuejs/vue/issues/7830)
 
 In 2.x it is difficult to use `v-model` on native custom elements, because the compiler can't tell a native custom element from a normal Vue component (`Vue.config.ignoredElements` is runtime only). The result is that given a custom element with `v-model`:
 
