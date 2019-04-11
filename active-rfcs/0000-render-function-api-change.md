@@ -12,8 +12,8 @@
 # Basic example
 
 ``` js
-// globally imported `h`
-import { h } from 'vue'
+// globally imported `createElement`
+import { createElement as h } from 'vue'
 
 export default {
   // adjusted render function arguments
@@ -30,7 +30,7 @@ export default {
 
 # Motivation
 
-In 2.x, VNodes are context-specific - which means every VNode created is bound to the component instance that created it (the "context"). This is because we need to support the following use cases:
+In 2.x, VNodes are context-specific - which means every VNode created is bound to the component instance that created it (the "context"). This is because we need to support the following use cases (`h` is a conventional alias for `createElement`):
 
 ``` js
 // looking up a component based on a string ID
@@ -46,7 +46,7 @@ h('div', {
 })
 ```
 
-In order to look up locally/globally registered components and directives, we need to know the context component instance that "owns" the VNode. This is why in 2.x `h` is passed in as an argument, because the `h` passed into each render function is a curried version that is pre-bound to the context instance.
+In order to look up locally/globally registered components and directives, we need to know the context component instance that "owns" the VNode. This is why in 2.x `h` is passed in as an argument, because the `h` passed into each render function is a curried version that is pre-bound to the context instance (as is `this.$createElement`).
 
 This has created a number of inconveniences, for example when trying to extract part of the render logic into a separate function, `h` needs to be passed along:
 
@@ -95,12 +95,12 @@ In 3.x, we are moving towards a flat VNode data structure to address these probl
 
 # Detailed design
 
-## Globally imported `h` function
+## Globally imported `createElement / h` function
 
-`h` is now globally imported:
+`createElement` is now globally imported (and can be renamed to `h` as before):
 
 ``` js
-import { h } from 'vue'
+import { createElement as h } from 'vue'
 
 export default {
   render() {
