@@ -192,12 +192,53 @@ With the flat structure, the VNode data props are handled using the following ru
 
 - `key`, `ref` and `slots` are reserved special properties
 - `class` and `style` have the same API as 2.x
-- props that start with `on` are handled as `v-on` bindings
+- props that start with `on` are handled as `v-on` bindings, with everything after `on` being converted to all-lowercase as the event name (more on this below)
 - for anything else:
   - If the key exists as a property on the DOM node, it is set as a DOM property;
   - Otherwise it is set as an attribute.
 
-Due to the flat structure, `this.$attrs` inside a component now also contains any raw props that are not explicitly declared by the component, including `onXXX` listeners. This makes it much easier to write wrapper components - simply pass `this.$attrs` down with `v-bind="$attrs"` (as a result, `this.$listeners` will also be removed).
+### Escape Hatches for Explicit Binding Types
+
+With the flat VNode data structure, how each property is handled internally becomes a bit implicit. This also creates a few problems - for example, how to explicitly set a non-existent DOM property, or listen to a CAPSCase event on a custom element?
+
+To deal with that the VNode data also supports explicit binding types via prefix:
+
+``` js
+h('div', {
+  'attr:id': 'foo',
+  'prop:__someCustomProperty__': { /*... */ },
+  'on:SomeEvent': e => { /* ... */ }
+})
+```
+
+This is equivalent to 2.x's nesting via `attrs`, `domProps` and `on`.
+
+### Special "Reserved" Props
+
+There are number of reserved data properties:
+
+- `key`
+- `ref`
+- `slots`
+
+In addition, you can hook into the vnode lifecycle using `vnode` prefixed hooks:
+
+``` js
+h('div', {
+  vnodeMounted(vnode) {
+    /* ... */
+  },
+  vnodeUpdated(vnode, prevVnode) {
+    /* ... */
+  }
+})
+```
+
+These hooks are also how custom directives are built on top of.
+
+---
+
+Due to the flat structure, `this.$attrs` inside a component now contains any raw props that are not explicitly declared by the component, including `class`, `style`, `onXXX` listeners and `vnodeXXX` hooks. This makes it much easier to write wrapper components - simply pass `this.$attrs` down with `v-bind="$attrs"`.
 
 ## Context-free VNodes
 
