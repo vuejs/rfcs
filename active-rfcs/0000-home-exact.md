@@ -1,5 +1,5 @@
 - Start Date: 2019-05-10
-- Target Major Version: (2.x / 3.x) (Breaking)
+- Target Major Version: Vue 2.x/3.x, vue-router 4.x (breaking change)
 - Reference Issues: https://github.com/vuejs/vue-router/issues/454
 - Implementation PR:
 
