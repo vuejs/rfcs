@@ -94,11 +94,12 @@ A scoped slot would get access to every bit of information needed to provide a c
 ### Accessible variables
 
 - `href`: resolved relative url to be added to an anchor tag
-- `location`: resolved normalized location from the `to`
+- `route`: resolved normalized location from the `to`
 - `navigate`: function to trigger navigation (usually attached to a click)
 - `classes`: classes to be applied to an element. Will contain `router-link-active` and/or `router-link-exact-active`
-- `isActive`: true whenever `router-link-active` is applied. This is when the _path_ section of the href (without the query and hash) is included (as in `currentLocation.path.startsWith(location.path)`)
-- `isExactActive`: true whenever `router-link-exact-active` is aplied. Only applies when the _fullPath_ is matched (including query and hash) (as in `currentLocation.fullPath === location.fullPath`)
+- `isActive`: true whenever `router-link-active` is applied. This is when the _path_ section of the href (without the query and hash) is included (as in `currentLocation.path.startsWith(location.path)`). Can be modified by `exact` prop
+- `isExactActive`: true whenever `router-link-exact-active` is aplied. Only applies when the _fullPath_ is matched (including query and hash) (as in `currentLocation.fullPath === location.fullPath`). Can be modified by `exact` prop.
+- `isSameFullPath`: true if the fullPath
 - `isSamePath`: true if the path section of the link matches current route (equality comparison between strings)
 - `isSameQuery`: true if the query of the link matches current query (custom equality comparison between objects)
 - `isSameHash`: true if the hash of the link matches current hash (equality comparison between strings)
@@ -107,7 +108,8 @@ A scoped slot would get access to every bit of information needed to provide a c
 
 # Drawbacks
 
-Whereas it's possible to keep existing behaviour working and only expose a new behaviour with scoped slots, it will still prevent us from fixing existing issues with current implementation. That's why there are some breaking changes, to make things more consistent.
+- Whereas it's possible to keep existing behaviour working and only expose a new behaviour with scoped slots, it will still prevent us from fixing existing issues with current implementation. That's why there are some breaking changes, to make things more consistent.
+- Too many scoped props, only `isSameQuery`, `isDescendant` and `isAscendant` are difficult to replicate in userland.
 
 # Alternatives
 
