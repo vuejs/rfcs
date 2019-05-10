@@ -97,12 +97,12 @@ A scoped slot would get access to every bit of information needed to provide a c
 - `location`: resolved normalized location from the `to`
 - `navigate`: function to trigger navigation (usually attached to a click)
 - `classes`: classes to be applied to an element. Will contain `router-link-active` and/or `router-link-exact-active`
-- `isActive`: true whenever `router-link-active` is applied. This is when path _path_ section of the href (without the query and hash) is included (as in `currentLocation.path.startsWith(location.path)`)
+- `isActive`: true whenever `router-link-active` is applied. This is when the _path_ section of the href (without the query and hash) is included (as in `currentLocation.path.startsWith(location.path)`)
 - `isExactActive`: true whenever `router-link-exact-active` is aplied. Only applies when the _fullPath_ is matched (including query and hash) (as in `currentLocation.fullPath === location.fullPath`)
 - `isSameQuery`: true if the query of the link matches current query
 - `isSameHash`: true if the hash of the link matches current hash
-- `isDescendant`: true if the route record matched by the `to` location is a descendant of the record matched by the current route
-- `isAscendant`: true if the route record matched by the `to` location is an ascendant of th erecord matched by the current route
+- `isDescendant`: true if the route record matched by the `to` location is a descendant of the record matched by the current route (as in `children` (works for nested `children` as well))
+- `isAscendant`: true if the route record matched by the `to` location is an ascendant of the record matched by the current route (as in current route being in `children`(works for nested routes as well))
 
 # Drawbacks
 
