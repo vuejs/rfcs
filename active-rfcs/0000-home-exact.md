@@ -43,7 +43,7 @@ This is a breaking change.
 
 Migration:
 - Remove `exact` prop on router links targeting the root path.
-- For `<router-link>` that actively needs it, put `:exact="false"`.
+- For `<router-link>` on the root `'/'` path that actively needs it, put `:exact="false"`.
 
 # Alternatives
 
