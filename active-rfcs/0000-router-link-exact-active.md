@@ -29,6 +29,8 @@ Current `exact` behavior doesn't marry well with query params and hash. However,
 
 Using `exact-path` changes the behavior of the `exact` prop, which means _both props are needed_. The idea behind this is for the prop to be completely useless in v4.
 
+If one wants to do more complex match, they should use the scoped slot version (https://github.com/vuejs/rfcs/pull/34)
+
 # Drawbacks
 
 - Breaking change
