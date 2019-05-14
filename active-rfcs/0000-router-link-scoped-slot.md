@@ -93,13 +93,25 @@ A scoped slot would get access to every bit of information needed to provide a c
 
 ### Accessible variables
 
-- `href`: resolved relative url to be added to an anchor tag
-- `route`: resolved normalized location from the `to`
+The variables fall into multiple categories. In documenation, they should be split per usage as [@Akryum pointed out](https://github.com/vuejs/rfcs/pull/34#issuecomment-491381810). This is important to overcome the fact that there is a big amount of available information
+
+#### Essential
+
+These are what you will likely *always* use
+
+- `href`: resolved relative url to be added to an anchor tag (is this necessary as it's an alias to `route.fullPath`)
+- `route`: resolved normalized route location from the `to` (same shape as `$route`)
 - `navigate`: function to trigger navigation (usually attached to a click)
-- `classes`: classes to be applied to an element. Will contain `router-link-active` and/or `router-link-exact-active`
 - `isActive`: true whenever `router-link-active` is applied. This is when the _path_ section of the href (without the query and hash) is included (as in `currentLocation.path.startsWith(location.path)`). Can be modified by `exact` prop
 - `isExactActive`: true whenever `router-link-exact-active` is aplied. Only applies when the _fullPath_ is matched (including query and hash) (as in `currentLocation.fullPath === location.fullPath`). Can be modified by `exact` prop.
+
+#### Convenience
+
+These are here for convenience and could be replicated in user land
+
+- `classes`: classes to be applied to an element. Will contain `router-link-active` and/or `router-link-exact-active`
 - `isSameFullPath`: true if the fullPath
+- `isSubPath`: true if the path section of the link is included in current route as in `$route.path.includes(route.path)`
 - `isSamePath`: true if the path section of the link matches current route (equality comparison between strings)
 - `isSameQuery`: true if the query of the link matches current query (custom equality comparison between objects)
 - `isSameHash`: true if the hash of the link matches current hash (equality comparison between strings)
