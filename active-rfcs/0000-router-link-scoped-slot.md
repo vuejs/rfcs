@@ -99,7 +99,7 @@ The variables fall into multiple categories. In documenation, they should be spl
 
 These are what you will likely *always* use
 
-- `href`: resolved relative url to be added to an anchor tag (is this necessary as it's an alias to `route.fullPath`)
+- `href`: resolved relative url to be added to an anchor tag (contains the base if provided while route.fullPath doesn't)
 - `route`: resolved normalized route location from the `to` (same shape as `$route`)
 - `navigate`: function to trigger navigation (usually attached to a click)
 - `isActive`: true whenever `router-link-active` is applied. This is when the _path_ section of the href (without the query and hash) is included (as in `currentLocation.path.startsWith(location.path)`). Can be modified by `exact` prop
