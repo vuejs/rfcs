@@ -110,7 +110,7 @@ cases mentioned.
 ```html
 <div v-for="(value, key, index) in object"></div>
 // This will become
-<div v-for="([value, key], index) of Object.entries(object)"></div>
+<div v-for="([key, value], index) of Object.entries(object)"></div>
 ```
 
 2. Iterating over array with `in` (`v-for-in-array`)
