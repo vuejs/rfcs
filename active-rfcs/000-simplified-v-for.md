@@ -74,6 +74,8 @@ as Javascript's `for`. I believe they should be removed in Vue 3.x:
   heavily `v-for-in-object` and `v-for-in-array` and `v-for-in-number`
   are used throughout the project.
 - More verbose when using `v-for`.
+- Less performant as it is required to create intermediate list to 
+  iterating through entries in objects
 
 # Alternatives
 
