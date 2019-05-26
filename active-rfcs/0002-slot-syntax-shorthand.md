@@ -1,4 +1,4 @@
-- Start Date: 01-16-2019
+- Start Date: 2019-16-01
 - Target Major Version: (2.x / 3.x)
 - Reference Issues: https://github.com/vuejs/rfcs/pull/2
 - Implementation PR: (leave this empty)
