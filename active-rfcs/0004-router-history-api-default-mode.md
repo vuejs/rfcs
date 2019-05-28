@@ -45,7 +45,7 @@ Why should we *not* do this? Please consider:
 - I am not sure if there even is a way to polyfill / retrofit this into older browsers
 - It's a breaking change as it changes default behaviour
 
-If we continue using the hash mode as the default, people will have to find was to mitigate the URL issue for crawlers, even if they run the JS just fine otherwise. If we switch the default, people who have to support older versions of IE may need to accept page refreshes on navigation or find workarounds.
+If we continue using the hash mode as the default, people will have to find ways to mitigate the URL issue for crawlers, even if they run the JS just fine otherwise. If we switch the default, people who have to support older versions of IE may need to accept page refreshes on navigation or find workarounds.
 
 # Alternatives
 
