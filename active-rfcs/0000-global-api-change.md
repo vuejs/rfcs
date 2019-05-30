@@ -107,6 +107,14 @@ const rootInstance = app.mount('#app')
 rootInstance instanceof Vue // true
 ```
 
+The `mount` method can also accept props to be passed to the root component via the second argument:
+
+``` js
+app.mount('#app', {
+  // props to be passed to root component
+})
+```
+
 ## Provide / Inject
 
 An app instance can also provide dependencies that can be injected by any component inside the app:
