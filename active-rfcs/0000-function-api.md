@@ -515,7 +515,17 @@ If provided key contains a value wrapper, `inject` will also return a value wrap
 
 - Undisciplined users may end up with "spaghetti code" since they are no longer forced to separate component code into option groups.
 
-  // TODO
+  I've seen this concern raised a few times in the Class API thread and internally. However, I believe this fear is unwarranted. It is true that the flexibility of function-based API will theoretically allow users to write code that is harder to follow. But let me explain why this is unlikely to happen.
+
+  The biggest difference of function-based APIs vs. the current option-based API is that function APIs make it ridiculously easy to extract part of your component logic into a well encapsulated function. This can be done not just for reuse, but purely for code organization purposes as well.
+
+  With component options, your code only *seem* to be organized - in a complex component, logic related to a specific task is often split up between multiple options. For example, fetching a piece of data often involves one or more properties in `props` and `data()`, a `mounted` hook, and a watcher declared in `watch`. If you put all the logic of your app in a single component, that component is going to become a monster and become very hard to maintain, because every single logical task will be fragmented and spanning across multiple option blocks.
+
+  In comparison, with function-based API all the code related to fetching a specific piece of data can be nicely encapsulated in a single function.
+
+  To avoid the "monster component" problem, we split the component into many smaller ones. Similarly, if you have a huge `setup()` function, you can split it into multiple functions, each dealing with a specific logical task. Function based API makes better organized code easily possible while with options you are stuck with... options (because splitting into mixins makes things worse).
+
+  From this perspective, separation of options vs. `setup()` is just like the separation of HTML/CSS/JS vs. Single File Components.
 
 # Alternatives
 
