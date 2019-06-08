@@ -55,7 +55,7 @@ One of the key aspects of the component API is how to encapsulate and reuse logi
 - Higher-order components (HOCs)
 - Renderless components (via scoped slots)
 
-These patterns are discussed in more details in the [appendix](#prior-art-composition-patterns) - but in general, they all suffer from one or more of the drawbacks below:
+There are plenty of information regarding these patterns on the internet, so we shal not repeat them in full details here. In general, these patterns all suffer from one or more of the drawbacks below:
 
 - Unclear sources for properties exposed on the render context. For example, when reading the template of a component using multiple mixins, it can be difficult to tell from which mixin a specific property was injected from.
 
@@ -243,7 +243,7 @@ Value wrappers are also automatically unwrapped when accessed as a nested proper
 
 ``` js
 const count = value(0)
-const obj = observable({
+const obj = state({
   count
 })
 
@@ -458,7 +458,7 @@ interface DebuggerEvent {
 
 ## Lifecycle Hooks
 
-All current lifecycle hooks will have an equivalent `useXXX` function that can be used inside `setup()`:
+All current lifecycle hooks will have an equivalent `onXXX` function that can be used inside `setup()`:
 
 ``` js
 import { onMounted, onUpdated, onUnmounted } from 'vue'
