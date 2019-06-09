@@ -606,7 +606,7 @@ The function based API provides the same level of logic composition capabilities
 - Not sensitive to call order and can be conditional;
 - Not called repeatedly on each render and produce less GC pressure;
 - Not subject to the issue where `useEffect` callback may capture stale variables if the user forgets to pass the correct dependency array;
-- Not subject to the issue where `useMemo` is almost always needed in order to prevent inline handlers causing over-re-rendering of child components;
+- Not subject to the issue where `useCallback` is almost always needed in order to prevent inline handlers causing over-re-rendering of child components;
 
 ## Type Issues with Class API
 
