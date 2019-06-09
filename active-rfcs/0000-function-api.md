@@ -107,7 +107,7 @@ See also:
 
 One of the major goals of 3.0 is to provide better built-in TypeScript type inference support. Originally we tried to address this problem with the now-abandoned [Class API RFC](https://github.com/vuejs/rfcs/pull/17), but after discussion and prototyping we discovered that using Classes [doesn't fully address the typing issue](#type-issues-with-class-api).
 
-The function-based APIs, on the other hand, are naturally type-friendly. In the prototype we have already achieved full typing support for the proposed APIs.
+The function-based APIs, on the other hand, are naturally type-friendly. In the prototype we have already achieved full typing support for the proposed APIs. The best part is - code written in TypeScript will look almost identical to code written in plain JavaScript. There are no manual type hints needed except for dependency injection.
 
 See also:
 
