@@ -55,7 +55,7 @@ One of the key aspects of the component API is how to encapsulate and reuse logi
 - Higher-order components (HOCs)
 - Renderless components (via scoped slots)
 
-There are plenty of information regarding these patterns on the internet, so we shal not repeat them in full details here. In general, these patterns all suffer from one or more of the drawbacks below:
+There are plenty of information regarding these patterns on the internet, so we shall not repeat them in full details here. In general, these patterns all suffer from one or more of the drawbacks below:
 
 - Unclear sources for properties exposed on the render context. For example, when reading the template of a component using multiple mixins, it can be difficult to tell from which mixin a specific property was injected from.
 
