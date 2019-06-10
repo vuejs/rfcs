@@ -231,6 +231,9 @@ export interface Vue {
 }
 ```
 
+## Portal Component Compatibility
+Compatibility is required for [such components](https://github.com/LinusBorg/portal-vue).
+
 # Drawbacks
 - Add a new component option `subscribers` is a big change.
 - Changes to the api will probably make it more difficult for Vue 1.x users to adapt.
