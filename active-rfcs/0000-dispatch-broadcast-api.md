@@ -71,7 +71,7 @@ hello baz
 
 Although this API was deprecated, it is still very useful in many scenarios.
 
-One of the most common examples:
+One of the most common examples (vscode actually uses a similar design):
 
 ```javascript
 import { createEditor } from 'some-editor'
