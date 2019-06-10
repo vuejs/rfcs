@@ -298,7 +298,13 @@ const writableComputed = computed(
 
 The `watch` API provides a way to perform side effect based on reactive state changes.
 
-The first argument passed to `watch` is called a "source", which can be either a getter function, a value wrapper, or an array containing either. The second argument is a callback that will only get called when the value returned from the getter or the value wrapper has changed:
+The first argument passed to `watch` is called a "source", which can be one of the following:
+
+- a getter function
+- a value wrapper
+- an array containing the two above types
+
+The second argument is a callback that will only get called when the value returned from the getter or the value wrapper has changed:
 
 ``` js
 watch(
@@ -578,9 +584,7 @@ import { createComponent, PropType } from 'vue'
 
 createComponent({
   props: {
-    options: {
-      type: (null as any) as PropType<{ msg: string }>,
-    }
+    options: (null as any) as PropType<{ msg: string }>
   },
   setup(props) {
     props.options // { msg: string } | undefined
@@ -604,6 +608,8 @@ createComponent({
   }
 })
 ```
+
+Here `Value` is the exposed type for value wrappers - it accepts a generic argument to represent the type of its internal value.
 
 # Drawbacks
 
@@ -661,7 +667,7 @@ Current 2.x users can start with the compatibility build and progressively migra
 
 > These options will only be available in the compatibility build of 3.0.
 
-- `data` (replaced by `setup()`)
+- `data` (replaced by `setup()` + `value` + `state`)
 - `computed` (replaced by `computed` returned from `setup()`)
 - `methods` (replaced by plain functions returned from `setup()`)
 - `watch` (replaced by `watch`)
@@ -705,6 +711,8 @@ The function based API provides the same level of logic composition capabilities
 - Not called repeatedly on each render and produce less GC pressure;
 - Not subject to the issue where `useCallback` is almost always needed in order to prevent inline handlers causing over-re-rendering of child components;
 - Not subject to the issue where `useEffect` and `useMemo` may capture stale variables if the user forgets to pass the correct dependency array. Vue's automated dependency tracking ensures watchers and computed values are always correctly invalidated.
+
+> Note: we acknowledge the creativity of React Hooks, and it is a major source of inspiration for this proposal. However, the issues mentioned above do exist in its design and we noticed Vue's reactivity model happens to provide a way around them.
 
 ## Type Issues with Class API
 
