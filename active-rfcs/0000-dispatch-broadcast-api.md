@@ -17,7 +17,7 @@ Redesign the `$dispatch` and `$broadcast` API that existed in 1.x and deprecated
 import Vue from 'vue'
 
 const Item = {
-  template: `<div></div>`,
+  template: `<div><slot></slot></div>`,
   props: ['name'],
   mounted () {
     if (this.name === 'foo') {
