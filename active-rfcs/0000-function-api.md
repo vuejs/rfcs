@@ -107,7 +107,7 @@ See also:
 
 One of the major goals of 3.0 is to provide better built-in TypeScript type inference support. Originally we tried to address this problem with the now-abandoned [Class API RFC](https://github.com/vuejs/rfcs/pull/17), but after discussion and prototyping we discovered that using Classes [doesn't fully address the typing issue](#type-issues-with-class-api).
 
-The function-based APIs, on the other hand, are naturally type-friendly. In the prototype we have already achieved full typing support for the proposed APIs. The best part is - code written in TypeScript will look almost identical to code written in plain JavaScript. There are no manual type hints needed except for dependency injection.
+The function-based APIs, on the other hand, are naturally type-friendly. In the prototype we have already achieved full typing support for the proposed APIs. The best part is - code written in TypeScript will look almost identical to code written in plain JavaScript. More details will be discussed later in this RFC.
 
 See also:
 
@@ -506,6 +506,104 @@ const Descendent = {
 ```
 
 If provided key contains a value wrapper, `inject` will also return a value wrapper and the binding will be reactive (i.e. the child will update if ancestor mutates the provided value).
+
+## Type Inference
+
+To get proper type inference in TypeScript, we do need to wrap a component definition in a function call:
+
+``` ts
+import { createComponent } from 'vue'
+
+const MyComponent = createComponent({
+  props: {
+    msg: String
+  },
+  setup(props) {
+    watch(() => props.msg, msg => { /* ... */ })
+    return {
+      count: value(0)
+    }
+  },
+  render({ state, props }) {
+    // state typing inferred from value returned by setup()
+    console.log(state.count)
+    // props typing inferred from `props` declaration
+    console.log(props.msg)
+
+    // `this` exposes both state and props
+    console.log(this.count)
+    console.log(this.msg)
+  }
+})
+```
+
+`createComponent` is conceptually similar to 2.x's `Vue.extend`, but internally it's just a no-op for typing purposes. The returned component is the object itself, but typed in a way that would provide props inference when used in TSX expressions.
+
+If you are using Single-File Components, Vetur can implicitly add the wrapper function for you.
+
+### Required Props
+
+By default, props are inferred as optional properties. `required: true` will be respected if present:
+
+``` ts
+import { createComponent } from 'vue'
+
+createComponent({
+  props: {
+    foo: {
+      type: String,
+      required: true
+    },
+    'bar: {
+      type: String
+    }
+  } as const,
+  setup(props) {
+    props.foo // string
+    props.bar // string | undefined
+  }
+})
+```
+
+Note that we need to add `as const` after the `props` declaration. This is because without `as const` the type will be `required: boolean` and won't qualify for `extends true` in conditional type operations.
+
+> Side note: should we consider making props required by default (And can be made optional with `optional: true`)?
+
+### Complex Prop Types
+
+The exposed `PropType` type can be used to declare complex prop types - but it requires a force-cast via `as any`:
+
+``` ts
+import { createComponent, PropType } from 'vue'
+
+createComponent({
+  props: {
+    options: {
+      type: (null as any) as PropType<{ msg: string }>,
+    }
+  },
+  setup(props) {
+    props.options // { msg: string } | undefined
+  }
+})
+```
+
+### Dependency Injection Typing
+
+The `inject` method is the only API that requires manual typing:
+
+``` ts
+import { createComponent, inject, Value } from 'vue'
+
+createComponent({
+  setup() {
+    const count: Value<number> = inject(CountSymbol)
+    return {
+      count
+    }
+  }
+})
+```
 
 # Drawbacks
 
