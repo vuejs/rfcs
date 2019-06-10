@@ -332,7 +332,7 @@ As mentioned previously, the `props` object passed to the `setup()` function is 
 ``` js
 const MyComponent = {
   props: {
-    id: number
+    id: Number
   },
   setup(props) {
     const data = value(null)
@@ -560,7 +560,7 @@ createComponent({
       type: String,
       required: true
     },
-    'bar: {
+    bar: {
       type: String
     }
   } as const,
