@@ -140,7 +140,7 @@ The size of `App` will be affected by the size of the browser window. `Sidebar` 
 
 We want `Editor` can adjust its size when `App` or `Content` is resized.
 
-For this we need to have `Editor` listen on the `resize` subscription. If `App` or `Sidebar` were resized, `resize` would be invoke, then `Editor` will adapt to a new size.
+For this we need to have `Editor` subscribe event `resize`. If `App` or `Sidebar` were resized, `resize` would be invoke, then `Editor` will adapt to a new size.
 
 I have encountered a much more complicated situation than this. In particular, if I implement a custom SplitView component, it is difficult to manage `resize` events using Vuex or a global event bus.
 
