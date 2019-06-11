@@ -260,6 +260,31 @@ console.log(count.value) // 2
 
 As a rule of thumb, the only occasions where you need to use `.value` is when directly accessing value wrappers as variables.
 
+### Bindings in Manual Render Functions
+
+Bindings returned by `setup()` is also usable inside manually written render functions - they are exposed on `this`. In addition, the render function receives the internal component instance as the argument, from which `state`, `props` and `slots` can be destructured:
+
+``` js
+const MyComponent = {
+  props: {
+    msg: String
+  },
+  setup() {
+    return {
+      count: value(0)
+    }
+  },
+  render({ state, props, slots }) {
+    // `state` contains bindings returned from setup()
+    console.log(state.count)
+    console.log(props.msg)
+    // `this` exposes both state and props
+    console.log(this.count)
+    console.log(this.msg)
+  }
+}
+```
+
 ### Computed Values
 
 In addition to plain value wrappers, we can also create computed values:
