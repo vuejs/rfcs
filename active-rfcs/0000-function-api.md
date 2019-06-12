@@ -224,7 +224,7 @@ object.count++
 
 ### Value Unwrapping
 
-Note in the last example we are using `{{ msg }}` in the template without the `.value` property access. This is because **value wrappers get "unwrapped" when they are accessed on the render context or as a nested property inside a reactive object.**
+Note in the last example we are using `{{ msg }}` in the template without the `.value` property access. This is because **value wrappers get "unwrapped" when they are accessed in the template or as a nested property inside a reactive object.**
 
 You can mutate an unwrapped value binding in inline handlers:
 
@@ -260,30 +260,32 @@ console.log(count.value) // 2
 
 As a rule of thumb, the only occasions where you need to use `.value` is when directly accessing value wrappers as variables.
 
-### Bindings in Manual Render Functions
+### Usage with Manual Render Functions
 
-Bindings returned by `setup()` is also usable inside manually written render functions - they are exposed on `this`. In addition, the render function receives the internal component instance as the argument, from which `state`, `props` and `slots` can be destructured:
+If the component doesn't use a template, `setup()` can also directly return a render function instead:
 
 ``` js
+import { value, createElement as h } from 'vue'
+
 const MyComponent = {
-  props: {
-    msg: String
-  },
-  setup() {
-    return {
-      count: value(0)
-    }
-  },
-  render({ state, props, slots }) {
-    // `state` contains bindings returned from setup()
-    console.log(state.count)
-    console.log(props.msg)
-    // `this` exposes both state and props
-    console.log(this.count)
-    console.log(this.msg)
+  setup(initialProps) {
+    const count = value(0)
+    const increment = () => { count.value++ }
+
+    return (props, slots, attrs, vnode) => (
+      h('button', {
+        onClick: increment
+      }, count.value)
+    )
   }
 }
 ```
+
+The returned render function has the same signature as specified in [RFC#28](https://github.com/vuejs/rfcs/pull/28).
+
+You may notice that both `setup()` and the returned function receive props as the first argument. They work mostly the same, but the `props` passed to the render function is a plain object in production and offers better performance.
+
+A normal `render()` option is still available, but is mostly used as a result of template compilation. For manual render functions, an inline function returned from `setup()` should be preferred since it avoids the need for proxying bindings and makes type inference easier.
 
 ### Computed Values
 
@@ -546,31 +548,71 @@ To get proper type inference in TypeScript, we do need to wrap a component defin
 import { createComponent } from 'vue'
 
 const MyComponent = createComponent({
+  // props declarations are used to infer prop types
   props: {
     msg: String
   },
   setup(props) {
-    watch(() => props.msg, msg => { /* ... */ })
-    return {
-      count: value(0)
-    }
-  },
-  render({ state, props }) {
-    // state typing inferred from value returned by setup()
-    console.log(state.count)
-    // props typing inferred from `props` declaration
-    console.log(props.msg)
+    props.msg // string | undefined
 
-    // `this` exposes both state and props
-    console.log(this.count)
-    console.log(this.msg)
+    // bindings returned from setup() can be used for type inference
+    // in templates
+    const count = value(0)
+    return {
+      count
+    }
   }
 })
 ```
 
-`createComponent` is conceptually similar to 2.x's `Vue.extend`, but internally it's just a no-op for typing purposes. The returned component is the object itself, but typed in a way that would provide props inference when used in TSX expressions.
+`createComponent` is conceptually similar to 2.x's `Vue.extend`, but it is a no-op and only needed for typing purposes. The returned component is the object itself, but typed in a way that would provide type information for Vetur and TSX. If you are using Single-File Components, Vetur can implicitly add the wrapper function for you.
 
-If you are using Single-File Components, Vetur can implicitly add the wrapper function for you.
+If you are using render functions / TSX, returning a render function inside `setup()` provides proper type support (again, no manual type hints needed):
+
+``` ts
+import { createComponent, createElement as h } from 'vue'
+
+const MyComponent = createComponent({
+  props: {
+    msg: String
+  },
+  setup(props) {
+    const count = value(0)
+    return () => h('div', [
+      h('p', `msg is ${props.msg}`),
+      h('p', `count is ${count.value}`)
+    ])
+  }
+})
+```
+
+### TypeScript-only Props Typing
+
+In 3.0, the `props` declaration is optional. If you don't want runtime props validation, you can omit `props` declaration and declare your expected prop types directly in TypeScript:
+
+``` ts
+import { createComponent, createElement as h } from 'vue'
+
+interface Props {
+  msg: string
+}
+
+const MyComponent = createComponent({
+  setup(props: Props) {
+    return () => h('div', props.msg)
+  }
+})
+```
+
+You can even pass the setup function directly if you don't need any other options:
+
+``` ts
+const MyComponent = createComponent((props: { msg: string }) => {
+  return () => h('div', props.msg)
+})
+```
+
+The returned `MyComponent` also provides type inference when used in TSX.
 
 ### Required Props
 
