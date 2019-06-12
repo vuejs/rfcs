@@ -680,13 +680,13 @@ Here `Value` is the exposed type for value wrappers - it accepts a generic argum
 
 # Drawbacks
 
-- Makes it more difficult to reflect and manipulate component definitions.
+### Runtime Reflection of Components
 
-  This might be a good thing since reflecting and manipulation of component options is usually fragile and risky in a userland context, and creates many edge cases for the runtime to handle (especially when extending or using mixins). The flexibility of function APIs should be able to achieve the same end goals with more explicit userland code.
+The new API makes it more difficult to reflect and manipulate component definitions. This might be a good thing since reflecting and manipulation of component options is usually fragile and risky in a userland context, and creates many edge cases for the runtime to handle (especially when extending or using mixins). The flexibility of function APIs should be able to achieve the same end goals with more explicit userland code.
 
-- Undisciplined users may end up with "spaghetti code" since they are no longer forced to separate component code into option groups.
+### Spaghetti Code in Unexperienced Hands
 
-  I've seen this concern raised a few times in the Class API thread and internally. However, I believe this fear is unwarranted. It is true that the flexibility of function-based API will theoretically allow users to write code that is harder to follow. But let me explain why this is unlikely to happen.
+Some feedbacks suggest that undisciplined users may end up with "spaghetti code" since they are no longer forced to separate component code into option groups. I believe this fear is unwarranted. It is true that the flexibility of function-based API will theoretically allow users to write code that is harder to follow. But let me explain why this is unlikely to happen.
 
   The biggest difference of function-based APIs vs. the current option-based API is that function APIs make it ridiculously easy to extract part of your component logic into a well encapsulated function. This can be done not just for reuse, but purely for code organization purposes as well.
 
