@@ -121,7 +121,7 @@ Function-based APIs are exposed as named ES exports and imported on demand. This
 
 ## The `setup` function
 
-A new component option, `setup()` is introduced. As the name suggests, this is the place where we use the function-based APIs to setup the logic of our component. `setup()` is called when an instance of the component is created, after props resolution. The function receives the resolved props as its argument:
+A new component option, `setup()` is introduced. As the name suggests, this is the place where we use the function-based APIs to setup the logic of our component. `setup()` is called when an instance of the component is created, after props resolution. The function receives the resolved props as its first argument:
 
 ``` js
 const MyComponent = {
@@ -136,7 +136,49 @@ const MyComponent = {
 
 Note this `props` object is reactive - i.e. it is updated when new props are passed in, and can be observed and reacted upon using the `watch` function introduced later in this RFC. However, for userland code, it is immutable during development (will emit warning if user code attempts to mutate it).
 
-`this` is usable inside `setup()`, but you most likely won't need it very often.
+The second argument provides a context object which exposes a number of properties that were previously exposed on `this` in 2.x APIs:
+
+``` js
+const MyComponent = {
+  setup(props, context) {
+    context.attrs
+    context.slots
+    context.refs
+    context.emit
+    context.parent
+    context.root
+  }
+}
+```
+
+`attrs`, `slots` and `refs` are in fact proxies to the corresponding values on the internal component instance. This ensures they always expose the latest values even after updates, so we can destructure them without worrying accessing a stale reference:
+
+``` js
+const MyComponent = {
+  setup(props, { refs }) {
+    // a function that may get called at a later stage
+    function onClick() {
+      refs.foo // guaranteed to be the latest reference
+    }
+  }
+}
+```
+
+Why don't we expose `props` via context as well, so that `setup()` needs just a single argument? There are several reasons for this:
+
+- It's much more common for a component to use `props` than the other properties, and very often a component uses only `props`.
+
+- Having `props` as a separate argument makes it easier to type it individually (see [TypeScript-only Props Typing](#typescript-only-props-typing) below) without messing up the types of other properties on the context. It also makes it possible to keep a consistent signature across `setup`, `render` and plain functional components with TSX support.
+
+**`this` is not available inside `setup()`.** The reason for avoiding `this` is because of a very common pitfall for beginners:
+
+``` js
+setup() {
+  function onClick() {
+    this // not the `this` you'd expect!
+  }
+}
+```
 
 ## State
 
