@@ -703,22 +703,30 @@ createComponent({
 
 ### Dependency Injection Typing
 
-The `inject` method is the only API that requires manual typing:
+`provide` and `inject` can be typed by providing a typed symbol using the `Key` type:
 
 ``` ts
-import { createComponent, inject, Value } from 'vue'
+import { createComponent, provide, inject, Key } from 'vue'
 
-createComponent({
+const CountSymbol: Key<number> = Symbol()
+
+const Provider = createComponent({
   setup() {
-    const count: Value<number> = inject(CountSymbol)
+    // will error if provided value is not a number
+    provide(CountSymbol, 123)
+  }
+})
+
+const Consumer = createComponent({
+  setup() {
+    const count = inject(CountSymbol) // count's type is Value<number>
+    console.log(count.value) // 123
     return {
       count
     }
   }
 })
 ```
-
-Here `Value` is the exposed type for value wrappers - it accepts a generic argument to represent the type of its internal value.
 
 # Drawbacks
 
