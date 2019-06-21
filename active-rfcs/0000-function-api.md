@@ -35,7 +35,7 @@ This RFC also provide strictly superior logic composition and better type infere
 
 First, the template syntax doesn't change, and you are not forced to use this API for your `<script>` sections at all.
 
-Second, if you use React, you'll most likely be using React Hooks. This API is certainly inspired by React hooks, but it works fundamentally differently and is rooted in Vue's very own reactivity system. In addition, [we believe this API addresses a number of important usability issues in React Hooks](#comaprison-with-react-hooks). If you cannot put up with this API, you will most likely hate React Hooks even more.
+Second, if you use React, you'll most likely be using React Hooks. This API is certainly inspired by React hooks, but it works fundamentally differently and is rooted in Vue's very own reactivity system. In addition, [we believe this API addresses a number of important usability issues in React Hooks](#comparison-with-react-hooks). If you cannot put up with this API, you will most likely hate React Hooks even more.
 
 # Summary
 
