@@ -3,9 +3,7 @@
 - Reference Issues:
 - Implementation PR: (leave this empty)
 
-> If you came here from HN/Reddit, we strongly suggest that you read this RFC in its entirety before making a comment.
-
-# High Level Q&A
+# High-level Q&A
 
 ## Is this like Python 3 / Do I have to rewrite all my code?
 
@@ -21,13 +19,11 @@ No. This is an RFC (Request for Comments) - as long as this pull request is stil
 
 RFCs are written for implementors and advanced users who are aware of the internal design constraints of the framework. It focuses on the technical details, and has to be extremely through and cover all possible edge cases, which is why it may seem complex at first glance.
 
-We will provide tutorials targeting normal users which will be much easier to follow along with.
+We will provide tutorials targeting normal users which will be much easier to follow along with. In the meanwhile, check out [some examples](#comparison-with-2x-api) to see if the new API really makes things more complex.
 
 ## This will lead to spaghetti code and is much harder to read.
 
 Please read [this section](#spaghetti-code-in-unexperienced-hands).
-
-Also see [more examples comparing the new API to 2.x options](#comparison-with-2x-api).
 
 ## The Class API is much better!
 
