@@ -1121,6 +1121,8 @@ export default {
 
 Notice how the new API cleanly organizes code by logical topic instead of options.
 
+More examples can be found in [this gist](https://gist.github.com/yyx990803/762ec427882a61be3e4affe02f8af555).
+
 ## Comparison with React Hooks
 
 The function based API provides the same level of logic composition capabilities as React Hooks, but with some important differences. Unlike React hooks, the `setup()` function is called only once. This means code using Vue's function APIs are:
