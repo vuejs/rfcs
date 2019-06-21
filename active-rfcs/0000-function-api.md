@@ -801,7 +801,9 @@ Therefore we are planning to provide two builds for 3.0:
 
 In the standard build, `setup()` can be used alongside 2.x options. Note that `setup()` will be called before `data`, `computed` and `method` options are resolved - i.e. you can access values returned from `setup()` on `this` in these options, but not the other way around.
 
-Current 2.x users can start with the standard build and progressively introduce the new API into their current codebase, without having to do a full migration all at once.
+Current 2.x users who wish to use the new API, but have a legacy application can start with the standard build and progressively introduce the new API into their current codebase, without having to do a full migration all at once.
+
+2.x options compatibility in the standard build will be kept through the entire 3.x lifecycle. We may or may not remove some 2.x options in v4, but it depends on community feedback when that happens (which is going to be pretty far into the future). More importantly, even if we drop the options in the future, they can still be made available via userland plugins, since the two APIs work exactly the same internally.
 
 ### Common Options
 
