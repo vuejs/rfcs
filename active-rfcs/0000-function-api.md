@@ -17,7 +17,7 @@ No. This is an RFC (Request for Comments) - as long as this pull request is stil
 
 ## Vue is all about simplicity and this RFC is not.
 
-RFCs are written for implementors and advanced users who are aware of the internal design constraints of the framework. It focuses on the technical details, and has to be extremely through and cover all possible edge cases, which is why it may seem complex at first glance.
+RFCs are written for implementors and advanced users who are aware of the internal design constraints of the framework. It focuses on the technical details, and has to be extremely thorough and cover all possible edge cases, which is why it may seem complex at first glance.
 
 We will provide tutorials targeting normal users which will be much easier to follow along with. In the meanwhile, check out [some examples](#comparison-with-2x-api) to see if the new API really makes things more complex.
 
