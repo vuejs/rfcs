@@ -9,17 +9,11 @@ Expose logic-related component options via function-based APIs instead.
 
 # Basic example
 
-``` js
+``` vue
+<script>
 import { value, computed, watch, onMounted } from 'vue'
 
-const App = {
-  template: `
-    <div>
-      <span>count is {{ count }}</span>
-      <span>plusOne is {{ plusOne }}</span>
-      <button @click="increment">count++</button>
-    </div>
-  `,
+export default {
   setup() {
     // reactive state
     const count = value(0)
@@ -43,6 +37,15 @@ const App = {
     }
   }
 }
+</script>
+
+<template>
+  <div>
+    <span>count is {{ count }}</span>
+    <span>plusOne is {{ plusOne }}</span>
+    <button @click="increment">count++</button>
+  </div>
+</template>
 ```
 
 # Motivation
