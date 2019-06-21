@@ -3,6 +3,44 @@
 - Reference Issues:
 - Implementation PR: (leave this empty)
 
+> If you came here from HN/Reddit, we strongly suggest that you read this RFC in its entirety before making a comment.
+
+# High Level Q&A
+
+## Is this like Python 3 / Do I have to rewrite all my code?
+
+No. The new API is 100% compatible with current syntax and purely additive. All new additions are contained within the new `setup()` function. 3.0 standard build will support 2.x options plus the new APIs, but you can optionally use the lean build which drops a number of options while providing a smaller and faster runtime. [Details](#adoption-strategy)
+
+2.x options compatibility will be kept through the entire 3.x lifecycle.
+
+## Is this set in stone?
+
+No. This is an RFC (Request for Comments) - as long as this pull request is still open, this is just a proposal for soliciting feedback. We encourage you to voice your opinion, but **please actually read the RFC itself before commenting, as the impression you got from a random Reddit/HN thread is likely misleading.**
+
+## Vue is all about simplicity and this RFC is not.
+
+RFCs are written for implementors and advanced users who are aware of the internal design constraints of the framework. It focuses on the technical details, and has to be extremely through and cover all possible edge cases, which is why it may seem complex at first glance.
+
+We will provide tutorials targeting normal users which will be much easier to follow along with.
+
+## This will lead to spaghetti code and is much harder to read.
+
+Please read [this section](#spaghetti-code-in-unexperienced-hands).
+
+Also see [more examples comparing the new API to 2.x options](comparison-with-2.x-api).
+
+## The Class API is much better!
+
+We [respectfully](https://github.com/vuejs/rfcs/blob/function-apis/active-rfcs/0000-function-api.md#type-issues-with-class-api) [disagree](https://github.com/vuejs/rfcs/pull/17#issuecomment-494242121).
+
+This RFC also provide strictly superior logic composition and better type inference than the Class API. As it stands, the only "advantage" the Class API has is familiarity - and we don't believe it's enough to outweigh the benefits this RFC provides over it.
+
+## This looks like React, why don't I just use React?
+
+First, you are not forced to use this API at all.
+
+Second, if you use React, you'll most likely be using React Hooks. This API is certainly inspired by React hooks, but it works fundamentally differently. In fact, [we believe this API addresses a number of important usability issues in React Hooks](#comaprison-with-react-hooks). If you cannot put up with this API, you will most likely hate React Hooks even more.
+
 # Summary
 
 Expose logic-related component options via function-based APIs instead.
@@ -10,6 +48,14 @@ Expose logic-related component options via function-based APIs instead.
 # Basic example
 
 ``` vue
+<template>
+  <div>
+    <span>count is {{ count }}</span>
+    <span>plusOne is {{ plusOne }}</span>
+    <button @click="increment">count++</button>
+  </div>
+</template>
+
 <script>
 import { value, computed, watch, onMounted } from 'vue'
 
@@ -38,14 +84,6 @@ export default {
   }
 }
 </script>
-
-<template>
-  <div>
-    <span>count is {{ count }}</span>
-    <span>plusOne is {{ plusOne }}</span>
-    <button @click="increment">count++</button>
-  </div>
-</template>
 ```
 
 # Motivation
@@ -757,21 +795,21 @@ Some feedbacks suggest that undisciplined users may end up with "spaghetti code"
 
 # Adoption strategy
 
-The proposed APIs are all new additions and can theoretically be introduced in a completely backwards compatible way. However, the new APIs can replace many of the existing options and makes them unnecessary in the long run. Being able to drop some of these old options will result in considerably smaller bundle size and better performance.
+The proposed APIs are all new additions and can be introduced in a completely backwards compatible way. However, the new APIs can replace many of the existing options and makes them unnecessary in the long run. Being able to drop some of these old options will result in considerably smaller bundle size and better performance.
 
 Therefore we are planning to provide two builds for 3.0:
 
-- **Compatibility build**: supports both the new function-based APIs AND all the 2.x options.
+- **Standard build**: compatible with 2.x API (except for breaking changes introduced in other RFCs), with the ability to optionally use the new APIs introduced in this RFC.
 
-- **Standard build**: supports the new function-based APIs and only a subset of 2.x options.
+- **Lean build**: only supports the new APIs and a subset of 2.x options. If you are starting a fresh project using only the new API, this would give you a smaller and faster runtime.
 
-In the compatibility build, `setup()` can be used alongside 2.x options. Note that `setup()` will be called before `data`, `computed` and `method` options are resolved - i.e. you can access values returned from `setup()` on `this` in these options, but not the other way around.
+In the standard build, `setup()` can be used alongside 2.x options. Note that `setup()` will be called before `data`, `computed` and `method` options are resolved - i.e. you can access values returned from `setup()` on `this` in these options, but not the other way around.
 
-Current 2.x users can start with the compatibility build and progressively migrate away from deprecated options, until eventually switching to the standard build.
+Current 2.x users can start with the standard build and progressively introduce the new API into their current codebase, without having to do a full migration all at once.
 
-### Preserved Options
+### Common Options
 
-> Preserved options work the same as 2.x and are available in both the compatibility and standard builds of 3.0. Options marked with * may receive further adjustments before 3.0 official release.
+> Common options work the same as 2.x and are available in both the full and lean builds of 3.0. Options marked with * may receive further adjustments before 3.0 official release.
 
 - `name`
 - `props`
@@ -783,9 +821,9 @@ Current 2.x users can start with the compatibility build and progressively migra
 - `delimiters` *
 - `comments` *
 
-### Options deprecated by this RFC
+### Options removed in the Lean Build
 
-> These options will only be available in the compatibility build of 3.0.
+> These options will not be available in the lean build of 3.0.
 
 - `data` (replaced by `setup()` + `value` + `state`)
 - `computed` (replaced by `computed` returned from `setup()`)
@@ -798,7 +836,7 @@ Current 2.x users can start with the compatibility build and progressively migra
 
 ### Options deprecated by other RFCs
 
-> These options will only be available in the compatibility build of 3.0.
+> There are a number of additional options that are deprecated by other RFCs. These options will likely be supported via a compatibility plugin. They are not strictly related to this RFC, but we are listing them here for completeness.
 
 - `el`
 
@@ -821,6 +859,271 @@ Current 2.x users can start with the compatibility build and progressively migra
   Deperecated by [RFC#26](https://github.com/vuejs/rfcs/pull/26).
 
 # Appendix
+
+## Comparison with 2.x API
+
+### Simple Counter
+
+2.x
+
+``` vue
+<template>
+  <div>
+    Count is {{ count }}, count * 2 is {{ double }}
+    <button @click="increment">+</button>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      count: 0
+    }
+  },
+  methods: {
+    increment() {
+      this.count++
+    }
+  },
+  computed: {
+    double() {
+      return this.count * 2
+    }
+  }
+}
+</script>
+```
+
+New API
+
+``` vue
+<template>
+  <div>
+    Count is {{ count }}, count * 2 is {{ double }}
+    <button @click="increment">+</button>
+  </div>
+</template>
+
+<script>
+import { value, computed } from 'vue'
+
+export default {
+  setup() {
+    const count = value(0)
+    const double = computed(() => count.value * 2)
+    const increment = () => { count.value++ }
+    return {
+      count,
+      double,
+      increment
+    }
+  }
+}
+</script>
+```
+
+### Fetching Data Based on Prop
+
+2.x
+
+``` vue
+<template>
+  <div>
+    <template v-if="isLoading">Loading...</template>
+    <template v-else>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.body }}</p>
+    </template>
+  </div>
+</template>
+
+<script>
+import { fetchPost } from './api'
+
+export default {
+  props: {
+    id: Number
+  },
+  data() {
+    return {
+      isLoading: true,
+      post: null
+    }
+  },
+  mounted() {
+    this.fetchPost()
+  },
+  watch: {
+    id: 'fetchPost'
+  },
+  methods: {
+    async fetchPost() {
+      this.isLoading = true
+      this.post = await fetchPost(this.id)
+      this.isLoading = false
+    }
+  }
+}
+</script>
+```
+
+New API
+
+``` vue
+<template>
+  <div>
+    <template v-if="isLoading">Loading...</template>
+    <template v-else>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.body }}</p>
+    </template>
+  </div>
+</template>
+
+<script>
+import { fetchPost, value, watch } from './api'
+
+export default {
+  setup(props) {
+    const isLoading = value(true)
+    const post = value(null)
+
+    watch(() => props.id, async (id) => {
+      isLoading.value = true
+      post.value = await fetchPost(id)
+      isLoading.value = false
+    })
+
+    return {
+      isLoading,
+      post
+    }
+  }
+}
+</script>
+```
+
+### Multiple Logic Topics
+
+Based on the previous data-fetching example, suppose we want to also track mouse position in the same component:
+
+2.x
+
+``` vue
+<template>
+  <div>
+    <template v-if="isLoading">Loading...</template>
+    <template v-else>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.body }}</p>
+    </template>
+    <div>Mouse is at {{ x }}, {{ y }}</div>
+  </div>
+</template>
+
+<script>
+import { fetchPost } from './api'
+
+export default {
+  props: {
+    id: Number
+  },
+  data() {
+    return {
+      isLoading: true,
+      post: null,
+      x: 0,
+      y: 0
+    }
+  },
+  mounted() {
+    this.fetchPost()
+    window.addEventListener('mousemove', this.updateMouse)
+  },
+  watch: {
+    id: 'fetchPost'
+  },
+  destroyed() {
+    window.removeEventListener('mousemove', this.updateMouse)
+  },
+  methods: {
+    async fetchPost() {
+      this.isLoading = true
+      this.post = await fetchPost(this.id)
+      this.isLoading = false
+    },
+    updateMouse(e) {
+      this.x = e.pageX
+      this.y = e.pageY
+    }
+  }
+}
+</script>
+```
+
+You'll start to notice that we have two logic topics (data fetching and mouse position tracking) but they are split up and mixed between component options.
+
+With new API:
+
+``` vue
+<template>
+  <div>
+    <template v-if="isLoading">Loading...</template>
+    <template v-else>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.body }}</p>
+    </template>
+  </div>
+</template>
+
+<script>
+import { fetchPost, value, watch, onMounted, onUnmounted } from './api'
+
+function useFetch(props) {
+  const isLoading = value(true)
+  const post = value(null)
+
+  watch(() => props.id, async (id) => {
+    isLoading.value = true
+    post.value = await fetchPost(id)
+    isLoading.value = false
+  })
+
+  return {
+    isLoading,
+    post
+  }
+}
+
+function useMouse() {
+  const x = value(0)
+  const y = value(0)
+  const update = e => {
+    x.value = e.pageX
+    y.value = e.pageY
+  }
+  onMounted(() => {
+    window.addEventListener('mousemove', update)
+  })
+  onUnmounted(() => {
+    window.removeEventListener('mousemove', update)
+  })
+  return { x, y }
+}
+
+export default {
+  setup(props) {
+    return {
+      ...useFetch(props),
+      ...useMouse()
+    }
+  }
+}
+</script>
+```
+
+Notice how the new API cleanly organizes code by logical topic instead of options.
 
 ## Comparison with React Hooks
 
