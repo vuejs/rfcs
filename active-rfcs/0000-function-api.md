@@ -27,7 +27,7 @@ We will provide tutorials targeting normal users which will be much easier to fo
 
 Please read [this section](#spaghetti-code-in-unexperienced-hands).
 
-Also see [more examples comparing the new API to 2.x options](comparison-with-2.x-api).
+Also see [more examples comparing the new API to 2.x options](#comparison-with-2x-api).
 
 ## The Class API is much better!
 
