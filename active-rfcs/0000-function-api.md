@@ -854,7 +854,7 @@ Current 2.x users who wish to use the new API, but have a legacy application can
 
 - `inheritAttrs`
 
-  Deperecated by [RFC#26](https://github.com/vuejs/rfcs/pull/26).
+  Deprecated by [RFC#26](https://github.com/vuejs/rfcs/pull/26).
 
 # Appendix
 
