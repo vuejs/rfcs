@@ -980,7 +980,8 @@ New API
 </template>
 
 <script>
-import { fetchPost, value, watch } from './api'
+import { value, watch } from 'vue'
+import { fetchPost } from './api'
 
 export default {
   setup(props) {
@@ -1076,7 +1077,8 @@ With new API:
 </template>
 
 <script>
-import { fetchPost, value, watch, onMounted, onUnmounted } from './api'
+import { value, watch, onMounted, onUnmounted } from 'vue'
+import { fetchPost } from './api'
 
 function useFetch(props) {
   const isLoading = value(true)
