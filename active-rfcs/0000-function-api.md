@@ -17,9 +17,9 @@ We are here to serve the Vue community and that is the purpose of an RFC - (Requ
 
 ## Vue is all about simplicity and this RFC is not.
 
-This RFC (and most others) are written for implementors and advanced users, who are aware of the internal design constraints of the framework. It focuses on the technical details and has to be extremely thorough and cover all possible edge cases. Please don't let the complexity of this RFC fool you. It may seem complex at first glance, but with the right understanding, taking time to learn and listen to those who understand it, you also learn it's not all that complex and most likely will also understand the important reasons for the additional API. Yes, it provides more flexibility, which means more responsibility on your part. But, if you are honest, we think you'll agree, that's not necessisarly a bad thing in terms of programming. The constraints you've loved in Vue are still there. 
+This RFC (as most others) are written for implementors and advanced users, who are aware of the internal design constraints of the framework. It focuses on the technical details and has to be extremely thorough and cover all possible edge cases. Please don't let the complexity of this RFC fool you. It may seem complex at first glance, but with the right understanding, taking time to learn and listen to those who understand it, you also learn it's not all that complex and most likely will also understand the important reasons for the additional API. Yes, it provides more flexibility, which means more responsibility on your part. But, if you are honest, we think you'll agree, that's not necessisarly a bad thing in terms of programming. The external API constraints you've learned to love in Vue are still there. 
 
-We will also provide tutorials, which will be much easier to follow along with. In the meanwhile, check out [these examples](#comparison-with-2x-api) and judge for yourself, if the new API is really so much more complex.  
+We will also provide tutorials, which will be much easier to follow along with. In the meanwhile, check out [these examples](#comparison-with-2x-api) and judge for yourself, if the new API is really so much more complex. **Again, we ask you to also fully read this RFC.**  
 
 ## This will lead to spaghetti code and is much harder to read.
 
@@ -27,9 +27,9 @@ Please read [this section](#spaghetti-code-in-inexperienced-hands).
 
 ## The Class API is much better!
 
-We've [taken several weeks and looked in depth at creating a Class API to only find that it doesn't profice what we hoped it would.](https://github.com/vuejs/rfcs/blob/function-apis/active-rfcs/0000-function-api.md#type-issues-with-class-api) [Evan also explained in detail about why the Class API was no longer the right direction.](https://github.com/vuejs/rfcs/pull/17#issuecomment-494242121).
+We've [taken several weeks and looked in depth at creating a Class API to only find that it doesn't profide what we hoped it would.](https://github.com/vuejs/rfcs/blob/function-apis/active-rfcs/0000-function-api.md#type-issues-with-class-api) [Evan also explained in detail about why the Class API was no longer the right direction.](https://github.com/vuejs/rfcs/pull/17#issuecomment-494242121).
 
-This RFC provides a superior ability for logic composition and better type inference than the Class API. Between the two, the only advantage the Class API has is familiarity - and we are absolutely certain the benefits of the function based API outweigh developer familiarity with a Class based component API. 
+This RFC provides a superior ability for logic composition and better type inference than the Class API. Between the two, the only advantage the Class API has is familiarity - and we are absolutely certain the benefits of a function based API outweigh developer familiarity with a Class based component API. 
 
 ## This looks like React, why don't I just use React?
 
