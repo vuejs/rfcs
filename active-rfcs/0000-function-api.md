@@ -7,35 +7,37 @@
 
 ## Is this like Python 3 / Do I have to rewrite all my code?
 
-No. The new API is 100% compatible with current syntax and purely additive. All new additions are contained within the new `setup()` function. 3.0 standard build will support 2.x options plus the new APIs, but you can optionally use the lean build which drops a number of options while providing a smaller and faster runtime. [Details](#adoption-strategy)
+No need to worry. The new API is planned to be 100% compatible with current syntax and purely additive. All new additions are contained within the new `setup()` function. The 3.0 standard build will support 2.x options plus the new APIs, but you can optionally use the lean build, which will drop a number of options while providing a smaller and faster runtime. [Details](#adoption-strategy)
 
 2.x options compatibility will be kept through the entire 3.x lifecycle.
 
 ## Is this set in stone?
 
-No. This is an RFC (Request for Comments) - as long as this pull request is still open, this is just a proposal for soliciting feedback. We encourage you to voice your opinion, but **please actually read the RFC itself before commenting, as the impression you got from a random Reddit/HN thread is likely misleading.**
+We are here to serve the Vue community and that is the purpose of an RFC - (Request for Comments). It's to get feedback from you. So no. It's just a suggestion. As long as this pull request is open, this is just a proposal for soliciting your input. We encourage you to offer us constructive feedback, but **please actually read the RFC itself before commenting.** 
 
 ## Vue is all about simplicity and this RFC is not.
 
-RFCs are written for implementors and advanced users who are aware of the internal design constraints of the framework. It focuses on the technical details, and has to be extremely thorough and cover all possible edge cases, which is why it may seem complex at first glance.
+This RFC (and most others) are written for implementors and advanced users, who are aware of the internal design constraints of the framework. It focuses on the technical details and has to be extremely thorough and cover all possible edge cases. Please don't let the complexity of this RFC fool you. It may seem complex at first glance, but with the right understanding, taking time to learn and listen to those who understand it, you also learn it's not all that complex and most likely will also understand the important reasons for the additional API. Yes, it provides more flexibility, which means more responsibility on your part. But, if you are honest, we think you'll agree, that's not necessisarly a bad thing in terms of programming. The constraints you've loved in Vue are still there. 
 
-We will provide tutorials targeting normal users which will be much easier to follow along with. In the meanwhile, check out [some examples](#comparison-with-2x-api) to see if the new API really makes things more complex.
+We will also provide tutorials, which will be much easier to follow along with. In the meanwhile, check out [these examples](#comparison-with-2x-api) and judge for yourself, if the new API is really so much more complex.  
 
 ## This will lead to spaghetti code and is much harder to read.
 
-Please read [this section](#spaghetti-code-in-unexperienced-hands).
+Please read [this section](#spaghetti-code-in-inexperienced-hands).
 
 ## The Class API is much better!
 
-We [respectfully](https://github.com/vuejs/rfcs/blob/function-apis/active-rfcs/0000-function-api.md#type-issues-with-class-api) [disagree](https://github.com/vuejs/rfcs/pull/17#issuecomment-494242121).
+We've [taken several weeks and looked in depth at creating a Class API to only find that it doesn't profice what we hoped it would.](https://github.com/vuejs/rfcs/blob/function-apis/active-rfcs/0000-function-api.md#type-issues-with-class-api) [Evan also explained in detail about why the Class API was no longer the right direction.](https://github.com/vuejs/rfcs/pull/17#issuecomment-494242121).
 
-This RFC also provide strictly superior logic composition and better type inference than the Class API. As it stands, the only "advantage" the Class API has is familiarity - and we don't believe it's enough to outweigh the benefits this RFC provides over it.
+This RFC provides a superior ability for logic composition and better type inference than the Class API. Between the two, the only advantage the Class API has is familiarity - and we are absolutely certain the benefits of the function based API outweigh developer familiarity with a Class based component API. 
 
 ## This looks like React, why don't I just use React?
 
-First, the template syntax doesn't change, and you are not forced to use this API for your `<script>` sections at all.
+We've made note in several places that the idea for this new API comes from React's new Hook system. This is true. Though, having said that, it's only the concept that is being implemented. We are still far, far from looking like React. For instance, Vue's `<template>, `<script>` and `<style>` tags will still be there to help divide your code into much more comprehensable sections, and will still be able to use the old `v2.0` API for your `<script>` section too. 
 
-Second, if you use React, you'll most likely be using React Hooks. This API is certainly inspired by React hooks, but it works fundamentally differently and is rooted in Vue's very own reactivity system. In addition, [we believe this API addresses a number of important usability issues in React Hooks](#comparison-with-react-hooks). If you cannot put up with this API, you will most likely hate React Hooks even more.
+Nonetheless, we also know, this new API will allow for much more advanced programming through better ecapsulation and composability. And even better, [this API addresses a number of important usability issues found in React's Hooks system](#comparison-with-react-hooks). 
+
+Our goal is always to make your life as a developer a better one. You've trusted us in the past. We ask you to trust us on this in the future too. And again, nothing up till now is set in stone. Give us your constructive feedback. We need it too!
 
 # Summary
 
@@ -92,7 +94,7 @@ One of the key aspects of the component API is how to encapsulate and reuse logi
 - Higher-order components (HOCs)
 - Renderless components (via scoped slots)
 
-There are plenty of information regarding these patterns on the internet, so we shall not repeat them in full details here. In general, these patterns all suffer from one or more of the drawbacks below:
+There is plenty of information regarding these patterns on the Internet, so we shall not repeat them in full details here. In general, these patterns all suffer from one or more of the drawbacks below:
 
 - Unclear sources for properties exposed on the render context. For example, when reading the template of a component using multiple mixins, it can be difficult to tell from which mixin a specific property was injected from.
 
@@ -771,9 +773,9 @@ const Consumer = createComponent({
 
 The new API makes it more difficult to reflect and manipulate component definitions. This might be a good thing since reflecting and manipulation of component options is usually fragile and risky in a userland context, and creates many edge cases for the runtime to handle (especially when extending or using mixins). The flexibility of function APIs should be able to achieve the same end goals with more explicit userland code.
 
-### Spaghetti Code in Unexperienced Hands
+### Spaghetti Code in Inexperienced Hands
 
-Some feedbacks suggest that undisciplined users may end up with "spaghetti code" since they are no longer forced to separate component code into option groups. I believe this fear is unwarranted. It is true that the flexibility of function-based API will theoretically allow users to write code that is harder to follow. But let me explain why this is unlikely to happen.
+Some feedback suggests that inexperienced and lesser disciplined users may end up with "spaghetti code", since they are no longer forced to separate component code into option groups. I believe this fear is unwarranted. It is true that the flexibility of function-based API will theoretically allow users to write code that is harder to follow. But, let me explain why this is unlikely to happen.
 
   The biggest difference of function-based APIs vs. the current option-based API is that function APIs make it ridiculously easy to extract part of your component logic into a well encapsulated function. This can be done not just for reuse, but purely for code organization purposes as well.
 
