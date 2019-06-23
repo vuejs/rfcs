@@ -5,11 +5,13 @@
 
 # High-level Q&A
 
-## Is this like Python 3 / Do I have to rewrite all my code?
+## Is this like Python 3 / Angular 2 / Do I have to rewrite all my code?
 
-No. The new API is 100% compatible with current syntax and purely additive. All new additions are contained within the new `setup()` function. 3.0 standard build will support 2.x options plus the new APIs, but you can optionally use the lean build which drops a number of options while providing a smaller and faster runtime. [Details](#adoption-strategy)
+No. The new API is 100% compatible with current syntax and purely additive. All new additions are contained within the new `setup()` function. 3.0 will support 2.x options plus the new APIs, but you can optionally use the lean build which drops a number of options while providing a smaller and faster runtime.
 
-2.x options compatibility will be kept through the entire 3.x lifecycle.
+**We have no fixed plan to remove of 2.x options. API removal will only happen if the APIs in question are no longer actively used by the community.**
+
+[Details](#adoption-strategy)
 
 ## Is this set in stone?
 
@@ -29,13 +31,13 @@ Please read [this section](#spaghetti-code-in-unexperienced-hands).
 
 We [respectfully](https://github.com/vuejs/rfcs/blob/function-apis/active-rfcs/0000-function-api.md#type-issues-with-class-api) [disagree](https://github.com/vuejs/rfcs/pull/17#issuecomment-494242121).
 
-This RFC also provide strictly superior logic composition and better type inference than the Class API. As it stands, the only "advantage" the Class API has is familiarity - and we don't believe it's enough to outweigh the benefits this RFC provides over it.
+This RFC also provides strictly superior logic composition and better type inference than the Class API. As it stands, the only "advantage" the Class API has is familiarity - and we don't believe it's enough to outweigh the benefits this RFC provides over it.
 
 ## This looks like React, why don't I just use React?
 
 First, the template syntax doesn't change, and you are not forced to use this API for your `<script>` sections at all.
 
-Second, if you use React, you'll most likely be using React Hooks. This API is certainly inspired by React hooks, but it works fundamentally differently and is rooted in Vue's very own reactivity system. In addition, [we believe this API addresses a number of important usability issues in React Hooks](#comparison-with-react-hooks). If you cannot put up with this API, you will most likely hate React Hooks even more.
+Second, if you use React, you'll most likely be using React Hooks. This API is certainly inspired by React hooks, but it works fundamentally differently and is rooted in Vue's very own reactivity system. In addition, [we believe this API addresses a number of important usability issues in React Hooks](#comparison-with-react-hooks). If you cannot put up with this API, you will most likely dislike React Hooks even more.
 
 # Summary
 
@@ -791,7 +793,9 @@ Some feedbacks suggest that undisciplined users may end up with "spaghetti code"
 
 # Adoption strategy
 
-The proposed APIs are all new additions and can be introduced in a completely backwards compatible way. However, the new APIs can replace many of the existing options and makes them unnecessary in the long run. Being able to drop some of these old options will result in considerably smaller bundle size and better performance.
+The proposed APIs are all new additions and can be introduced in a completely backwards compatible way. No code needs to be rewritten (this excludes breaking changes introduced in other RFCs). If you do not plan to use this API, then this RFC does not affect you.
+
+However, there are a range of features that are now covered by both the 2.x options and function-based APIs. For users only using function-based APIs, some code can be dropped in return for a smaller and faster runtime.
 
 Therefore we are planning to provide two builds for 3.0:
 
@@ -803,7 +807,7 @@ In the standard build, `setup()` can be used alongside 2.x options. Note that `s
 
 Current 2.x users who wish to use the new API, but have a legacy application can start with the standard build and progressively introduce the new API into their current codebase, without having to do a full migration all at once.
 
-2.x options compatibility in the standard build will be kept through the entire 3.x lifecycle. We may or may not remove some 2.x options in v4, but it depends on community feedback when that happens (which is going to be pretty far into the future). More importantly, even if we drop the options in the future, they can still be made available via userland plugins, since the two APIs work exactly the same internally.
+2.x options support in the standard build will be kept for as long as necessary. We will determine whether we can make the lean build the "standard" some time in the future, depending on community feedback. In addition, 2.x options can be supported via an optional plugin even if it is removed from the standard core.
 
 ### Common Options
 
