@@ -1076,6 +1076,7 @@ With new API:
       <h3>{{ post.title }}</h3>
       <p>{{ post.body }}</p>
     </template>
+    <div>Mouse is at {{ x }}, {{ y }}</div>
   </div>
 </template>
 
