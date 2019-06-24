@@ -866,7 +866,7 @@ Current 2.x users who wish to use the new API, but have a legacy application can
 
 ### Simple Counter
 
-2.x
+Standard API
 
 ``` vue
 <template>
@@ -897,7 +897,7 @@ export default {
 </script>
 ```
 
-New API
+Functions API
 
 ``` vue
 <template>
@@ -927,7 +927,7 @@ export default {
 
 ### Fetching Data Based on Prop
 
-2.x
+Standard API
 
 ``` vue
 <template>
@@ -970,7 +970,7 @@ export default {
 </script>
 ```
 
-New API
+Functions API
 
 ``` vue
 <template>
@@ -1010,7 +1010,7 @@ export default {
 
 Based on the previous data-fetching example, suppose we want to also track mouse position in the same component:
 
-2.x
+Standard API
 
 ``` vue
 <template>
@@ -1066,7 +1066,7 @@ export default {
 
 You'll start to notice that we have two logic topics (data fetching and mouse position tracking) but they are split up and mixed between component options.
 
-With new API:
+With the function-based API:
 
 ``` vue
 <template>
@@ -1126,7 +1126,7 @@ export default {
 </script>
 ```
 
-Notice how the new API cleanly organizes code by logical topic instead of options.
+Notice how the function-based API cleanly organizes code by logical topic instead of options.
 
 More examples can be found in [this gist](https://gist.github.com/yyx990803/762ec427882a61be3e4affe02f8af555).
 
