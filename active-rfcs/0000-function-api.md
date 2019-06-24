@@ -7,15 +7,13 @@
 
 ## Is this like Python 3 / Angular 2 / Do I have to rewrite all my code?
 
-No. The new API is 100% compatible with current syntax and purely additive. All new additions are contained within the new `setup()` function. 3.0 will support 2.x options plus the new APIs, but you can optionally use the lean build which drops a number of options while providing a smaller and faster runtime.
-
-**We have no fixed plan to remove of 2.x options. API removal will only happen if the APIs in question are no longer actively used by the community.**
+No. The new API is 100% compatible with current syntax and purely additive. All new additions are contained within the new `setup()` function. **Nothing is being removed or deprecated (in this RFC)**, nor do we have plan to remove / deprecate anything in the foreseeable future. **(A previous draft of this RFC indicated that there is the possibility of deprecating a number of 2.x options in a future major release, which has been redacted based on user feedback.)**
 
 [Details](#adoption-strategy)
 
 ## Is this set in stone?
 
-No. This is an RFC (Request for Comments) - as long as this pull request is still open, this is just a proposal for soliciting feedback. We encourage you to voice your opinion, but **please actually read the RFC itself before commenting, as the impression you got from a random Reddit/HN thread is likely misleading.**
+No. This is an RFC (Request for Comments) - as long as this pull request is still open, this is just a proposal for soliciting feedback. We encourage you to voice your opinion, but **please actually read the RFC itself before commenting, as the information you got from a random Reddit/HN thread can be incomplete, outdated or outright misleading.**
 
 ## Vue is all about simplicity and this RFC is not.
 
@@ -23,9 +21,13 @@ RFCs are written for implementors and advanced users who are aware of the intern
 
 We will provide tutorials targeting normal users which will be much easier to follow along with. In the meanwhile, check out [some examples](#comparison-with-2x-api) to see if the new API really makes things more complex.
 
+## I don't see what problems this proposal solves.
+
+Please read [this reply](https://github.com/vuejs/rfcs/issues/55#issuecomment-504875870).
+
 ## This will lead to spaghetti code and is much harder to read.
 
-Please read [this section](#spaghetti-code-in-unexperienced-hands).
+Please read [this section](#spaghetti-code-in-unexperienced-hands) and [this reply](https://github.com/vuejs/rfcs/issues/55#issuecomment-504875870).
 
 ## The Class API is much better!
 
@@ -793,72 +795,11 @@ Some feedbacks suggest that undisciplined users may end up with "spaghetti code"
 
 # Adoption strategy
 
-The proposed APIs are all new additions and can be introduced in a completely backwards compatible way. No code needs to be rewritten (this excludes breaking changes introduced in other RFCs). If you do not plan to use this API, then this RFC does not affect you.
+The proposed API is purely additive and can be introduced in a completely backwards compatible fashion. No existing code needs to be rewritten (this excludes breaking changes introduced in other RFCs).
 
-However, there are a range of features that are now covered by both the 2.x options and function-based APIs. For users only using function-based APIs, some code can be dropped in return for a smaller and faster runtime.
+We plan to first introduce the proposed API as a standalone plugin for 2.x (before merging this RFC) so that users can experiment with the API and provide more concrete feedback. **Release of the plugin is not an indication that the API will eventually become part of Vue** - it's only for collecting feedback for this RFC.
 
-Therefore we are planning to provide two builds for 3.0:
-
-- **Standard build**: compatible with 2.x API (except for breaking changes introduced in other RFCs), with the ability to optionally use the new APIs introduced in this RFC.
-
-- **Lean build**: only supports the new APIs and a subset of 2.x options. If you are starting a fresh project using only the new API, this would give you a smaller and faster runtime.
-
-In the standard build, `setup()` can be used alongside 2.x options. Note that `setup()` will be called before `data`, `computed` and `method` options are resolved - i.e. you can access values returned from `setup()` on `this` in these options, but not the other way around.
-
-Current 2.x users who wish to use the new API, but have a legacy application can start with the standard build and progressively introduce the new API into their current codebase, without having to do a full migration all at once.
-
-2.x options support in the standard build will be kept for as long as necessary. We will determine whether we can make the lean build the "standard" some time in the future, depending on community feedback. In addition, 2.x options can be supported via an optional plugin even if it is removed from the standard core.
-
-### Common Options
-
-> Common options work the same as 2.x and are available in both the full and lean builds of 3.0. Options marked with * may receive further adjustments before 3.0 official release.
-
-- `name`
-- `props`
-- `template`
-- `render`
-- `components`
-- `directives`
-- `filters` *
-- `delimiters` *
-- `comments` *
-
-### Options removed in the Lean Build
-
-> These options will not be available in the lean build of 3.0.
-
-- `data` (replaced by `setup()` + `value` + `state`)
-- `computed` (replaced by `computed` returned from `setup()`)
-- `methods` (replaced by plain functions returned from `setup()`)
-- `watch` (replaced by `watch`)
-- `provide/inject` (replaced by `provide` and `inject`)
-- `mixins` (replaced by function composition)
-- `extends` (replaced by function composition)
-- All lifecycle hooks (replaced by `onXXX` functions)
-
-### Options deprecated by other RFCs
-
-> There are a number of additional options that are deprecated by other RFCs. These options will likely be supported via a compatibility plugin. They are not strictly related to this RFC, but we are listing them here for completeness.
-
-- `el`
-
-  Components are no longer mounted by instantiating a constructor with `new`, Instead, a root app instance is created and explicitly mounted. See [RFC#29](https://github.com/vuejs/rfcs/blob/global-api-change/active-rfcs/0000-global-api-change.md#mounting-app-instance).
-
-- `propsData`
-
-  Props for root component can be passed via app instance's `mount` method. See [RFC#29](https://github.com/vuejs/rfcs/blob/global-api-change/active-rfcs/0000-global-api-change.md#mounting-app-instance).
-
-- `functional`
-
-  Functional components are now declared as plain functions. See [RFC#27](https://github.com/vuejs/rfcs/pull/27).
-
-- `model`
-
-  No longer necessary with `v-model` arguments. See [RFC#31](https://github.com/vuejs/rfcs/pull/31).
-
-- `inheritAttrs`
-
-  Deprecated by [RFC#26](https://github.com/vuejs/rfcs/pull/26).
+Assuming this RFC eventually lands, in 3.0 `setup()` can be used alongside 2.x options. Note that `setup()` will be called before `data`, `computed` and `method` options are resolved - i.e. you can access values returned from `setup()` on `this` in these options, but not the other way around.
 
 # Appendix
 
