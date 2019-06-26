@@ -1073,6 +1073,76 @@ Notice how the function-based API cleanly organizes code by logical topic instea
 
 More examples can be found in [this gist](https://gist.github.com/yyx990803/762ec427882a61be3e4affe02f8af555).
 
+#### Hybrid Approaches work too
+
+It is also possible to encapsulate one logic topic in `setup` while otherwise using the Standard API. In this example, mouse-related logic is handled with the Function-based API while the fetching logic is handled with the Standard API.
+
+_When `setup` is used alongside the Standard API, `setup` runs first and any conflicting properties are overridden by the Standard API._
+
+```vue
+<template>
+  <div>
+    <template v-if="isLoading">Loading...</template>
+    <template v-else>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.body }}</p>
+    </template>
+    <div>Mouse is at {{ x }}, {{ y }}</div>
+  </div>
+</template>
+
+<script>
+import { value, onMounted, onUnmounted } from 'vue'
+import { fetchPost } from './api'
+
+function useMouse() {
+  const x = value(0)
+  const y = value(0)
+  const update = e => {
+    x.value = e.pageX
+    y.value = e.pageY
+  }
+  onMounted(() => {
+    window.addEventListener('mousemove', update)
+  })
+  onUnmounted(() => {
+    window.removeEventListener('mousemove', update)
+  })
+  return { x, y }
+}
+
+export default {
+  props: {
+    id: Number
+  },
+  setup(props) {
+    return {
+      ...useMouse()
+    }
+  },
+  data() {
+    return {
+      isLoading: true,
+      post: null,
+    }
+  },
+  mounted() {
+    this.fetchPost()
+  },
+  watch: {
+    id: 'fetchPost'
+  },
+  methods: {
+    async fetchPost() {
+      this.isLoading = true
+      this.post = await fetchPost(this.id)
+      this.isLoading = false
+    }
+  }
+}
+</script>
+```
+
 ## Comparison with React Hooks
 
 The function based API provides the same level of logic composition capabilities as React Hooks, but with some important differences. Unlike React hooks, the `setup()` function is called only once. This means code using Vue's function APIs are:
