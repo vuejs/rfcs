@@ -727,14 +727,14 @@ Note that we need to add `as const` after the `props` declaration. This is becau
 
 ### Complex Prop Types
 
-The exposed `PropType` type can be used to declare complex prop types - but it requires a force-cast via `as any`:
+The exposed `PropType` type can be used to declare complex prop types - but it requires a force-cast via `as unknown`:
 
 ``` ts
 import { createComponent, PropType } from 'vue'
 
 createComponent({
   props: {
-    options: (null as any) as PropType<{ msg: string }>
+    options: (null as unknown) as PropType<{ msg: string }>
   },
   setup(props) {
     props.options // { msg: string } | undefined
