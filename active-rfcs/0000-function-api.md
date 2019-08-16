@@ -617,7 +617,7 @@ const Ancestor = {
 
 const Descendent = {
   setup() {
-    const { [CountSymbol] } = inject(CountSymbol)
+    const { [CountSymbol]: count } = inject(CountSymbol)
     return {
       count
     }
