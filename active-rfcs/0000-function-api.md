@@ -596,6 +596,10 @@ const MyComponent = {
 
 ## Dependency Injection
 
+`provide` and `inject` functions do the same job `provide` and `inject` options did in Vue 2.x.
+The `provide` function takes object as a first argument or key (`string`, `Symbol` or `Key<T>`) as first argument and value as the second one.
+The `inject` function takes keys as a rest array `(...keys)` and returns an object containing values for all of the keys.
+
 ``` js
 import { provide, inject } from 'vue'
 
