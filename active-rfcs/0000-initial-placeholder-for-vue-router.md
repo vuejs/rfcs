@@ -39,7 +39,7 @@ new Vue({
 }).$mount('#app')
 ```
 
-The children of the `<router-view>` will be rendered first when `vue-router` has just been initialized and there's no matching route as mentione above. The moment there is a matched route, the actual content of the `<router-view>` will be rendered instead, replacing the `<router-view>` itself and the placeholder.
+The children of the `<router-view>` will be rendered first when `vue-router` has just been initialized and there's no matching route as mentioned above. The moment there is a matched route, the actual content of the `<router-view>` will be rendered instead, replacing the `<router-view>` itself and the placeholder.
 
 # Motivation
 
