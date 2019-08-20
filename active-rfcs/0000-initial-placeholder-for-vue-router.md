@@ -5,7 +5,7 @@
 
 # Summary
 
-The way I use `router-view` is that it has a placeholder using the `router-view` children before
+The way I use `<router-view>` is that it has a placeholder using the `<router-view>` children before
 rendering it with the actual view from the component. Here's a little demo:
 
 https://codesandbox.io/s/vue-routing-example-b1t5d
