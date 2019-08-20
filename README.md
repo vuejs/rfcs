@@ -39,7 +39,7 @@ What constitutes a "substantial" change is evolving based on community norms, bu
 
 - A new feature that creates new API surface area
 - Changing the semantics or behavior of an existing API
-- The removal of features that already shipped as part of the release channel.
+- The removal of features that are already shipped as part of the release channel.
 - The introduction of new idiomatic usage or conventions, even if they do not include code changes to Vue itself.
 
 Some changes do not require an RFC:
