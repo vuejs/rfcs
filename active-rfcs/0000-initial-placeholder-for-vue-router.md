@@ -59,7 +59,7 @@ if (children && children.length === 1) {
 }
 ```
 
-Before the code was there, `null` was returned instead and it will render nothing on the browser (`<!---->`).
+Before the code was there, `null` was returned instead and it will render nothing on the browser (`<!---->`). With this code, it will render the children of `<router-view>` instead, providing a seamless transition between the actual component and the `<router-view>`.
 
 # Drawbacks
 
@@ -78,4 +78,5 @@ We could communicate this changes through docs and the release notes, as usual.
 
 # Unresolved questions
 
-- I haven't looked into the impacts of implementing this on Vue Devtools and how it would look like. If anyone knows about this, let me know.
+- I haven't looked into the impacts of implementing this on Vue Devtools and how it would look like. AFAIK it should be ok, but if anyone knows about this, let me know.
+- Also I haven't looked into how this would look like when there are `<transition>`s in the `<router-view>` itself, but AFAIK it should be ok.
