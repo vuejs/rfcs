@@ -15,7 +15,7 @@ between the blank page and the rendered component is undesirable and I am trying
 
 I tried using [async component](https://vuejs.org/v2/guide/components-dynamic-async.html#Async-Components) to no avail, and it turned out that the cause was when the router is initialized, it is validating an [initial route](https://github.com/vuejs/vue-router/blob/v3.0.6/src/util/route.js#L52), and it is rendering an empty node since there is [no match](https://github.com/vuejs/vue-router/blob/v3.0.6/src/components/view.js#L51). This explains the blank page/element that I was facing.
 
-My proposal is to render the children (that acts as a placeholder) instead of an empty node, so that there is something to be rendered before the route component takes place, which (for now) applies to any kinds of route mismatches. I did this RFC based on [a suggestion](https://github.com/vuejs/vue-router/pull/2799#issuecomment-519885182) from @posva so that I can get more feedback on this.
+My proposal is to render the children of `<router-view>`, which acts as a placeholder, instead of an empty node, so that there is something to be rendered before the route component takes place, which (for now) applies to any kinds of route mismatches. I did this RFC based on [a suggestion](https://github.com/vuejs/vue-router/pull/2799#issuecomment-519885182) from [@posva](https://github.com/posva) so that I can get more feedback on this.
 
 # Basic example
 
@@ -63,7 +63,7 @@ Before the code was there, `null` was returned instead and it will render nothin
 
 # Drawbacks
 
-- It will have some conflicts with how `vue-router` would handle 404 pages in the future, as mentioned by @posva in the PR. In my opinion, it can be handled separately outside of the PR that implements this,
+- It will have some conflicts with how `vue-router` would handle 404 pages in the future, as mentioned by [@posva](https://github.com/posva) in the PR. In my opinion, it can be handled separately outside of the PR that implements this,
 since the context of HTTP responses might not be what this RFC is aiming for in the first place. I would suggest to make this as a default behavior (which will also apply for whenever 404s are happening), then the 404 case can be improved from there.
 - There might be problems on what kind of placeholder should be allowed, but in my opinion, as long as it's a valid HTML, it should be fine. Feel free to point out if it isn't, though.
 
