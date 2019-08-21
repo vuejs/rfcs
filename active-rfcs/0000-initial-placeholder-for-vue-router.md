@@ -5,15 +5,14 @@
 
 # Summary
 
-The way I use `<router-view>` is that it has a placeholder using the `<router-view>` children before
-rendering it with the actual view from the component. Here's a little demo:
+The way I would like to use `<router-view>` is that it should be able to provide an initial placeholder using the `<router-view>` children before rendering it with the actual view from the component. Here's a little demo:
 
 https://codesandbox.io/s/vue-routing-example-b1t5d
 
 You see that there's a slight delay before the route component gets rendered. It gets quite apparent when you have a `beforeEach` navigation guard that delays the route to be rendered. The 'blinking' effect
 between the blank page and the rendered component is undesirable and I am trying to improve it.
 
-I tried using [async component](https://vuejs.org/v2/guide/components-dynamic-async.html#Async-Components) to no avail, and it turned out that the cause was when the router is initialized, it is validating an [initial route](https://github.com/vuejs/vue-router/blob/v3.0.6/src/util/route.js#L52), and it is rendering an empty node since there is [no match](https://github.com/vuejs/vue-router/blob/v3.0.6/src/components/view.js#L51). This explains the blank page/element that I was facing.
+Initially, I tried using [async component](https://vuejs.org/v2/guide/components-dynamic-async.html#Async-Components) to no avail, and it turned out that the cause was when the router is initialized, it is validating an [initial route](https://github.com/vuejs/vue-router/blob/v3.0.6/src/util/route.js#L52), and it is rendering an empty node since there is [no match](https://github.com/vuejs/vue-router/blob/v3.0.6/src/components/view.js#L51). This explains the blank page/element that I was facing.
 
 My proposal is to render the children of `<router-view>`, which acts as a placeholder, instead of an empty node, so that there is something to be rendered before the route component takes place, which (for now) applies to any kinds of route mismatches. I did this RFC based on [a suggestion](https://github.com/vuejs/vue-router/pull/2799#issuecomment-519885182) from [@posva](https://github.com/posva) so that I can get more feedback on this.
 
