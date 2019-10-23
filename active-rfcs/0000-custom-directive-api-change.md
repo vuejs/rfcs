@@ -69,24 +69,30 @@ Will roughly compile into this:
 ``` js
 const vFoo = resolveDirective('foo')
 
-return applyDirectives(h('div'), this, [
+return withDirectives(h('div'), [
   [vFoo, bar]
 ])
 ```
 
 Where `vFoo` will be the directive object written by the user, which contains hooks like `mounted` and `updated`.
 
-`applyDirective` returns a cloned VNode with the user hooks wrapped and injected as vnode lifecycle hooks (see [Render Function API Changes](https://github.com/vuejs/rfcs/blob/render-fn-api-change/active-rfcs/0000-render-function-api-change.md#special-reserved-props) for more details):
+`withDirectives` returns a cloned VNode with the user hooks wrapped and injected as vnode lifecycle hooks (see [Render Function API Changes](https://github.com/vuejs/rfcs/blob/render-fn-api-change/active-rfcs/0000-render-function-api-change.md#special-reserved-props) for more details):
 
 ``` js
 {
-  vnodeMounted(vnode, prevVNode) {
+  onVnodeMounted(vnode) {
     // call vFoo.mounted(...)
   }
 }
 ```
 
-**As a result, custom directives are fully included as part of a VNode's data. When a custom directive is used on a component, these `vnodeXXX` hooks are passed down to the component as extraneous props and end up in `this.$attrs`.**
+**As a result, custom directives are fully included as part of a VNode's data. When a custom directive is used on a component, these `onVnodeXXX` hooks are passed down to the component as extraneous props and end up in `this.$attrs`.**
+
+This also means it's possible to directly hook into an element's lifecycle like this in the template, which can be handy when a custom directive is too involved:
+
+``` html
+<div @vnodeMounted="myHook" />
+```
 
 This is consistent with the attribute fallthrough behavior discussed in [vuejs/rfcs#26](https://github.com/vuejs/rfcs/pull/26). So, the rule for custom directives on a component will be the same as other extraneous attributes: it is up to the child component to decide where and whether to apply it. When the child component uses `v-bind="$attrs"` on an inner element, it will apply any custom directives used on it as well.
 
