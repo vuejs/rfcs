@@ -36,7 +36,7 @@ new Vue({
 import { createApp } from 'vue'
 import App from './App.vue'
 
-const app = createApp(App)
+const app = createApp()
 
 app.config.ignoredElements = [/^app-/]
 app.use(/* ... */)
@@ -44,7 +44,7 @@ app.mixin(/* ... */)
 app.component(/* ... */)
 app.directive(/* ... */)
 
-app.mount('#app')
+app.mount(App, '#app')
 ```
 
 # Motivation
@@ -73,12 +73,11 @@ In this proposal we introduce a new global API, `createApp`:
 
 ``` js
 import { createApp } from 'vue'
-import App from './App.vue'
 
-const app = createApp(App)
+const app = createApp()
 ```
 
-Calling `createApp` with a root component returns an **app instance**. An app instance provides an **app context**. The entire component tree formed by the root instance and its descendent components share the same app context, which provides the configurations that were previously "global" in Vue 2.x.
+Calling `createApp` returns an **app instance**. An app instance provides an **app context**. The entire component tree mounted by the app instance share the same app context, which provides the configurations that were previously "global" in Vue 2.x.
 
 ## Global API Mapping
 
@@ -86,11 +85,10 @@ An app instance exposes a subset of the current global APIs. The rule of thumb i
 
 - Global configuration
   - `Vue.config` -> `app.config`
-    - with the exception of `Vue.config.productionTip`
+    - some config option changes will be discussed in a separate RFC.
 - Asset registration APIs
   - `Vue.component` -> `app.component`
   - `Vue.directive` -> `app.directive`
-  - `Vue.filter` -> `app.filter`
 - Behavior Extension APIs
   - `Vue.mixin` -> `app.mixin`
   - `Vue.use` -> `app.use`
@@ -99,18 +97,16 @@ All other global APIs that do not globally mutate behavior are now named exports
 
 ## Mounting App Instance
 
-The app instance can be mounted with the `mount` method. It works the same as the existing `vm.$mount()` component instance method and returns the mounted root component instance:
+The app instance can mount a root component with the `mount` method. It works similarly to the 2.x `vm.$mount()` method and returns the mounted root component instance:
 
 ``` js
-const rootInstance = app.mount('#app')
-
-rootInstance instanceof Vue // true
+const rootInstance = app.mount(App, '#app')
 ```
 
-The `mount` method can also accept props to be passed to the root component via the second argument:
+The `mount` method can also accept props to be passed to the root component via the third argument:
 
 ``` js
-app.mount('#app', {
+app.mount(App, '#app', {
   // props to be passed to root component
 })
 ```
@@ -160,13 +156,3 @@ N/A
 - The transformation is straightforward (as seen in the basic example).
 - Moved methods can be replaced with stubs that emit warnings to guide migration.
 - A codemod can also be provided.
-
-# Unresolved questions
-
-- `Vue.config.productionTip` is left out because it is indeed "global". Maybe it should be moved to a global method?
-
-  ``` js
-  import { suppressProductionTip } from 'vue'
-
-  suppressProductionTip()
-  ```
