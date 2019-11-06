@@ -79,9 +79,9 @@ Will compile to:
 
 ``` js
 h(Comp, {
-  modelValue: foo,
+  modelValue: text,
   'onUpdate:modelValue': value => {
-    foo = value
+    text = value
   },
   modelModifiers: {
     foo: true,
