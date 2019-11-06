@@ -67,6 +67,29 @@ Note that this enables multiple `v-model` bindings on the same component, each s
 />
 ```
 
+## Handling Modifiers
+
+In 2.x, we have hard-coded support for modifiers like `.trim` on component `v-model`. However, it would be more useful if the component can support custom modfiers. In v3, modifiers added to a componen `v-model` will be provided to the component via the `modelModifiers` prop:
+
+```html
+<Comp v-model.foo.bar="text" />
+```
+
+Will compile to:
+
+``` js
+h(Comp, {
+  modelValue: foo,
+  'onUpdate:modelValue': value => {
+    foo = value
+  },
+  modelModifiers: {
+    foo: true,
+    bar: true
+  }
+})
+```
+
 ## Usage on Native Elements
 
 Another aspect of the `v-model` usage is on native elements. In 2.x, the compiler produces different code based on the element type `v-model` is used on. For example, it outputs different prop/event combinations for `<input type="text">` and `<input type="checkbox">`. However, this strategy does not handle dynamic element or input types very well:
