@@ -6,23 +6,31 @@
 # Summary
 
 - `h` is now globally imported instead of passed to render functions as argument
+
 - render function arguments changed and made consistent between stateful and functional components
-- VNodes now have a flat data structure
+
+- VNodes now have a flat props structure
 
 # Basic example
 
 ``` js
-// globally imported `createElement`
-import { createElement as h } from 'vue'
+// globally imported `h`
+import { h } from 'vue'
 
 export default {
-  // adjusted render function arguments
-  render(props, slots) {
+  render() {
     return h(
       'div',
       // flat data structure
-      { id: props.id },
-      slots.default()
+      {
+        id: 'app',
+        onClick() {
+          console.log('hello')
+        }
+      },
+      [
+        h('span', 'child')
+      ]
     )
   }
 }
@@ -95,12 +103,12 @@ In 3.x, we are moving towards a flat VNode data structure to address these probl
 
 # Detailed design
 
-## Globally imported `createElement / h` function
+## Globally imported `h` function
 
-`createElement` is now globally imported (and can be renamed to `h` as before):
+`h` is now globally imported:
 
 ``` js
-import { createElement as h } from 'vue'
+import { h } from 'vue'
 
 export default {
   render() {
@@ -111,53 +119,64 @@ export default {
 
 ## Render Function Arguments Change
 
-With `h` no longer needed as an argument, the `render` function now receives a new set of arguments:
+With `h` no longer needed as an argument, the `render` function now will no longer receive any arguments. In fact, in 3.0 the `render` option will mostly be used as an integration point for the render functions produced by the template compiler. For manual render functions, it is recommended to return it from the `setup()` function:
 
 ``` js
-// MyComponent.js
-export default {
-  render(
-    // declared props
-    props,
-    // resolved slots
-    slots,
-    // fallthrough attributes
-    attrs,
-    // the raw vnode in parent scope representing this component
-    vnode
-  ) {
+import { h, reactive } from 'vue'
 
+export default {
+  setup(props, { slots, attrs, emit }) {
+    const state = reactive({
+      count: 0
+    })
+
+    function increment() {
+      state.count++
+    }
+
+    // return the render function
+    return () => {
+      return h('div', {
+        onClick: increment
+      }, state.count)
+    }
   }
 }
 ```
 
-- `props` and `attrs` will be equivalent to `this.$props` and `this.$attrs` - also see [Optional Props Declaration](https://github.com/vuejs/rfcs/pull/25) and [Attribute Fallthrough](https://github.com/vuejs/rfcs/pull/26)
+The render function returned from `setup()` naturally has access to reactive state and functions declared in scope, plus the arguments passed to setup:
 
-- `slots` will be equivalent to `this.$slots` - also see [Slots Unification](https://github.com/vuejs/rfcs/pull/20)
+- `props` and `attrs` will be equivalent to `this.$props` and `this.$attrs` - also see [Optional Props Declaration](https://github.com/vuejs/rfcs/pull/25) and [Attribute Fallthrough](https://github.com/vuejs/rfcs/pull/TODO).
 
-- `vnode` will be equivalent to `this.$vnode`, which is the raw vnode that represents this component in parent scope, i.e. the return value of `h(MyComponent, { ... })`.
+- `slots` will be equivalent to `this.$slots` - also see [Slots Unification](https://github.com/vuejs/rfcs/pull/20).
+
+- `emit` will be equivalent to `this.$emit`.
+
+The `props`, `slots` and `attrs` objects here are proxies, so they will always be pointing to the latest values when used in render functions.
+
+For details on how `setup()` works, consult the [Composition API RFC](https://vue-composition-api-rfc.netlify.com/api.html#setup).
 
 Note that the render function for a functional component will now also have the same signature, which makes it consistent in both stateful and functional components:
 
 ``` js
-const FunctionalComp = (props, slots, attrs, vnode) => {
+const FunctionalComp = (props, { slots, attrs, emit }) => {
   // ...
 }
 ```
 
 The new list of arguments should provide the ability to fully replace the current functional render context:
 
-- `props` and `slots` have equivalent values
-- `data` and `children` can be accessed directly on `vnode`
-- `listeners` will be included in `attrs`
-- `injections` will have a dedicated new API:
+- `props` and `slots` have equivalent values;
+- `data` and `children` are no longer necessary (just use `props` and `slots`);
+- `listeners` will be included in `attrs`;
+- `injections` can be replaced using the new `inject` API (part of [Composition API](https://vue-composition-api-rfc.netlify.com/api.html#provide-inject)):
 
   ``` js
-  import { resolveInjection } from 'vue'
+  import { inject } from 'vue'
   import { themeSymbol } from './ThemeProvider'
 
   const FunctionalComp = props => {
-    const theme = resolveInjection(themeSymbol)
+    const theme = inject(themeSymbol)
     return h('div', `Using theme ${theme}`)
   }
   ```
@@ -190,51 +209,38 @@ The new list of arguments should provide the ability to fully replace the curren
 
 With the flat structure, the VNode data props are handled using the following rules:
 
-- `key`, `ref` and `slots` are reserved special properties
+- `key` and `ref` are reserved special properties
 - `class` and `style` have the same API as 2.x
 - props that start with `on` are handled as `v-on` bindings, with everything after `on` being converted to all-lowercase as the event name (more on this below)
 - for anything else:
   - If the key exists as a property on the DOM node, it is set as a DOM property;
   - Otherwise it is set as an attribute.
 
-### Escape Hatches for Explicit Binding Types
-
-With the flat VNode data structure, how each property is handled internally becomes a bit implicit. This also creates a few problems - for example, how to explicitly set a non-existent DOM property, or listen to a CAPSCase event on a custom element?
-
-To deal with that the VNode data also supports explicit binding types via prefix:
-
-``` js
-h('div', {
-  'attr:id': 'foo',
-  'prop:__someCustomProperty__': { /*... */ },
-  'on:SomeEvent': e => { /* ... */ }
-})
-```
-
-This is equivalent to 2.x's nesting via `attrs`, `domProps` and `on`.
-
 ### Special "Reserved" Props
 
-There are number of reserved data properties:
+There are two globally reserved props:
 
 - `key`
 - `ref`
-- `slots`
 
-In addition, you can hook into the vnode lifecycle using `vnode` prefixed hooks:
+In addition, you can hook into the vnode lifecycle using reserved `onVnodeXXX` prefixed hooks:
 
 ``` js
 h('div', {
-  vnodeMounted(vnode) {
+  onVnodeMounted(vnode) {
     /* ... */
   },
-  vnodeUpdated(vnode, prevVnode) {
+  onVnodeUpdated(vnode, prevVnode) {
     /* ... */
   }
 })
 ```
 
-These hooks are also how custom directives are built on top of.
+These hooks are also how custom directives are built on top of. Since they start with `on`, they can also be declared with `v-on` in templates:
+
+``` html
+<div @vnodeMounted="() => { ... }">
+```
 
 ---
 
@@ -245,7 +251,7 @@ Due to the flat structure, `this.$attrs` inside a component now contains any raw
 With VNodes being context-free, we can no longer use a string ID (e.g. `h('some-component')`) to implicitly lookup globally registered components. Same for looking up directives. Instead, we need to use an imported API:
 
 ``` js
-import { h, resolveComponent, resolveDirective, applyDirectives } from 'vue'
+import { h, resolveComponent, resolveDirective, withDirectives } from 'vue'
 
 export default {
   render() {
@@ -254,9 +260,8 @@ export default {
     const barDir = resolveDirective('bar')
 
     // <some-global-comp v-foo="x" v-bar="y" />
-    return applyDirectives(
+    return withDirectives(
       h(comp),
-      this,
       [fooDir, this.x],
       [barDir, this.y]
     )
@@ -264,7 +269,7 @@ export default {
 }
 ```
 
-This will mostly be used in compiler-generated output, since manually written render function code typically directly import the components and use them by value, and rarely have to use directives.
+This will mostly be used in compiler-generated output, since manually written render function code typically directly import the components and directives and use them by value.
 
 # Drawbacks
 
@@ -295,3 +300,21 @@ N/A
   - It's also possible to provide a codemod that auto-converts `h` calls to use the new VNode data format, since the mapping is pretty mechanical.
 
 - Functional components using context will likely have to be manually migrated, but a similar adaptor can be provided.
+
+# Unresolved Questions
+
+## Escape Hatches for Explicit Binding Types
+
+With the flat VNode data structure, how each property is handled internally becomes a bit implicit. This also creates a few problems - for example, how to explicitly set a non-existent DOM property, or listen to a CAPSCase event on a custom element?
+
+We may want to support explicit binding types via prefix:
+
+``` js
+h('div', {
+  'attr:id': 'foo',
+  'prop:__someCustomProperty__': { /*... */ },
+  'on:SomeEvent': e => { /* ... */ }
+})
+```
+
+This is equivalent to 2.x's nesting via `attrs`, `domProps` and `on`. However, this requires us to perform an extra check for every property being patched, which leads to a constant performance cost for a very niche use case. We may want to find a better way to deal with this.
