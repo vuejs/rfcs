@@ -5,124 +5,116 @@
 
 # Summary
 
-- Disable implicit attribute fall-through to child component root element
+- Make the attrs fallthrough behavior more consistent;
+- Make it easier to pass all extraneous attrs to child elements / components.
 
-- Remove `inheritAttrs` option
+# Motivation
 
-# Basic example
+In Vue 2.x, components have an implicit attrs fallthrough behavior. Any prop passed to a component, but is not declared as a prop by the component, is considered an "extraneous attribute". In 2.x, these extraneous attributes are exposed in `this.$attrs` and implicitly applied to the component's root node. This behavior can be disabled with `inheritAttrs: false`, where the user expects to explicit control where the attrs should be applied.
 
-To replicate 2.x behavior in templates:
+There are a number of inconsistencies and issues in the 2.x behavior:
+
+- `inheritAttrs: false` does not affect `class` and `style`.
+
+- `class`, `style`, `v-on` listeners and custom directives are not included in `$attrs`, making it cumbersome for a higher-order component (HOC) to properly pass everything down to a nested child component.
+
+- Functional components have no implicit attrs fallthrough at all.
+
+In 3.x, the need for "spreading extraneous attrs" also becomes more prominent due to the ability for components to render multiple root nodes (fragments). This RFC seeks to address these problems.
+
+# Detailed design
+
+`this.$attrs` now contains **everything** passed to the component except those that are declared as props. **This includes `class`, `style`, `v-on` listeners (as `onXXX` props), and custom directives (as `onVnodeXXX` props)**. (This is based on flat props structure as proposed in [Render Function API Change](https://github.com/vuejs/rfcs/blob/render-fn-api-change/active-rfcs/0000-render-function-api-change.md#flat-vnode-props-format)). As a result of this:
+
+- `.native` modifier for `v-on` will be removed.
+
+- `this.$listeners` will be removed.
+
+When the component returns a single root node, `this.$attrs` will be implicitly merged into the root node's props. This is the same as 2.x, except it will now include all the props that were not previously in `this.$attrs`, as discussed above.
+
+If the component receives extraneous attrs, but returns multiple root nodes (a fragment), an automatic merge cannot be performed. If the user did not perform an explicit spread (checked by access to `this.$attrs` during render), a runtime warning will be emitted. The component should either pick an element to apply the attrs to (via `v-bind="$attrs"`), or explicitly suppress the warning with `inheritAttrs: false`.
+
+## `inheritAttrs: false`
+
+With `inheritAttrs: false`, the component can either choose to intentionally ignore all extraneous attrs, or explicitly control where the attrs should be applied via `v-bind="$attrs"`:
 
 ``` html
-<div v-bind="$attrs">hi</div>
+<div class="wrapper">
+  <!-- apply attrs to an inner element instead of root -->
+  <input v-bind="$attrs">
+</div>
 ```
 
-In render function:
+In 2.x, this option does not affect `class` and `style` - they will be implicitly merged on root in all cases for stateful components - but in 3.0 this special case is removed: `class` and `style` will be part of `$attrs` just like everything else.
+
+## Merging Attrs in Render Functions
+
+In manual render functions, it may seem convenient to just use a spread:
 
 ``` js
-import { h } from 'vue'
-
 export default {
+  props: { /* ... */ },
+  inheritAttrs: false,
   render() {
-    return h('div', this.$attrs, 'hi')
+    return h('div', { class: 'foo', ...this.$attrs })
   }
 }
 ```
 
-# Motivation
+However, this will cause attrs to overwrite whatever existing props of the same name. For example, there the local `class` may be overwritten when we probably want to merge the classes instead. Vue provides a `mergeProps` helper that handles the merging of `class`, `style` and `onXXX` listeners:
 
-In 2.x, the current attribute fallthrough behavior is quite implicit:
+``` js
+import { mergeProps } from 'vue'
 
-- `class` and `style` used on a child component are implicitly applied to the component's root element. It is also automatically merged with `class` and `style` bindings on that element in the child component template.
-
-  - However, this behavior is not consistent in functional components because functional components may return multiple root nodes.
-
-  - With 3.0 supporting fragments and therefore multiple root nodes for all components, this becomes even more problematic. The implicit behavior can suddenly fail when the child component changes from single-root to multi-root.
-
-- attributes passed to a component that are not declared by the component as props are also implicitly applied to the component root element.
-
-  - Again, in functional components this needs explicit application, and would be inconsistent for 3.0 components with multiple root nodes.
-
-  - `this.$attrs` only contains attributes, but excludes `class` and `style`; `v-on` listeners are contained in a separate `this.$listeners` object. There is also the `.native` modifier. The combination of `inheritAttrs`, `.native`, `$attrs` and `$listeners` makes props passing in higher-order components unnecessarily complex. The new behavior makes it much more straightforward: spreading $attrs means "pass everything that I don't care about down to this element/component".
-
-  - `class` and `style` are always automatically merged, and are not affected by `inheritAttrs`.
-
-The fallthrough behavior has already been inconsistent between stateful components and functional components in 2.x. With the introduction of fragments (the ability for a component to have multiple root nodes) in 3.0, the fallthrough behavior becomes even more unreliable for component consumers. The implicit behavior is convenient in cases where it works, but can be confusing in cases where it doesn't.
-
-In 3.0, we are planning to make attribute fallthrough an explicit decision of component authors. Whether a component accepts additional attributes becomes part of the component's API contract. We believe overall this should result in a simpler, more explicit and more consistent API.
-
-# Detailed design
-
-- `inheritAttrs` option will be removed.
-
-- `.native` modifier for `v-on` will be removed.
-
-- Non-prop attributes no longer automatically fallthrough to the root element of the child component (including `class` and `style`). This is the same for both stateful and functional components.
-
-  This means that with the following usage:
-
-  ``` js
-  const Child = {
-    props: ['foo'],
-    template: `<div>{{ foo }}</div>`
+export default {
+  props: { /* ... */ },
+  inheritAttrs: false,
+  render() {
+    return h('div', mergeProps({ class: 'foo' }, this.$attrs))
   }
+}
+```
 
-  const Parent = {
-    components: { Child },
-    template: `<child foo="1" bar="2" class="bar"/>`
-  }
-  ```
+This is also what `v-bind` uses internally.
 
-  Both `bar="2"` AND `class="bar"` on `<child>` will be ignored.
- 
-- `this.$listeners` will be removed.
+## Consistency between Functional and Stateful Components
 
-- `this.$attrs` now contains **everything** passed to the component except those that are declared as props or custom events. **This includes `class`, `style`, `v-on` listeners (as `onXXX` properties)**. The object will be flat (no nesting) - this is possible thanks to the new flat VNode data structure (discussed in [Render Function API Change](https://github.com/vuejs/rfcs/pull/28)).
+Functional components will now share the exact same behavior with Stateful components. The extraneous attrs is passed via the second context argument (as specified in [Render Function API Change](https://github.com/vuejs/rfcs/blob/render-fn-api-change/active-rfcs/0000-render-function-api-change.md#functional-component-signature)):
 
-  To explicitly inherit additional attributes passed by the parent, the child component should apply it with `v-bind`:
+``` js
+const Func = (props, { attrs }) => {
+  return h('div', mergeProps({ id: 'x' }, attrs), props.msg)
+}
 
-  ``` js
-  const Child = {
-    props: ['foo'],
-    template: `<div v-bind="$attrs">{{ foo }}</div>`
-  }
-  ```
+Func.props = { /* ... */ }
+```
 
-  This also applies when the child component needs to apply `$attrs` to a non-root element, or has multiple root nodes:
+## Components with no Props Declaration
 
-  ``` js
-  const ChildWithNestedRoot = {
-    props: ['foo'],
-    template: `
-      <label>
-        {{ foo }}
-        <input v-bind="$attrs">
-      </label>
-    `
-  }
+Note that for components without props declaration (see [Optional Props Declaration](https://github.com/vuejs/rfcs/pull/25)), there will be no implicit attrs handling of any kind, because everything passed in is considered a prop and there will be no "extraneous" attrs. A component without props declaration (mostly functional components) is responsible for explicitly passing down necessary props. This can be easily done with object rest spread:
 
-  const ChildWithMultipleRoot = {
-    props: ['foo'],
-    template: `
-      <label :for="$attrs.id">{{ foo }}</label>
-      <input v-bind="$attrs">
-    `
-  }
-  ```
+``` js
+const Func = ({ msg, ...rest }) => {
+  return h('div', mergeProps({ id: 'x' }, rest), [
+    h('span', msg)
+  ])
+}
+```
 
-  In render functions, if simple overwrite is acceptable, `$attrs` can be merged using object spread. But in most cases, special handling is required (e.g. for `class`, `style` and `onXXX` listeners). Therefore a `mergeData` helper will be provided. It handles the proper merging of VNode data:
+# Drawbacks
 
-  ``` js
-  import { h, mergeData } from 'vue'
+For existing components using `inheritAttrs: false` this will be a breaking change. However, the upgrade should lead to simpler code.
 
-  const Child = {
-    render() {
-      return h(InnerComponent, mergeData({ foo: 'bar' }, this.$attrs))
-    }
-  }
-  ```
+# Alternatives
 
-  Inside render functions, the user also has the full flexibility to pluck / omit any props from `$attrs` using 3rd party helpers, e.g. lodash.
+N/A
+
+# Adoption strategy
+
+- Migration guide for existing components using `inheritAttrs: false`.
+- Rework documentation regarding `$attrs`.
+
+# Unresolved questions
 
 ## Removing Unwanted Listeners
 
@@ -146,45 +138,3 @@ When spreading `$attrs` with `v-bind`, all parent listeners are applied to the t
 Props do not suffer from this problem because declared props are removed from `$attrs`. Therefore we should have a similar way to "declare" emitted events from a component. There is currently [an open RFC for it](https://github.com/vuejs/rfcs/pull/16) by @niko278.
 
 Event listeners for explicitly declared events will be removed from `$attrs` and can only be triggered by custom events emitted by the component via `this.$emit`.
-
-# Drawbacks
-
-- Fallthrough behavior is now disabled by default and is controlled by the component author. If the component is intentionally "closed" there's no way for the consumer to change that. This may cause some inconvenience for users accustomed to the old behavior, especially when using `class` and `style` for styling purposes, but it is the more "correct" behavior when it comes to component responsibilities and boundaries. Styling use cases can be easily worked around with by wrapping the component in a wrapper element. In fact, this should be the best practice in 3.0 because the child component may or may not have multiple root nodes.
-
-- For accessibility reasons, it should be a best practice for components that are shipped as libraries to always spread `$attrs` so that any `aria-x` attributes can fallthrough. However this is a straightforward / mechanical code change, and is more of an educational issue. We could make it common knowledge by emphasizing this in all our information channels.
-
-# Alternatives
-
-N/A
-
-# Adoption strategy
-
-## Documentation
-
-This RFC discusses the problem by starting with the 2.x implementation details with a lot of history baggage so it can seem a bit complex. However if we were to document the behavior for a new user, the concept is much simpler in comparison:
-
-- For a component without explicit props and events declarations, everything passed to it from the parent ends up in `$attrs`.
-
-- If a component declares explicit props, they are removed from `$attrs`.
-
-- If a component declares explicit events, corresponding `onXXX` listeners are removed from `$attrs`.
-
-- `$attrs` essentially means **extraneous attributes,**, or "any attributes passed to the component that hasn't been explicitly handled by the component".
-
-## Migration
-
-This will be one of the changes that will have a bigger impact on existing code and would likely require manual migration.
-
-- We will provide a warning when a component has unused extraneous attributes (i.e. non-empty `$attrs` that is never used during render).
-
-- For application code that adds `class` / `style` to child components for styling purposes: the child component should be wrapped with a wrapper element.
-
-- For higher-order components or reusable components that allow the consumer to apply arbitrary attributes / listeners to an inner element (e.g. custom form components that wrap `<input>`):
-
-  - Declare props and events that are consumed by the HOC itself (thus removing them from `$attrs`)
-
-  - Refactor the component and explicitly add `v-bind="$attrs"` to the target inner component or element. For render functions, apply `$attrs` with the `mergeData` helper.
-
-  - If a component is already using `inheritAttrs: false`, the migration should be relatively straightforward.
-
-We will need more dogfooding (migrating actual apps to 3.0) to provide more detailed migration guidance for this one, since the migration cost heavily depends on usage.
