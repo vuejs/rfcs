@@ -69,7 +69,7 @@ Note that this enables multiple `v-model` bindings on the same component, each s
 
 ## Handling Modifiers
 
-In 2.x, we have hard-coded support for modifiers like `.trim` on component `v-model`. However, it would be more useful if the component can support custom modfiers. In v3, modifiers added to a componen `v-model` will be provided to the component via the `modelModifiers` prop:
+In 2.x, we have hard-coded support for modifiers like `.trim` on component `v-model`. However, it would be more useful if the component can support custom modfiers. In v3, modifiers added to a component `v-model` will be provided to the component via the `modelModifiers` prop:
 
 ```html
 <Comp v-model.foo.bar="text" />
