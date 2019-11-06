@@ -117,7 +117,7 @@ export default {
 }
 ```
 
-## Render Function Arguments Change
+## Render Function Signature Change
 
 With `h` no longer needed as an argument, the `render` function now will no longer receive any arguments. In fact, in 3.0 the `render` option will mostly be used as an integration point for the render functions produced by the template compiler. For manual render functions, it is recommended to return it from the `setup()` function:
 
@@ -146,7 +146,7 @@ export default {
 
 The render function returned from `setup()` naturally has access to reactive state and functions declared in scope, plus the arguments passed to setup:
 
-- `props` and `attrs` will be equivalent to `this.$props` and `this.$attrs` - also see [Optional Props Declaration](https://github.com/vuejs/rfcs/pull/25) and [Attribute Fallthrough](https://github.com/vuejs/rfcs/pull/TODO).
+- `props` and `attrs` will be equivalent to `this.$props` and `this.$attrs` - also see [Optional Props Declaration](https://github.com/vuejs/rfcs/pull/25) and [Attribute Fallthrough](https://github.com/vuejs/rfcs/pull/92).
 
 - `slots` will be equivalent to `this.$slots` - also see [Slots Unification](https://github.com/vuejs/rfcs/pull/20).
 
@@ -155,6 +155,8 @@ The render function returned from `setup()` naturally has access to reactive sta
 The `props`, `slots` and `attrs` objects here are proxies, so they will always be pointing to the latest values when used in render functions.
 
 For details on how `setup()` works, consult the [Composition API RFC](https://vue-composition-api-rfc.netlify.com/api.html#setup).
+
+## Functional Component Signature
 
 Note that the render function for a functional component will now also have the same signature, which makes it consistent in both stateful and functional components:
 
@@ -183,7 +185,7 @@ The new list of arguments should provide the ability to fully replace the curren
 
 - `parent` access will be removed. This was an escape hatch for some internal use cases - in userland code, props and injections should be preferred.
 
-## Flat VNode Data Format
+## Flat VNode Props Format
 
 ``` js
 // before
@@ -207,9 +209,9 @@ The new list of arguments should provide the ability to fully replace the curren
 }
 ```
 
-With the flat structure, the VNode data props are handled using the following rules:
+With the flat structure, the VNode props are handled using the following rules:
 
-- `key` and `ref` are reserved special properties
+- `key` and `ref` are reserved
 - `class` and `style` have the same API as 2.x
 - props that start with `on` are handled as `v-on` bindings, with everything after `on` being converted to all-lowercase as the event name (more on this below)
 - for anything else:
