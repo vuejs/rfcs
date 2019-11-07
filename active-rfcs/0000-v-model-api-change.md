@@ -35,9 +35,7 @@ In 3.0, the `model` option will be removed. `v-model="foo"` (without argument) o
 ``` js
 h(Comp, {
   modelValue: foo,
-  'onUpdate:modelValue': value => {
-    foo = value
-  }
+  'onUpdate:modelValue': value => (foo = value)
 })
 ```
 
@@ -50,9 +48,7 @@ RFC #8 proposes the ability for `v-model` to accept arguments. The argument can 
 ``` js
 h(Comp, {
   value: foo,
-  'onUpdate:value': value => {
-    foo = value
-  }
+  'onUpdate:value': value => (foo = value)
 })
 ```
 
@@ -80,13 +76,32 @@ Will compile to:
 ``` js
 h(Comp, {
   modelValue: text,
-  'onUpdate:modelValue': value => {
-    text = value
-  },
+  'onUpdate:modelValue': value => (text = value),
   modelModifiers: {
     foo: true,
     bar: true
   }
+})
+```
+
+For `v-model` with arguments, the generated prop name will be `arg + "Modifiers"`:
+
+```html
+<Comp
+   v-model:foo.trim="text"
+   v-model:bar.number="number" />
+```
+
+Will compile to:
+
+``` js
+h(Comp, {
+  foo: text,
+  'onUpdate:foo': value => (text = value),
+  fooModifiers: { trim: true },
+  bar: number,
+  'onUpdate:bar': value => (bar = value),
+  barModifiers: { number: true },
 })
 ```
 
