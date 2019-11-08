@@ -85,7 +85,8 @@ An app instance exposes a subset of the current global APIs. The rule of thumb i
 
 - Global configuration
   - `Vue.config` -> `app.config`
-    - some config option changes will be discussed in a separate RFC.
+    - `config.productionTip`: removed. ([details](#remove-config-productiontip))
+    - `config.ignoredElements` -> `config.isCustomElement`. ([details](#config-ignoredelements-config-iscustomelement))
 - Asset registration APIs
   - `Vue.component` -> `app.component`
   - `Vue.directive` -> `app.directive`
@@ -134,6 +135,31 @@ export default {
 
 This is similar to using the `provide` option in a 2.x root instance.
 
+## Remove `config.productionTip`
+
+In 3.0, the "use production build" tip will only show up when using the "dev + full build" (the build that includes the runtime compiler and has warnings).
+
+For ES modules builds, since they are used with bundlers, and in most cases a CLI or boilerplate would have configured the production env properly, this tip will no longer show up.
+
+## `config.ignoredElements` -> `config.isCustomElement`
+
+This config option was introduced with the intention to support native custom elements, so the renaming better conveys what it does. The new option also expects a function which provides more flexibility than the old string / RegExp version:
+
+``` js
+// before
+Vue.config.ignoredElements = ['my-el', /^ion-/]
+
+// after
+const app = Vue.createApp()
+app.config.isCustomElement = tag => tag.startsWith('ion-')
+```
+
+**Important:** in 3.0, the check of whether an element is a component or not has been moved to the template compilation phase, therefore this config option is only respected when using the runtime compiler. If you are using the runtime-only build, `isCustomElement` must be passed to `@vue/compiler-dom` in the build setup instead - for example, via the [`compilerOptions` option in `vue-loader`](https://vue-loader.vuejs.org/options.html#compileroptions).
+
+- If `config.isCustomElement` is assigned to when using a runtime-only build, a warning will be emitted instructing the user to pass the option in the build setup instead;
+
+- This will be a new top-level option in the Vue CLI config.
+
 # Drawbacks
 
 ## Plugin auto installation
@@ -156,3 +182,4 @@ N/A
 - The transformation is straightforward (as seen in the basic example).
 - Moved methods can be replaced with stubs that emit warnings to guide migration.
 - A codemod can also be provided.
+- For `config.ingoredElements`, a compat shim can be easily provided.
