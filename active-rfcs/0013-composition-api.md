@@ -65,7 +65,7 @@ In comparison, the APIs proposed in this RFC utilize mostly plain variables and 
 
 ### API Introduction
 
-Instead of bringing in new concepts, the APIs being proposed here are more about exposing Vue's core capabilities - such as creating and observing reactive state - as standalone functions. Here we will introduce a number of the most fundamental APIs and how they can be used in place of 2.x options to express in-component logic. Note this section focuses on introducing the basic ideas so it does not goes into full details for each API. Full API specs can be found in the [API Reference](./api) section.
+Instead of bringing in new concepts, the APIs being proposed here are more about exposing Vue's core capabilities - such as creating and observing reactive state - as standalone functions. Here we will introduce a number of the most fundamental APIs and how they can be used in place of 2.x options to express in-component logic. Note this section focuses on introducing the basic ideas so it does not goes into full details for each API. Full API specs can be found in the [API Reference](https://vue-composition-api-rfc.netlify.com/api.html) section.
 
 #### Reactive State and Side Effects
 
@@ -197,7 +197,7 @@ state.count++ // -> 2
 
 **Here `double` is an object that we call a "ref", as it serves as a reactive reference to the internal value it is holding.**
 
-> You might be aware that Vue already has the concept of "refs", but only for referencing DOM elements or component instances in templates ("template refs"). Check out [this](./api.html#template-refs) to see how the new refs system can be used for both logical state and template refs.
+> You might be aware that Vue already has the concept of "refs", but only for referencing DOM elements or component instances in templates ("template refs"). Check out [this](https://vue-composition-api-rfc.netlify.com/api.html#template-refs) to see how the new refs system can be used for both logical state and template refs.
 
 In addition to computed refs, we can also directly create plain mutable refs using the `ref` API:
 
@@ -346,7 +346,7 @@ export default {
 
 These lifecycle registration methods can only be used during the invocation of a `setup` hook. It automatically figures out the current instance calling the `setup` hook using internal global state. It is intentionally designed this way to reduce friction when extracting logic into external functions.
 
-> More details about these APIs can be found in the [API Reference](./api). However, we recommend finishing the following sections before digging into the design details.
+> More details about these APIs can be found in the [API Reference](https://vue-composition-api-rfc.netlify.com/api.html). However, we recommend finishing the following sections before digging into the design details.
 
 ### Code Organization
 
@@ -565,7 +565,7 @@ The Composition API can be used alongside the existing options-based API.
 
 Many Vue plugins today inject properties onto `this`. For example, Vue Router injects `this.$route` and `this.$router`, and Vuex injects `this.$store`. This has made type inference tricky since each plugin requires the user to augment the Vue typing for injected properties.
 
-When using the Composition API, there is no `this`. Instead, plugins will leverage [`provide` and `inject`](./api.html#provide-inject) internally and expose a composition function. The following is hypothetical code for a plugin:
+When using the Composition API, there is no `this`. Instead, plugins will leverage [`provide` and `inject`](https://vue-composition-api-rfc.netlify.com/api.html#provide-inject) internally and expose a composition function. The following is hypothetical code for a plugin:
 
 ``` js
 const StoreSymbol = Symbol()
@@ -697,7 +697,7 @@ export default {
 }
 ```
 
-The [`toRefs`](./api.html#torefs) API is provided to deal with this constraint - it converts each property on a reactive object to a corresponding ref:
+The [`toRefs`](https://vue-composition-api-rfc.netlify.com/api.html#torefs) API is provided to deal with this constraint - it converts each property on a reactive object to a corresponding ref:
 
 ``` js
 function useMousePosition() {
