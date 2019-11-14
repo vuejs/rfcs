@@ -9,7 +9,7 @@ Remove support for the [inline-template feature](https://vuejs.org/v2/guide/comp
 
 # Motivation
 
-`inline-template` was originally included in Vue to address the cases where Vue is used to progressively enhance a largely server-rendered application. It allows users to define the template of a child component directly inside a parent's template.
+`inline-template` was originally included in Vue to address the cases where Vue is used to progressively enhance a traditionally server-rendered application (e.g. with Rails, Django or Laravel). It allows users to define the template of a child component directly inside a parent's template.
 
 The biggest issue with `inline-template` is that it makes template scoping very inconsistent. Without `inline-template`, a simple rule of thumb is that every variable appearing inside a template is either provided by the owner component, or by a directive that explicitly introduces scope variables (e.g. `v-for` and `v-slot`). `inline-template` breaks that assumption by mixing multiple scoping contexts in the same template:
 
