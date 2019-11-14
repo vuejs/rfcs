@@ -44,7 +44,7 @@ Remove support for [filters](https://vuejs.org/v2/guide/filters.html).
 There is currently a stage 1 proposal for adding the [Pipeline Operator](https://github.com/tc39/proposal-pipeline-operator) to JavaScript, which provides largely similar syntactical convenience:
 
 ``` js
-let transformedMsg = msg |> uppsercase |> reverse |> pluralize
+let transformedMsg = msg |> uppercase |> reverse |> pluralize
 ```
 
 Considering there is a possibility of this proposal eventually landing, it is best for a framework like Vue to not provide a similar alternative (especially with syntax that conflicts with existing JavaScript).
