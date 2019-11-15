@@ -24,7 +24,7 @@ In 3.x, the need for "spreading extraneous attrs" also becomes more prominent du
 
 # Detailed design
 
-`this.$attrs` now contains **everything** passed to the component except those that are declared as props. **This includes `class`, `style`, `v-on` listeners (as `onXXX` props), and custom directives (as `onVnodeXXX` props)**. (This is based on flat props structure as proposed in [Render Function API Change](https://github.com/vuejs/rfcs/blob/render-fn-api-change/active-rfcs/0000-render-function-api-change.md#flat-vnode-props-format)). As a result of this:
+`this.$attrs` now contains **everything** passed to the component except those that are declared as props. **This includes `class`, `style`, `v-on` listeners (as `onXXX` props), and custom directives (as `onVnodeXXX` props)**. (This is based on flat props structure as proposed in [Render Function API Change](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0008-render-function-api-change.md#flat-vnode-props-format)). As a result of this:
 
 - `.native` modifier for `v-on` will be removed.
 
@@ -79,7 +79,7 @@ This is also what `v-bind` uses internally.
 
 ## Consistency between Functional and Stateful Components
 
-Functional components will now share the exact same behavior with Stateful components. The extraneous attrs is passed via the second context argument (as specified in [Render Function API Change](https://github.com/vuejs/rfcs/blob/render-fn-api-change/active-rfcs/0000-render-function-api-change.md#functional-component-signature)):
+Functional components will now share the exact same behavior with Stateful components. The extraneous attrs is passed via the second context argument (as specified in [Render Function API Change](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0008-render-function-api-change.md#functional-component-signature)):
 
 ``` js
 const Func = (props, { attrs }) => {
@@ -91,7 +91,7 @@ Func.props = { /* ... */ }
 
 ## Components with no Props Declaration
 
-Note that for components without props declaration (see [Optional Props Declaration](https://github.com/vuejs/rfcs/pull/25)), there will be no implicit attrs handling of any kind, because everything passed in is considered a prop and there will be no "extraneous" attrs. A component without props declaration (mostly functional components) is responsible for explicitly passing down necessary props. This can be easily done with object rest spread:
+Note that for components without props declaration (see [Optional Props Declaration](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0010-optional-props-declaration.md)), there will be no implicit attrs handling of any kind, because everything passed in is considered a prop and there will be no "extraneous" attrs. A component without props declaration (mostly functional components) is responsible for explicitly passing down necessary props. This can be easily done with object rest spread:
 
 ``` js
 const Func = ({ msg, ...rest }) => {
