@@ -34,6 +34,8 @@ Here the inner template actually has no access to the iterated `item`. It's poin
 
 # Adoption strategy
 
+## Replacement 1: `<script>` tag
+
 Most of the use cases for `inline-template` assumes a no-build-tool setup, where all templates are written directly inside the HTML page. The most straightforward workaround in such cases is using `<script>` with an alternative type:
 
 ``` html
@@ -54,3 +56,29 @@ const MyComp = {
 ```
 
 This doesn't require any build setup, works in all browsers, is not subject to in-DOM HTML parsing caveats (e.g. you can use camelCase prop names), and provides proper syntax highlighting in most IDEs. In a traditional server-side framework, these templates can be split out into server template partials (included into the main HTML template) for better maintainability.
+
+## Replacement 2: Default Slot
+
+A component previously using `inline-template` can be refactored into using the default slot - which makes the data scoping more explicit while preserving the convenience of writing child content inline:
+
+``` html
+<!-- before -->
+<my-comp inline-template :msg="parentMsg">
+  {{ msg }} {{ childState }}
+</my-comp>
+
+<!-- after -->
+<my-comp v-slot="{ childState }">
+  {{ parentMsg }} {{ childState }}
+</my-comp>
+```
+
+The child, instead of providing no template, should now render the default slot (Note in v3 due to fragment support you can render a slot as the root now):
+
+``` html
+<!--
+  in child template, render default slot while passing
+  in necessary private state of child.
+-->
+<slot :childState="childState" />
+```
