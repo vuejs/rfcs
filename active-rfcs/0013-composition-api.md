@@ -1,6 +1,6 @@
 - Start Date: 2019-07-10
 - Target Major Version: 2.x / 3.x
-- Reference Issues: [#42](https://github.com/vuejs/rfcs/pull/42)
+- Reference Issues: [#78](https://github.com/vuejs/rfcs/pull/78)
 - Implementation PR: N/A
 
 > Since this RFC is long, it is deployed in a more readable format [here](https://vue-composition-api-rfc.netlify.com/). There is also an accompanying [API Reference](https://vue-composition-api-rfc.netlify.com/api.html).
