@@ -50,7 +50,7 @@ h(Comp, () => [
 
 Inside `Comp`, `this.$slots.default` will be a function in both cases and returns the same VNodes. However, the 2nd case will be more performant as `this.msg` will be registered as a dependency of the child component only.
 
-Named slots usage has changed - instead of a special `slot` data property on the content nodes, pass them to the component's `slots`:
+Named slots usage has changed - instead of a special `slot` data property on the content nodes, pass them as children via the 3rd argument:
 
 ``` js
 // 2.x
@@ -60,11 +60,11 @@ h(Comp, [
 ])
 
 // 3.0
-h(Comp, {
-  slots: {
-    foo: () => h('div', this.foo),
-    bar: () => h('div', this.bar)
-  }
+// Note the `null` is required to avoid the slots object being mistaken
+// for props.
+h(Comp, null, {
+  foo: () => h('div', this.foo),
+  bar: () => h('div', this.bar)
 })
 ```
 
