@@ -77,12 +77,10 @@ The compiler can detect `v-slot` and compile content as functions, but in render
 Slots can be manually annotated so that Vue won't force the child to update when the parent updates:
 
 ``` js
-h(Comp, {
-  slots: {
-    $stable: true,
-    foo: () => h('div', this.foo),
-    bar: () => h('div', this.bar)
-  }
+h(Comp, null, {
+  $stable: true,
+  foo: () => h('div', this.foo),
+  bar: () => h('div', this.bar)
 })
 ```
 
