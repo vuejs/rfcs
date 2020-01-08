@@ -750,7 +750,7 @@ Any JavaScript program starts with an entry file (think of it as the `setup()` f
 
 ## Adoption strategy
 
-The Composition API is purely additive and does not affect / deprecate any existing 2.x APIs. It has been made available as a 2.x plugin via the [`@vue/composition` library](https://github.com/vuejs/composition-api/). The library's primary goal is to provide a way to experiment with the API and to collect feedback. The current implementation is up-to-date with this proposal, but may contain minor inconsistencies due to technical constraints of being a plugin. It may also receive braking changes as this proposal is updated, so we do not recommend using it in production at this stage.
+The Composition API is purely additive and does not affect / deprecate any existing 2.x APIs. It has been made available as a 2.x plugin via the [`@vue/composition` library](https://github.com/vuejs/composition-api/). The library's primary goal is to provide a way to experiment with the API and to collect feedback. The current implementation is up-to-date with this proposal, but may contain minor inconsistencies due to technical constraints of being a plugin. It may also receive breaking changes as this proposal is updated, so we do not recommend using it in production at this stage.
 
 We intend to ship the API as built-in in 3.0. It will be usable alongside existing 2.x options.
 
