@@ -75,6 +75,6 @@ Migration itself is straightforward:
 * Extract shared data into an external object and use it as a property in `data`.
 * Rewrite references to the shared data to point to a new shared object.
 
-API page should contain an info block that `object` declaration is deprecated with a guide on how to migrate.
+API page should contain an info block describing that `object` declaration is deprecated with a guide on how to migrate.
 
 An adapter could be provided to retain backwards compatibility.
