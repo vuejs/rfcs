@@ -4,57 +4,59 @@
 
 # Summary
 
-`data` component option accepts two types of declaration: `function` or `object`. The most common is the `function` declaration, because it creates a new state for each instance of the component. `object` declaration on the other hand shares state between all the component's instances. This RFC focuses on removing `object` declaration for `data`.
+`data` option accepts two types of declaration: `function` or `object`. The most common is the `function` declaration, because it creates a new state for each instance of the component. `object` declaration on the other hand shares state between all the  instances and works only on a root instance. This RFC primarily focuses on removing `object` declaration for `data`.
 
 # Motivation
 
-There are little or no use-cases for component's instances to have a shared state. Even if you encounter such a case it can be done using `function` declaration.
-Having two types of declaration is not novice-friendly and is confusing without proper examples (which are nonexistent in the current documentation).
-With a single type of declaration you could achieve the same results and eliminate the confusing part of it.
+There are little or no use-cases for root instances to have a shared state. Even if you encounter such a case it can be achieved using `function` declaration.
+Having two types of declaration is not novice-friendly and is confusing without proper examples (which are nonexistent in the current documentation). The additional restriction that `object` declaration is possible only on the root instance is also confusing.
+With a unified declaration you could achieve the same result and eliminate the confusing part of it.
 
 # Detailed design
 
-`object` declaration should no longer be valid and produce an error with an explanation that only `function` declaration is valid for a component. It should also contain a link to an API and migration example.
+`object` declaration should no longer be valid and produce an error with an explanation that only `function` declaration is valid for `data` on the root instance. It should also contain a link to an API and migration example.
 
 Before, using `object` declaration:
 
-```html
-<script>
-export default {
+```js
+import { createApp, h } from 'vue'
+
+createApp().mount({
   data: {
-    counter: 1
+    counter: 1,
   },
-  methods: {
-    increment() {
-      this.counter++
-    }
-  }
-}
-</script>
+  render() {
+    return [
+      h('span', this.counter),
+      h('button', {
+        onClick: () => { this.counter++ }
+      }),
+    ]
+  },
+}, '#app')
 ```
 
 After, using `function` declaration.
 
-```html
-<script>
-const sharedObject = { counter: 1 }
+```js
+import { createApp, h } from 'vue'
 
-export default {
+createApp().mount({
   data() {
     return {
-      sharedObject
+      counter: 1,
     }
   },
-  methods: {
-    increment() {
-      this.sharedObject.counter++
-    }
-  }
-}
-</script>
+  render() {
+    return [
+      h('span', this.counter),
+      h('button', {
+        onClick: () => { this.counter++ }
+      }),
+    ]
+  },
+}, '#app')
 ```
-
-`sharedObject` will be the same in each component's instance.
 
 # Drawbacks
 
@@ -66,7 +68,7 @@ Examples using `object` declaration should be rewritten using `function` declara
 
 # Adoption strategy
 
-Since it's not a common pattern in components migration should be fairly easy.
+Since it's not a common pattern to have an `object` declaration in root instance migration should be fairly easy.
 
 Migration itself is straightforward:
 
