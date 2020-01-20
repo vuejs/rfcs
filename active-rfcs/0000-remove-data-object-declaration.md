@@ -68,7 +68,7 @@ Examples using `object` declaration should be rewritten using `function` declara
 
 # Adoption strategy
 
-Since it's not a common pattern to have an `object` declaration in root instance migration should be fairly easy.
+Since it's not a common pattern to have an `object` declaration in root instance migration should be fairly easy. The impact of this change is also minimized due to the root mounting API change in v3 (where you always use a root component).
 
 Migration itself is straightforward:
 
