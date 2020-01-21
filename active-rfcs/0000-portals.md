@@ -79,7 +79,7 @@ In order to work around issues with [z-index Stacking Context](https://philipwal
 
 Many apps have the concept of widgets, where their UI has an outlet (i.e. in a sidebar or dashboard) where other parts of the application, i.e. plugins, can inject small pieces of UI.
 
-In Single Page Applications, where our Javascript controls essentially he whole page, this is generally not a challenge. But in situations where our Vue app only controls a part of the page, it currently proves to be challenging (but impossible) to mount individual elements and components in other parts of the page.
+In Single Page Applications, where our Javascript controls essentially the whole page, this is generally not a challenge. But in situations where our Vue app only controls a part of the page, it currently proves to be challenging (but impossible) to mount individual elements and components in other parts of the page.
 
 With Portals, we have a straightforward way to mount child components to other locations in the DOM declaratively.
 
