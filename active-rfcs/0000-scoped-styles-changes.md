@@ -9,8 +9,18 @@ Provide more consistent custom CSS extensions in Single File Component scoped st
 
 # Basic example
 
-If the proposal involves a new or changed API, include a basic code example.
-Omit this section if it's not applicable.
+``` html
+<style scoped>
+/* deep selectors */
+::v-deep(.foo) {}
+
+/* targeting slot content */
+::v-slotted(.foo) {}
+
+/* one-off global rule */
+::v-global(.foo) {}
+</style>
+```
 
 # Motivation
 
