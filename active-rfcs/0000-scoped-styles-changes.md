@@ -103,6 +103,8 @@ Currently to add a global CSS rule we need to use a separate unscoped `<style>` 
   .foo {}
   ```
 
+- The [test cases of `@vue/compiler-sfc`](https://github.com/vuejs/vue-next/blob/master/packages/compiler-sfc/__tests__/compileStyle.spec.ts) can be used as a reference for the compilation transform details.
+
 # Adoption strategy
 
 All previous usage of deep selectors can be supported with deprecation warnings. We will remove the support in a future release when most users have completed the migration.
