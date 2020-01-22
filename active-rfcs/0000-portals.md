@@ -139,20 +139,20 @@ const App = {
 
 ## The `target` prop
 
-The component has only one _required_ prop, named `target`. It accepts a string wich has to be a valid query selector.
+The component has only one _required_ prop, named `target`. It accepts a string wich has to be a valid query selector, or an HTMLElement (if used in a browser environment).
 
 ```html
 <!-- ok -->
-<Portal target="#some-id">
-  <Portal target=".some-class">
-    <Portal target="[data-portal]">
-      <!-- 
-  probably too unspecific, but technically valid 
+<Portal target="#some-id" />
+<Portal target=".some-class" />
+<Portal target="[data-portal]" />
+<!--
+  probably too unspecific, but technically valid
   should we allow this or block it?
 -->
-      <Portal target="h1">
-        <!-- Wrong -->
-        <Portal target="some-string"></Portal></Portal></Portal></Portal
+<Portal target="h1" />
+<!-- Wrong -->
+<Portal target="some-string" />
 ></Portal>
 ```
 
