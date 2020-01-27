@@ -36,7 +36,7 @@ new Vue({
 import { createApp } from 'vue'
 import App from './App.vue'
 
-const app = createApp()
+const app = createApp(App)
 
 app.config.ignoredElements = [/^app-/]
 app.use(/* ... */)
@@ -44,7 +44,7 @@ app.mixin(/* ... */)
 app.component(/* ... */)
 app.directive(/* ... */)
 
-app.mount(App, '#app')
+app.mount('#app')
 ```
 
 # Motivation
@@ -74,7 +74,9 @@ In this proposal we introduce a new global API, `createApp`:
 ``` js
 import { createApp } from 'vue'
 
-const app = createApp()
+const app = createApp({
+  /* root component definition */
+})
 ```
 
 Calling `createApp` returns an **app instance**. An app instance provides an **app context**. The entire component tree mounted by the app instance share the same app context, which provides the configurations that were previously "global" in Vue 2.x.
@@ -165,7 +167,7 @@ This config option was introduced with the intention to support native custom el
 Vue.config.ignoredElements = ['my-el', /^ion-/]
 
 // after
-const app = Vue.createApp()
+const app = Vue.createApp({ /* ... */ })
 app.config.isCustomElement = tag => tag.startsWith('ion-')
 ```
 
