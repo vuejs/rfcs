@@ -171,6 +171,10 @@ const normalizedRouteRecord = router.addRoute(routeRecord)
 router.removeRoute(normalizedRouteRecord)
 ```
 
+## `getRoutes`
+
+There could also be a reactive property with the routes but this would allow using them in templates, which in most scenarios is an application level feature which could and should handle things the other way around **having a reactive source of route records that are syncronized with the router**. Doing this at the application level avoids adding the cost for every user
+
 # Adoption strategy
 
 This API is backwards compatible with what exists in Vue Router 3
