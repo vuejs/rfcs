@@ -78,7 +78,7 @@ removeRoute() // removes the route record
 router.removeRoute('NewRoute') // because names are unique
 ```
 
-If we are on `/new-route`, adding the record will trigger a _replace_ navigation and will trigger all will trigger navigation guards. In this scenario, if no catch-route (path: '\*') is present, `from` will be a route location with an empty `matched` array and missing all extra properties like `meta` and `name` while `to` will be the same actual location (same `path`, `fullPath`, `query` and `hash`) but with a non-empty array of `matched`.
+If we are on `/new-route`, adding the record will trigger a _replace_ navigation and will trigger all navigation guards. In this scenario, if no catch-route (path: '\*') is present, `from` will be a route location with an empty `matched` array and missing all extra properties like `meta` and `name` while `to` will be the same actual location (same `path`, `fullPath`, `query` and `hash`) but with a non-empty array of `matched`.
 
 _For Alternatives, please check [alternatives](#alternatives)_
 
