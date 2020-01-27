@@ -118,6 +118,18 @@ interface removeRoute {
 }
 ```
 
+## `getRoutes`
+
+Allows reading the list of normalized active route records:
+
+```ts
+interface getRoutes {
+  (): RouteRecordNormalized[]
+}
+```
+
+What is present in RouteRecordNormalized is yet to be precised but contains at least all existing properties from a RouteRecord, some of them normalized (like `components` instead of `component` and an `undefined` name)
+
 # Drawbacks
 
 - This API increases vue-router size. To make it treeshakable will require allowing the matcher (responsible for parsing `path` and doing the path ranking) to be extended with simpler versions, which are quite complex to write.
