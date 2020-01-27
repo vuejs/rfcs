@@ -96,6 +96,21 @@ An app instance exposes a subset of the current global APIs. The rule of thumb i
 
 All other global APIs that do not globally mutate behavior are now named exports as proposed in [Global API Treeshaking](https://github.com/vuejs/rfcs/pull/19).
 
+The only exception is `Vue.extend`. Since the global `Vue` is no longer a new-able constructor, `Vue.extend` no longer makes sense in terms of constructor extension.
+
+- For extending a base component, the `extends` option should be used instead.
+- For TypeScript type-inference, use the new `defineComponent` global API:
+
+  ``` ts
+  import { defineComponent} from 'vue'
+
+  const App = defineComponent({
+    /* Type inference provided */
+  })
+  ```
+
+  Note that implementation-wise `defineComponent` does nothing - it simply returns the object passed to it. However, in terms of typing, the returned value has a synthetic type of a constructor for manual render function, TSX and IDE tooling support. This mismatch is an intentional trade-off.
+
 ## Mounting App Instance
 
 The app instance can mount a root component with the `mount` method. It works similarly to the 2.x `vm.$mount()` method and returns the mounted root component instance:
