@@ -43,7 +43,7 @@ The current version of Vue Router only supports adding a new absolute route. The
 
 In theory this could also improve Developer experience by changing routes in place with Hot Module Replacement.
 
-Note: Dynamic routing only makes sense after implementing path ranking (automatic route order that allows route records to be add in any order but still be matched correctly). Most of the cost of adding this feature is on the path scoring side.
+Note: Dynamic routing only makes sense after implementing path ranking (automatic route order that allows route records to be added in any order but still be matched correctly). Most of the cost of adding this feature is on the path scoring side.
 
 # Detailed design
 
@@ -54,9 +54,9 @@ Note: Dynamic routing only makes sense after implementing path ranking (automati
 - How should conflicts be handled?
 - What should be returned by the function?
 
-The code samples are written in TS to provide more information about what is the shape of the object expected:
+The code samples are written in TS to provide more information about the shape of the object expected:
 
-`RouteRecord` is the same kind of object used in the `routes` option when instantiating the Router. To give you an idea, it looks like (https://router.vuejs.org/api/#routes) but what matters is that this object is consistent with the `routes` options since the `RouteRecord` type might have minor changes in the future version of Vue Router 4.
+`RouteRecord` is the same kind of object used in the `routes` option when instantiating the Router. To give you an idea, it looks like (https://router.vuejs.org/api/#routes). Important to note, this object is consistent with the `routes` options, since the `RouteRecord` type might have minor changes in the future version of Vue Router 4.
 
 ```ts
 const routeRecord: RouteRecord = {
@@ -66,9 +66,9 @@ const routeRecord: RouteRecord = {
 }
 ```
 
-There are different options of what to return from `addRoute`
+There are different options for what to return from `addRoute`.
 
-Returning a function that allows removing the route is useful for unamed routes
+Returning a function that allows removing the route is useful for unamed routes.
 
 ```ts
 const removeRoute = router.addRoute(routeRecord)
@@ -78,13 +78,13 @@ removeRoute() // removes the route record
 router.removeRoute('NewRoute') // because names are unique
 ```
 
-If we are on `/new-route`, adding the record will trigger a _replace_ navigation and will trigger all navigation guards. In this scenario, if no catch-route (path: '\*') is present, `from` will be a route location with an empty `matched` array and missing all extra properties like `meta` and `name` while `to` will be the same actual location (same `path`, `fullPath`, `query` and `hash`) but with a non-empty array of `matched`.
+If we are on `/new-route`, adding the record will trigger a _replace_ navigation and will trigger all navigation guards. In this scenario, if no catch-route (path: '\*') is present, `from` will be a route location with an empty `matched` array and missing all extra properties like `meta` and `name`, while `to` will be the same actual location (same `path`, `fullPath`, `query` and `hash`) but with a non-empty array of `matched`.
 
 _For Alternatives, please check [alternatives](#alternatives)_
 
 ### Conflicts
 
-When adding a route that has the same name as an existing route, it should replace the existing route and warn about it (in dev only). This is the most convenient version because it allows replacing new routes without removing the old ones **when they are using the same name**.
+When adding a route that has the same name as an existing route, it should replace the existing route and warn about it (in dev only). This is the most convenient version, because it allows replacing new routes without removing the old ones **when they are using the same name**.
 
 Alternatives:
 
@@ -128,7 +128,7 @@ interface getRoutes {
 }
 ```
 
-What is present in RouteRecordNormalized is yet to be precised but contains at least all existing properties from a RouteRecord, some of them normalized (like `components` instead of `component` and an `undefined` name)
+What is present in RouteRecordNormalized is yet to be decided, but contains at least all existing properties from a RouteRecord, some of them normalized (like `components` instead of `component` and an `undefined` name).
 
 # Drawbacks
 
@@ -147,7 +147,7 @@ There are tradeoffs to choosing any path. Attempt to identify them here.
 
 ## `addRoutes`
 
-- A promise that resolves or reject based on the possible navigation that adding the record might trigger (e.g. being on `/new-route` before adding the route)
+- A promise that resolves or rejects based on the possible navigation that adding the record might trigger (e.g. being on `/new-route` before adding the route)
 
 ```ts
 window.location.pathname // "/new-route"
@@ -173,8 +173,8 @@ router.removeRoute(normalizedRouteRecord)
 
 ## `getRoutes`
 
-There could also be a reactive property with the routes but this would allow using them in templates, which in most scenarios is an application level feature which could and should handle things the other way around **having a reactive source of route records that are syncronized with the router**. Doing this at the application level avoids adding the cost for every user
+There could also be a reactive property with the routes, but this would allow using them in templates, which in most scenarios is an application level feature which could and should handle things the other way around, **having a reactive source of route records that are syncronized with the router**. Doing this at the application level avoids adding the cost for every user.
 
 # Adoption strategy
 
-This API is backwards compatible with what exists in Vue Router 3
+This API is backwards compatible with the existing Vue Router 3. 
