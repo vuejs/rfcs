@@ -37,7 +37,7 @@ const routeRecords = router.getRoutes()
 
 # Motivation
 
-Dynamic routing is a feature that enables applications to build its own routing system. An usecase of this is the vue-cli ui, that allows adding graphical plugins which can have their own interfaces.
+Dynamic routing is a feature that enables applications to build its own routing system. A usecase of this is the vue-cli ui, that allows adding graphical plugins which can have their own interfaces.
 
 The current version of Vue Router only supports adding a new absolute route. The idea of this RFC is to add the missing functions to allow dynamic routing. Thinking about the different ways this API can be shaped and what is best for the future of Vue Router. Currently, it's impossible to achieve the example described above without hacks or creating a whole new Router instance.
 
