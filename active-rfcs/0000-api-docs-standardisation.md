@@ -10,7 +10,7 @@ While there are many similarities, as it stands the API docs for the [various](h
 Examples of this include:
 
 1. [JSDoc-style signatures](https://vuejs.org/v2/api/#Vue-extend) (`{Object} options`) being used in one place while more [TypeScript-looking signatures](https://vuejs.org/v2/api/#optionMergeStrategies) (`{ [key: string]: Function }`) can be found in others
-2. Then we have vue-router which sometimes provides [TypeScript signatures](https://router.vuejs.org/api/#scrollbehavior) and at others just does its own thing with [with list items](https://router.vuejs.org/api/#v-slot-api-3-1-0), or within [fenced code blocks](https://router.vuejs.org/api/#to)
+2. Then we have vue-router which sometimes provides [TypeScript signatures](https://router.vuejs.org/api/#scrollbehavior) and at others just does its own thing [with list items](https://router.vuejs.org/api/#v-slot-api-3-1-0), or within [fenced code blocks](https://router.vuejs.org/api/#to)
 3. Vue likes to put the [usage examples within a list item](https://vuejs.org/v2/api/#silent) whereas [Vuex just puts them inline](https://vuex.vuejs.org/api/#subscribeaction), with the rest of the text
 4. Vuex has the "new in version / since version" [in a blockquote](https://vuex.vuejs.org/api/#subscribeaction) underneath the signature, Vue puts them [in a blockquote](https://vuejs.org/v2/api/#inheritAttrs) except it's always at the very top, meanwhile vue-router likes to [put it in parentheses in the heading](https://router.vuejs.org/api/#v-slot-api-3-1-0)
 5. [Vue](https://vuejs.org/v2/api/#Built-In-Components) has a [dedicated section for built-in components](https://vuejs.org/v2/api/#Built-In-Components) whereas [vue-router has them as top-level headings](https://router.vuejs.org/api/#router-link)
@@ -59,7 +59,7 @@ This would of course be a **lot more work** than simply trying to standardise th
 
 ## Full-text searching of Markdown files
 
-Someone mentioned that for our use-case we could just use something like [Solr](https://lucene.apache.org/solr/) (or [Lunr](https://lunrjs.com/), without the need to parse/generate any data, and indeed we are using Lunr for searching through the **guides**, but API docs are very different to textual documents, and from my experiments I don't think Lunr nor Fuse.js (nor any other solution) is going to do a particularly good job _for API docs specifically_.
+Someone mentioned that for our use-case we could just use something like [Solr](https://lucene.apache.org/solr/) (or [Lunr](https://lunrjs.com/)), without the need to parse/generate any data, and indeed we are using Lunr for searching through the **guides**, but API docs are very different to textual documents, and from my experiments I don't think Lunr nor Fuse.js (nor any other solution) is going to do a particularly good job _for API docs specifically_.
 
 # Adoption strategy
 
