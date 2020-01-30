@@ -7,9 +7,9 @@
 
 Vue 3 introduces the Composition API, and as part of that, a `watch` method. More information and examples can be found [here](https://vue-composition-api-rfc.netlify.com/api.html#watch).
 
-Currently, the code for this feature is shared with the code used by the `watch` options API. However, the default behaviors are slighly different; the new `watch` method will trigger immediately after the component is mounted. This is not the case for Vue 2.X; this behavior is opt in, via the `immediate` option.
+In Vue 3, the code for the `watch` Composition API is shared with the code used by the `watch` Options API - they exhibit the same behavior. This default behavior is slighly different from Vue 2. The new `watch` Composition API will trigger immediately after the component is mounted. This is not the case for Vue 2; this behavior is opt in, via the `immediate` option.
 
-This RFC proposes to keep this change moving forward in Vue 3.x; `watch` handlers will be invoke immediately, both when using the `watch` method and the `watch` options API.
+This RFC proposes to keep this change moving forward in Vue 3 `watch` handlers will be invoke immediately, both when using the `watch` method and the `watch` Options API.
 
 # Basic example
 
@@ -32,33 +32,30 @@ const App = {
 }
 ```
 
-If this component is mounted in Vue 2 the `message` handler will not be triggered until `message` is changed for the first time. A user can opt to fire the `handler` immediately by passing `immediate: true`. 
+Although this component is valid in both Vue 2 and Vue 3, it behaves differently.
 
-Currently in Vue 3, the `message` handle will trigger immediately; this is the default behavior in Vue 3 - the opposite of Vue 2. To opt out of this behavior in Vue 3, the user can pass a `{ lazy: true }` option.
+- If this component is mounted in Vue 2, the `message` handler will not be triggered until `message` is changed for the first time. A user can opt to fire the `handler` immediately by passing `immediate: true`. 
+- In Vue 3, the `message` handle will trigger immediately; this is the default behavior in Vue 3 - the opposite of Vue 2. To opt out of this behavior in Vue 3, the user can pass a `{ lazy: true }` option.
 
 # Motivation
-
-Why are we doing this? What use cases does it support? What is the expected
-outcome?
 
 It is better to be consistent across the Composition API and the Options API. While they look different, the two APIs Vue provides are just two different ways of accomplishing the same thing.
 
 # Detailed design
 
-The `watch` options API should behave the same as the `watch` method provided by the Composition API.
+The `watch` Options API should behave the same as the `watch` method provided by the Composition API.
 
 # Drawbacks
 
 The main cost of keeping this breaking change is the migration cost for existing codebases. Having `watch` trigger immediately when upgraing to Vue 3 may cause unintended behavior. The user will need to add `{ lazy: false }` to each watch API they do not want to trigger immediately.
 
+It is possible many commonly used modules use the old `watch` behavior; this could break, or at least change the behavior of many applications and libraries.
+
 # Alternatives
 
-An alternative would be to implement an `immediate` option that defaults to `false` for the `watch` Options API in Vue 3.
+An alternative would be to implement an `immediate` option that defaults to `false` for the `watch` Options API in Vue 3. This would mean no breaking change, but a larger API surface with discrepancy between the Options API and Composition API.
 
 # Adoption strategy
-
-If we implement this proposal, how will existing Vue developers adopt it? Is
-this a breaking change? Can we write a codemod? Can we provide a runtime adapter library for the original API it replaces? How will this affect other projects in the Vue ecosystem?
 
 - The user will need to add `{ lazy: false }` to each watch API they do not want to trigger immediately in their existing codebases. 
 - A codemod to assist with this migration should be possible in most cases. 
