@@ -37,9 +37,37 @@ Although this component is valid in both Vue 2 and Vue 3, it behaves differently
 - If this component is mounted in Vue 2, the `message` handler will not be triggered until `message` is changed for the first time. A user can opt to fire the `handler` immediately by passing `immediate: true`. 
 - In Vue 3, the `message` handle will trigger immediately; this is the default behavior in Vue 3 - the opposite of Vue 2. To opt out of this behavior in Vue 3, the user can pass a `{ lazy: true }` option.
 
+It is relevant to note that `watch` in Vue 3 is not fired synchronously (even for the initial call) - they are in fact deferred until the component is mounted. Even with immediate by default, watchers won't fire during SSR unless you explicitly use { flush: 'sync' } in the watcher's options.
+
 # Motivation
 
 It is better to be consistent across the Composition API and the Options API. While they look different, the two APIs Vue provides are just two different ways of accomplishing the same thing.
+
+One common occurrence is the following:
+
+```js
+created() {
+  this.fetchData(this.id)
+},
+watch: {
+  id: fetchData
+},
+methods: {
+  fetchData(id) {
+    // ...
+  }
+}
+```
+
+An example of this is an application with a route like `/users/:id`, where you want to load the user on the initial load, and whenever the `id` param changes. With `immediate: true` as the default, the above can be written like this:
+
+```js
+watch: {
+  id(id) {
+    // fetch data...
+  }
+}
+```
 
 # Detailed design
 
