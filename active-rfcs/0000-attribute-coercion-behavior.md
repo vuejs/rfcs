@@ -115,7 +115,7 @@ In 3.x, `null` or `undefined` should be used to explicitly remove an attribute.
   <tbody>
     <tr>
       <td rowspan="3">2.x “Enumerated attrs”<br><small>i.e. <code>contenteditable</code>, <code>draggable</code> and <code>spellcheck</code>.</small></td>
-      <td><code>undefined</code>, <code>null</code>, <code>false</code></td>
+      <td><code>undefined</code>, <code>false</code></td>
       <td><code>undefined</code>, <code>null</code></td>
       <td><i>removed</i></td>
     </tr>
