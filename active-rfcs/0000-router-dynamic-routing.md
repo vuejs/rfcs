@@ -132,16 +132,7 @@ What is present in RouteRecordNormalized is yet to be decided, but contains at l
 
 # Drawbacks
 
-- This API increases vue-router size. To make it treeshakable will require allowing the matcher (responsible for parsing `path` and doing the path ranking) to be extended with simpler versions, which are quite complex to write.
-  Why should we _not_ do this? Please consider:
-
-- implementation cost, both in term of code size and complexity
-- whether the proposed feature can be implemented in user space
-- the impact on teaching people Vue
-- integration of this feature with other existing and planned features
-- cost of migrating existing Vue applications (is it a breaking change?)
-
-There are tradeoffs to choosing any path. Attempt to identify them here.
+- This API increases vue-router size. To make it treeshakable will require allowing the matcher (responsible for parsing `path` and doing the path ranking) to be extended with simpler versions, which are quite complex to write but we could instead export different versions of the matcher and allow the user specifying the matcher in a leaner version of the router.
 
 # Alternatives
 
@@ -177,4 +168,4 @@ There could also be a reactive property with the routes, but this would allow us
 
 # Adoption strategy
 
-This API is backwards compatible with the existing Vue Router 3. 
+This API is backwards compatible with the existing Vue Router 3.
