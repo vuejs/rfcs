@@ -65,7 +65,7 @@ In comparison, the APIs proposed in this RFC utilize mostly plain variables and 
 
 ### API Introduction
 
-Instead of bringing in new concepts, the APIs being proposed here are more about exposing Vue's core capabilities - such as creating and observing reactive state - as standalone functions. Here we will introduce a number of the most fundamental APIs and how they can be used in place of 2.x options to express in-component logic. Note this section focuses on introducing the basic ideas so it does not goes into full details for each API. Full API specs can be found in the [API Reference](https://vue-composition-api-rfc.netlify.com/api.html) section.
+Instead of bringing in new concepts, the APIs being proposed here are more about exposing Vue's core capabilities - such as creating and observing reactive state - as standalone functions. Here we will introduce a number of the most fundamental APIs and how they can be used in place of 2.x options to express in-component logic. Note this section focuses on introducing the basic ideas so it does not go into full details for each API. Full API specs can be found in the [API Reference](./api) section.
 
 #### Reactive State and Side Effects
 
@@ -82,23 +82,25 @@ const state = reactive({
 
 `reactive` is the equivalent of the current `Vue.observable()` API in 2.x, renamed to avoid confusion with RxJS observables. Here, the returned `state` is a reactive object that all Vue users should be familiar with.
 
-The essential use case for reactive state in Vue is that we can use it during render. Thanks to dependency tracking, the view automatically updates when reactive state changes. Rendering something in the DOM is considered a "side effect": our program is modifying state external to the program itself (the DOM). To apply and *automatically re-apply* a side effect based on reactive state, we can use the `watch` API:
+The essential use case for reactive state in Vue is that we can use it during render. Thanks to dependency tracking, the view automatically updates when reactive state changes. Rendering something in the DOM is considered a "side effect": our program is modifying state external to the program itself (the DOM). To apply and *automatically re-apply* a side effect based on reactive state, we can use the `watchEffect` API:
 
 ``` js
-import { reactive, watch } from 'vue'
+import { reactive, watchEffect } from 'vue'
 
 const state = reactive({
   count: 0
 })
 
-watch(() => {
+watchEffect(() => {
   document.body.innerHTML = `count is ${state.count}`
 })
 ```
 
-`watch` expects a function that applies the desired side effect (in this case, setting `innerHTML`). It executes the function immediately, and tracks all the reactive state properties it used during the execution as dependencies. Here, `state.count` would be tracked as a dependency for this watcher after the initial execution. When `state.count` is mutated at a future time, the inner function will be executed again.
+`watchEffect` expects a function that applies the desired side effect (in this case, setting `innerHTML`). It executes the function immediately, and tracks all the reactive state properties it used during the execution as dependencies. Here, `state.count` would be tracked as a dependency for this watcher after the initial execution. When `state.count` is mutated at a future time, the inner function will be executed again.
 
 This is the very essence of Vue's reactivity system. When you return an object from `data()` in a component, it is internally made reactive by `reactive()`. The template is compiled into a render function (think of it as a more efficient `innerHTML`) that makes use of these reactive properties.
+
+> `watchEffect` is similar to the 2.x `watch` option, but it doesn't require separating the watched data source and the side effect callback. Composition API also provides a `watch` function that behaves exactly the same as the 2.x option.
 
 Continuing the above example, this is how we would handle user input:
 
@@ -113,7 +115,7 @@ document.body.addEventListener('click', increment)
 But with Vue's templating system we don't need to wrangle with `innerHTML` or manually attaching event listeners. Let's simplify the example with a hypothetical `renderTemplate` method so we can focus on the reactivity side:
 
 ``` js
-import { reactive, watch } from 'vue'
+import { reactive, watchEffect } from 'vue'
 
 const state = reactive({
   count: 0
@@ -128,7 +130,7 @@ const renderContext = {
   increment
 }
 
-watch(() => {
+watchEffect(() => {
   // hypothetical internal code, NOT actual API
   renderTemplate(
     `<button @click="increment">{{ state.count }}</button>`,
@@ -157,7 +159,7 @@ What is `computed` returning here? If we take a guess at how `computed` is imple
 // simplified pseudo code
 function computed(getter) {
   let value
-  watch(() => {
+  watchEffect(() => {
     value = getter()
   })
   return value
@@ -176,7 +178,7 @@ function computed(getter) {
   const ref = {
     value: null
   }
-  watch(() => {
+  watchEffect(() => {
     ref.value = getter()
   })
   return ref
@@ -188,7 +190,7 @@ In addition, we also need to intercept read / write operations to the object's `
 ``` js
 const double = computed(() => state.count * 2)
 
-watch(() => {
+watchEffect(() => {
   console.log(double.value)
 }) // -> 0
 
@@ -197,7 +199,7 @@ state.count++ // -> 2
 
 **Here `double` is an object that we call a "ref", as it serves as a reactive reference to the internal value it is holding.**
 
-> You might be aware that Vue already has the concept of "refs", but only for referencing DOM elements or component instances in templates ("template refs"). Check out [this](https://vue-composition-api-rfc.netlify.com/api.html#template-refs) to see how the new refs system can be used for both logical state and template refs.
+> You might be aware that Vue already has the concept of "refs", but only for referencing DOM elements or component instances in templates ("template refs"). Check out [this](./api.html#template-refs) to see how the new refs system can be used for both logical state and template refs.
 
 In addition to computed refs, we can also directly create plain mutable refs using the `ref` API:
 
@@ -231,7 +233,7 @@ const renderContext = {
   increment
 }
 
-watch(() => {
+watchEffect(() => {
   renderTemplate(
     `<button @click="increment">{{ count }}</button>`,
     renderContext
@@ -256,7 +258,7 @@ console.log(state.double)
 Our code so far already provides a working UI that can update based on user input - but the code runs only once and is not reusable. If we want to reuse the logic, a reasonable next step seems to be refactoring it into a function:
 
 ``` js
-import { reactive, computed, watch } from 'vue'
+import { reactive, computed, watchEffect } from 'vue'
 
 function setup() {
   const state = reactive({
@@ -276,7 +278,7 @@ function setup() {
 
 const renderContext = setup()
 
-watch(() => {
+watchEffect(() => {
   renderTemplate(
     `<button @click="increment">
       Count is: {{ state.count }}, double is: {{ state.double }}
@@ -330,7 +332,7 @@ So far we have covered the pure state aspect of a component: reactive state, com
 - When some state changes;
 - When the component is mounted, updated or unmounted (lifecycle hooks).
 
-We know that we can use the `watch` API to apply side effects based on state changes. As for performing side effects in different lifecycle hooks, we can use the dedicated `onXXX` APIs (which directly mirror the existing lifecycle options):
+We know that we can use the `watchEffect` and `watch` APIs to apply side effects based on state changes. As for performing side effects in different lifecycle hooks, we can use the dedicated `onXXX` APIs (which directly mirror the existing lifecycle options):
 
 ``` js
 import { onMounted } from 'vue'
@@ -346,7 +348,7 @@ export default {
 
 These lifecycle registration methods can only be used during the invocation of a `setup` hook. It automatically figures out the current instance calling the `setup` hook using internal global state. It is intentionally designed this way to reduce friction when extracting logic into external functions.
 
-> More details about these APIs can be found in the [API Reference](https://vue-composition-api-rfc.netlify.com/api.html). However, we recommend finishing the following sections before digging into the design details.
+> More details about these APIs can be found in the [API Reference](./api). However, we recommend finishing the following sections before digging into the design details.
 
 ### Code Organization
 
@@ -356,13 +358,13 @@ This is an understandable first impression. But as mentioned in the Motivations 
 
 #### What is "Organized Code"?
 
-Let's take a step back and consider what we really mean when we talk about "organized code". The end goal of keeping code organized should be making the code easier to read and understand. And what do we mean by "understanding" the code? Can we really claim that we "understand" a component just because we know what options it contains? Have you ever run into a big component authored by another developer (for example [this one](https://github.com/vuejs/vue-cli/blob/dev/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L198-L404)), and have a hard time wrapping your head around it?
+Let's take a step back and consider what we really mean when we talk about "organized code". The end goal of keeping code organized should be making the code easier to read and understand. And what do we mean by "understanding" the code? Can we really claim that we "understand" a component just because we know what options it contains? Have you ever run into a big component authored by another developer (for example [this one](https://github.com/vuejs/vue-cli/blob/a09407dd5b9f18ace7501ddb603b95e31d6d93c0/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L198-L404)), and have a hard time wrapping your head around it?
 
 Think about how we would walk a fellow developer through a big component like the one linked above. You will most likely start with "this component is dealing with X, Y and Z" instead of "this component has these data properties, these computed properties and these methods". When it comes to understanding a component, we care more about "what the component is trying to do" (i.e. the intentions behind the code) rather than "what options the component happens to use". While code written with options-based API naturally answers the latter, it does a rather poor job at expressing the former.
 
 #### Logical Concerns vs. Option Types
 
-Let's define the "X, Y and Z" the component is dealing with as **logical concerns**. The readability problem is typically non-present in small, single purpose components because the entire component deals with a single logical concern. However, the issue becomes much more prominent in advanced use cases. Take the [Vue CLI UI file explorer](https://github.com/vuejs/vue-cli/blob/dev/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L198-L404) as an example. The component has to deal with many different logical concerns:
+Let's define the "X, Y and Z" the component is dealing with as **logical concerns**. The readability problem is typically non-present in small, single purpose components because the entire component deals with a single logical concern. However, the issue becomes much more prominent in advanced use cases. Take the [Vue CLI UI file explorer](https://github.com/vuejs/vue-cli/blob/a09407dd5b9f18ace7501ddb603b95e31d6d93c0/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L198-L404) as an example. The component has to deal with many different logical concerns:
 
 - Tracking current folder state and displaying its content
 - Handling folder navigation (opening, closing, refreshing...)
@@ -371,7 +373,7 @@ Let's define the "X, Y and Z" the component is dealing with as **logical concern
 - Toggling show hidden folders
 - Handling current working directory changes
 
-Can you instantly recognize and tell these logical concerns apart by reading the options-based code? It surely is difficult. You will notice that code related to a specific logical concern is often fragmented and scattered all over the place. For example, the "create new folder" feature makes use of [two data properties](https://github.com/vuejs/vue-cli/blob/dev/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L221-L222), [one computed property](https://github.com/vuejs/vue-cli/blob/dev/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L240), and [a method](https://github.com/vuejs/vue-cli/blob/dev/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L387) - where the method is defined in a location more than a hundred lines away from the data properties.
+Can you instantly recognize and tell these logical concerns apart by reading the options-based code? It surely is difficult. You will notice that code related to a specific logical concern is often fragmented and scattered all over the place. For example, the "create new folder" feature makes use of [two data properties](https://github.com/vuejs/vue-cli/blob/a09407dd5b9f18ace7501ddb603b95e31d6d93c0/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L221-L222), [one computed property](https://github.com/vuejs/vue-cli/blob/a09407dd5b9f18ace7501ddb603b95e31d6d93c0/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L240), and [a method](https://github.com/vuejs/vue-cli/blob/a09407dd5b9f18ace7501ddb603b95e31d6d93c0/packages/@vue/cli-ui/src/components/folder/FolderExplorer.vue#L387) - where the method is defined in a location more than a hundred lines away from the data properties.
 
 If we color-code each of these logical concerns, we notice how fragmented they are when expressed with component options:
 
@@ -565,7 +567,7 @@ The Composition API can be used alongside the existing options-based API.
 
 Many Vue plugins today inject properties onto `this`. For example, Vue Router injects `this.$route` and `this.$router`, and Vuex injects `this.$store`. This has made type inference tricky since each plugin requires the user to augment the Vue typing for injected properties.
 
-When using the Composition API, there is no `this`. Instead, plugins will leverage [`provide` and `inject`](https://vue-composition-api-rfc.netlify.com/api.html#provide-inject) internally and expose a composition function. The following is hypothetical code for a plugin:
+When using the Composition API, there is no `this`. Instead, plugins will leverage [`provide` and `inject`](./api.html#provide-inject) internally and expose a composition function. The following is hypothetical code for a plugin:
 
 ``` js
 const StoreSymbol = Symbol()
@@ -697,7 +699,7 @@ export default {
 }
 ```
 
-The [`toRefs`](https://vue-composition-api-rfc.netlify.com/api.html#torefs) API is provided to deal with this constraint - it converts each property on a reactive object to a corresponding ref:
+The [`toRefs`](./api.html#torefs) API is provided to deal with this constraint - it converts each property on a reactive object to a corresponding ref:
 
 ``` js
 function useMousePosition() {
@@ -750,7 +752,7 @@ Any JavaScript program starts with an entry file (think of it as the `setup()` f
 
 ## Adoption strategy
 
-The Composition API is purely additive and does not affect / deprecate any existing 2.x APIs. It has been made available as a 2.x plugin via the [`@vue/composition` library](https://github.com/vuejs/composition-api/). The library's primary goal is to provide a way to experiment with the API and to collect feedback. The current implementation is up-to-date with this proposal, but may contain minor inconsistencies due to technical constraints of being a plugin. It may also receive breaking changes as this proposal is updated, so we do not recommend using it in production at this stage.
+The Composition API is purely additive and does not affect / deprecate any existing 2.x APIs. It has been made available as a 2.x plugin via the [`@vue/composition` library](https://github.com/vuejs/composition-api/). The library's primary goal is to provide a way to experiment with the API and to collect feedback. The current implementation is up-to-date with this proposal, but may contain minor inconsistencies due to technical constraints of being a plugin. It may also receive braking changes as this proposal is updated, so we do not recommend using it in production at this stage.
 
 We intend to ship the API as built-in in 3.0. It will be usable alongside existing 2.x options.
 
@@ -814,7 +816,7 @@ Although taking very different routes, the Composition API and Svelte 3's compil
 
 ``` html
 <script>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watchEffect, onMounted } from 'vue'
 
 export default {
   setup() {
@@ -824,7 +826,7 @@ export default {
       count.value++
     }
 
-    watch(() => console.log(count.value))
+    watchEffect(() => console.log(count.value))
 
     onMounted(() => console.log('mounted!'))
 
