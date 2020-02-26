@@ -7,9 +7,10 @@
 
 Introducing an API that allows adding and removing route records while the router is working
 
-- `router.addRoute(route: RouteRecord)`
-- `router.removeRoute(name: string)`
-- `router.getRoutes()`
+- `router.addRoute(route: RouteRecord)` Add a new route
+- `router.removeRoute(name: string | Symbol)` Remove an existing route
+- `router.hasRoute(name: string | Symbol): boolean` Check if a route exists
+- `router.getRoutes(): RouteRecord[]` Get the current list of routes
 
 # Basic example
 
@@ -78,13 +79,24 @@ removeRoute() // removes the route record
 router.removeRoute('NewRoute') // because names are unique
 ```
 
-If we are on `/new-route`, adding the record will trigger a _replace_ navigation and will trigger all navigation guards. In this scenario, if no catch-route (path: '\*') is present, `from` will be a route location with an empty `matched` array and missing all extra properties like `meta` and `name`, while `to` will be the same actual location (same `path`, `fullPath`, `query` and `hash`) but with a non-empty array of `matched`.
+If we are on `/new-route`, adding the record will **not** trigger a _replace_ navigation. The user is responsible for forcing a navigation by calling `router.push` or `router.replace` with the current location `router.replace(router.currentRoute.value.fullPath)`. Using the string version of the location ensures that a new location is resolved instead of the old one. If the route is added inside of a navigation guard, make sure to use the value from the `to` parameter:
+
+```js
+router.beforeEach((to, from, next) => {
+  // ...
+  router.addRoute(newRoute)
+  next(to.fullPath)
+  // ...
+})
+```
+
+Because the Dynamic Routing API is an advanced API that most users won't directly use, having this split allows more flexible and optimized behavior. The recommended approach to add routes will still be the configuration based one.
 
 _For Alternatives, please check [alternatives](#alternatives)_
 
 ### Conflicts
 
-When adding a route that has the same name as an existing route, it should replace the existing route and warn about it (in dev only). This is the most convenient version, because it allows replacing new routes without removing the old ones **when they are using the same name**.
+When adding a route that has the same name as an existing route, it should replace the existing route. This is the most convenient version, because it allows replacing new routes without having to explicitely remove the old ones **when they are using the same name**.
 
 Alternatives:
 
@@ -103,24 +115,34 @@ router.addRoute('ParentRoute', routeRecord)
 
 ```ts
 interface addRoute {
-  (parentName: string, route: RouteRecord): () => void
+  (parentName: string | Symbol, route: RouteRecord): () => void
   (route: RouteRecord): () => void
 }
 ```
 
 ## `removeRoute`
 
-Removing a route removes all its children as well. If we were on the removed route, the router should re route, which could end up in the catch-all route (`path: '*'`).
+Removing a route removes all its children as well. As with `addRoute`, it's necessary to trigger a new navigation in order to update the current displayed view by _RouterView_.
 
 ```ts
 interface removeRoute {
-  (name: string): () => void
+  (name: string | Symbol): () => void
+}
+```
+
+## `hasRoute`
+
+Checks if a route exists:
+
+```ts
+interface hasRoute {
+  (name: string | Symbol): boolean
 }
 ```
 
 ## `getRoutes`
 
-Allows reading the list of normalized active route records:
+Allows reading the list of normalized route records:
 
 ```ts
 interface getRoutes {
@@ -152,8 +174,6 @@ removeRoute() // removes the route record
 router.removeRoute('NewRoute') // names are unique
 ```
 
-- We could also force the user to manually `push` after adding routes to avoid any promise based api on `addRoute`
-
 - A reference to the record added (a normalized copy of the original record)
 
 ```ts
@@ -168,4 +188,4 @@ There could also be a reactive property with the routes, but this would allow us
 
 # Adoption strategy
 
-This API is backwards compatible with the existing Vue Router 3.
+- Deprecate `addRoutes` and add `addRoute` to Vue Router 3. Other methods are new.
