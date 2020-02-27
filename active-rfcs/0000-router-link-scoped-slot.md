@@ -69,7 +69,7 @@ is equivalent to
 
 ```vue
 <router-link to="/" v-slot="{ navigate, isActive, isExactActive }">
-  <button role="link" @click="navigate" :class="{ active: isActive, 'active-exact': isExactActive }">
+  <button role="link" @click="navigate" :class="{ active: isActive, 'exact-active': isExactActive }">
     <Icon>home</Icon><span class="xs-hidden">Home</span>
   </button>
 </router-link>
@@ -104,7 +104,7 @@ The slot should provide values that are computed inside `router-link`:
 # Drawbacks
 
 - Whereas it's possible to keep existing behaviour working and only expose a new behaviour with scoped slots, it will still prevent us from fixing existing issues with current implementation. That's why there are some breaking changes, to make things more consistent.
-- No access to the default `router-link` classes like `router-link-active` and `router-link-active-exact`.
+- No access to the default `router-link` classes like `router-link-active` and `router-link-exact-active`.
 
 # Alternatives
 
