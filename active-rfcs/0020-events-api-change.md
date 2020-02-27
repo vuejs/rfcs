@@ -17,6 +17,6 @@ With Vue 2's API, `$emit` can be used to trigger event handlers declaratively at
 
 # Adoption strategy
 
-In Vue 2, the most common usage of the event emitter API is using an empty Vue instance as an event hub. This can be easily be achieved by using an external library implementing the event emitter interface, for example [mitt](https://github.com/developit/mitt).
+In Vue 2, the most common usage of the event emitter API is using an empty Vue instance as an event hub. This can be replaced by using an external library implementing the event emitter interface, for example [mitt](https://github.com/developit/mitt).
 
-These methods can also be easily provided in compatibility builds.
+These methods can also be supported in compatibility builds.
