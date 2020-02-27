@@ -1,4 +1,4 @@
-- Start Date: (fill me in with today's date, 2020-02-27)
+- Start Date: 2020-02-27
 - Target Major Version: 3.x
 - Reference Issues: (fill in existing related issues, if any)
 - Implementation PR: (leave this empty)
