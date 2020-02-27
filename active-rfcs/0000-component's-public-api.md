@@ -292,6 +292,7 @@ You'll then be able to use it as a ref:
 
 * Should be triggered after data init, `refs` then would require a lot of fiddling around to preserve reactivity (wrapping exposed values inside an object at a minimum)
 * Provides value down the render tree as a side-effect, which may not be the desired behaviour
+* This could cause performance penalty if any injections are used since we have to cycle through every provision in the vnode tree from bottom to top
 
 # Alternatives
 
