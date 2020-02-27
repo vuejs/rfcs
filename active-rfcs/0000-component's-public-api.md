@@ -199,6 +199,45 @@ Or function refs:
 </script>
 ```
 
+Alternative way of accessing refs:
+
+```html
+<template>
+  <input ref="input">
+</template>
+
+<script>
+  export const GET_INPUT_REF = Symbol()
+  
+  export default {
+    name: 'MyInput',
+    provide() {
+      return {
+        [GET_INPUT_REF]: () => {
+          return this.$refs.input
+        }
+      }
+    },
+  }
+</script>
+```
+
+```html
+<template>
+  <MyInput ref="input">
+</template>
+
+<script>
+  import { GET_INPUT_REF } from 'MyInput.vue'
+  
+  export default {
+    mounted() {
+      console.log(this.$refs.input[GET_INPUT_REF]())
+    }
+  }
+</script>
+```
+
 Example using Composition API:
 
 ```html
