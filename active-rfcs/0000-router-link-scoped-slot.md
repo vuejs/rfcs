@@ -44,8 +44,8 @@ This implementation would:
 
 - generate an anchor (`a`) element and apply the corresponding properties:
   - `href` with the destination
-  - `class` with `router-link-active` or `router-link-exact-active` (can be changed through prop or global option)
-  - click listener to trigger navigation through `router.push` or `router.replace` with a `event.preventDefault`
+  - `class` with `router-link-active` and/or `router-link-exact-active` (can be changed through prop or global option)
+  - click listener to trigger navigation through `router.push` or `router.replace` with a `event.preventDefault` (except when the link is clicked using a modifier like <kbd>⌘</kbd> or <kbd>Ctrl</kbd>)
 - Put anything passed as the children of the anchor
 - Pass down any attributes that aren't props to the `a` element
 
@@ -68,8 +68,8 @@ I am not sure about keeping the `tag` prop if it can be replaced which a scoped 
 is equivalent to
 
 ```vue
-<router-link to="/" v-slot="{ navigate, classes }">
-  <button role="link" @click="navigate" :class="classes">
+<router-link to="/" v-slot="{ navigate, isActive, isExactActive }">
+  <button role="link" @click="navigate" :class="{ active: isActive, 'active-exact': isExactActive }">
     <Icon>home</Icon><span class="xs-hidden">Home</span>
   </button>
 </router-link>
@@ -82,9 +82,9 @@ is equivalent to
 A scoped slot would get access to every bit of information needed to provide a custom integration and allows applying the active classes, click listener, links, etc at any level. This would allow a better integration with frameworks like Bootstrap (https://getbootstrap.com/docs/4.3/components/navbar/). The idea would be to create a Vue component to avoid the boilerplate like bootstrap-vue does (https://bootstrap-vue.js.org/docs/components/navbar/#navbar)
 
 ```vue
-<router-link to="/" v-slot="{ href, navigate, classes }">
-  <li :class="classes">
-    <a :href="href" @click.prevent="navigate">
+<router-link to="/" v-slot="{ href, navigate, isActive }">
+  <li :class="{ 'active': isActive }">
+    <a :href="href" @click="navigate">
       <Icon>home</Icon><span class="xs-hidden">Home</span>
     </a>
   </li>
@@ -93,35 +93,18 @@ A scoped slot would get access to every bit of information needed to provide a c
 
 ### Accessible variables
 
-The variables fall into multiple categories. In documenation, they should be split per usage as [@Akryum pointed out](https://github.com/vuejs/rfcs/pull/34#issuecomment-491381810). This is important to overcome the fact that there is a big amount of available information
-
-#### Essential
-
-These are what you will likely *always* use
+The slot should provide values that are computed inside `router-link`:
 
 - `href`: resolved relative url to be added to an anchor tag (contains the base if provided while route.fullPath doesn't)
 - `route`: resolved normalized route location from the `to` (same shape as `$route`)
-- `navigate`: function to trigger navigation (usually attached to a click)
-- `isActive`: true whenever `router-link-active` is applied. This is when the _path_ section of the href (without the query and hash) is included (as in `currentLocation.path.startsWith(location.path)`). Can be modified by `exact` prop
-- `isExactActive`: true whenever `router-link-exact-active` is aplied. Only applies when the _fullPath_ is matched (including query and hash) (as in `currentLocation.fullPath === location.fullPath`). Can be modified by `exact` prop.
-
-#### Convenience
-
-These are here for convenience and could be replicated in user land
-
-- `classes`: classes to be applied to an element. Will contain `router-link-active` and/or `router-link-exact-active`
-- `isSameFullPath`: true if the fullPath
-- `isSubPath`: true if the path section of the link is included in current route as in `$route.path.includes(route.path)`
-- `isSamePath`: true if the path section of the link matches current route (equality comparison between strings)
-- `isSameQuery`: true if the query of the link matches current query (custom equality comparison between objects)
-- `isSameHash`: true if the hash of the link matches current hash (equality comparison between strings)
-- `isDescendant`: true if the route record matched by the `to` location is a descendant of the record matched by the current route (as in `children` (works for nested `children` as well))
-- `isAscendant`: true if the route record matched by the `to` location is an ascendant of the record matched by the current route (as in current route being in `children`(works for nested routes as well))
+- `navigate`: function to trigger navigation (usually attached to a click). Also calls `preventDefault` if the click is directly pressed.
+- `isActive`: true whenever `router-link-active` is applied. Can be modified by `exact` prop
+- `isExactActive`: true whenever `router-link-exact-active` is aplied. Can be modified by `exact` prop.
 
 # Drawbacks
 
 - Whereas it's possible to keep existing behaviour working and only expose a new behaviour with scoped slots, it will still prevent us from fixing existing issues with current implementation. That's why there are some breaking changes, to make things more consistent.
-- Too many scoped props, only `isSameQuery`, `isDescendant` and `isAscendant` are difficult to replicate in userland.
+- No access to the default `router-link` classes like `router-link-active` and `router-link-active-exact`.
 
 # Alternatives
 
@@ -133,5 +116,3 @@ These are here for convenience and could be replicated in user land
 - Deprecate `tag` and `event` with a message and link to documentation the remove in v4
 
 # Unresolved questions
-
-- Do we need other information in the scoped slot?
