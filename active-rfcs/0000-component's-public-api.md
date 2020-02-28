@@ -70,7 +70,7 @@ After the change you'll be required to expose your data and methods explicitly.
     name: 'Parent',
     mounted() {
       this.$refs.input.focus() // exposed
-      this.$refs.input.blue() // error, not exposed
+      this.$refs.input.blur() // error, not exposed
     }
   }
 </script>
