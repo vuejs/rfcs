@@ -376,6 +376,7 @@ Using events to expose your component's public interface:
 # Adoption strategy
 
 Components containing any data required by the parent component via `refs` would be required to explicitly declare their public interface.
+A `loose` mode configuration in `createApp` could be provided to opt-out of this behaviour.
 
 # Unresolved questions
 
