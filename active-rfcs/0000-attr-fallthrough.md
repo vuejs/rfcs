@@ -5,11 +5,11 @@
 
 # Summary
 
-- Implicit fallthrough now by default only applies for a whitelist of attributes (`class`, `style`, event listeners, and a11y attributes).
+- Implicit fallthrough now by default only applies for a whitelist of attributes (`class`, `style`, event listeners, a11y attributes, and data attributes).
 
 - Implicit fallthrough now works consistently for both stateful and functional components (as long as the component has a single root node).
 
-- `this.$attrs` now contains everything passed to the component minus those explicitly declared as props, including `class`, `style`, and listeners. `this.$listeners` is removed.
+- `this.$attrs` now contains everything passed to the component minus those explicitly declared as props, including `class`, `style`, and listeners. (`this.$listeners` is removed)
 
 # Motivation
 
@@ -153,7 +153,9 @@ Func.props = { /* ... */ }
 
 # Drawbacks
 
-- Attributes not in the whitelist will now need to be explicitly applied in the child component. However, such cases should be rare and we can detect and warn the presence of such attributes in the compatibility build.
+Having a hard-coded whitelist is not ideal, but we are making a pragmatic trade-off here since the whitelist should cover the vast majority of use cases where implicit fallthrough provides convenience value and is expected.
+
+Attributes not in the whitelist will now need to be explicitly applied in the child component. However, such cases should be rare and we can detect and warn the presence of such attributes in the compatibility build.
 
 # Adoption strategy
 
