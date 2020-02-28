@@ -47,6 +47,7 @@ Implicit fallthrough now by default only affects a whitelist of attributes:
 - `style`
 - `v-on` event listeners (as `onXXX` props)
 - Accessibility attributes: `aria-xxx` and `role`.
+- Data attributes: `data-xxx`.
 
 To qualify for the whitelist, an attribute must:
 
