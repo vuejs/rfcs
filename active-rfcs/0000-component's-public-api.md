@@ -5,22 +5,22 @@
 
 # Summary
 
-Use `provide` to define component's public API available for parent components via `refs`.
+Introduce a new `expose` option to declare component's public API available for parent components via `refs`. Restrict access to component's context by default.
 
 # Basic example
 
-Right now you can access the whole component's context without any limitations when using `refs`.
+At the moment you can access the whole component's context without any limitations when using `refs`.
 
 ```html
 <template>
-  <div />
+  <input ref="input">
 </template>
 
 <script>
   export default {
-    name: 'Foo',
+    name: 'MyInput',
     methods: {
-      someMethod() {}
+      focus() { this.$refs.input.focus() }
     }
   }
 </script>
@@ -28,14 +28,14 @@ Right now you can access the whole component's context without any limitations w
 
 ```html
 <template>
-  <Foo ref="foo" />
+  <MyInput ref="input" />
 </template>
 
 <script>
   export default {
-    name: 'Bar',
+    name: 'Parent',
     mounted() {
-      this.$refs.foo.someMethod() // you can access anything on the context
+      this.$refs.input.focus() // you can access anything on the context
     }
   }
 </script>
@@ -45,21 +45,16 @@ After the change you'll be required to expose your data and methods explicitly.
 
 ```html
 <template>
-  <div />
+  <input ref="input">
 </template>
 
 <script>
   export default {
-    name: 'Foo',
-    provide() {
-      const { someMethod } = this;
-      return {
-        someMethod,
-      }
-    },
+    name: 'MyInput',
+    expose: ['focus'],
     methods: {
-      someMethod() {},
-      anotherMethod() {},
+      focus() { this.$refs.input.focus() },
+      blur() { this.$refs.input.blur() },
     }
   }
 </script>
@@ -67,15 +62,15 @@ After the change you'll be required to expose your data and methods explicitly.
 
 ```html
 <template>
-  <Foo ref="foo" />
+  <MyInput ref="input" />
 </template>
 
 <script>
   export default {
-    name: 'Bar',
+    name: 'Parent',
     mounted() {
-      this.$refs.foo.someMethod() // exposed
-      this.$refs.foo.anotherMethod() // error, not exposed
+      this.$refs.input.focus() // exposed
+      this.$refs.input.blue() // error, not exposed
     }
   }
 </script>
@@ -93,48 +88,147 @@ To fix these issues components would be required to explicitly declare their pub
 
 # Detailed design
 
-Components should not be able to directly access other components context anymore. To declare component's public interface use `provide` and pass any data that should be exposed. The object returned in `provide` would serve as a main access point for the accessor component. To eliminate conflicts and provide better cohesion use `Symbol` for exposed data property names.
+Components should not be able to directly access other components context anymore. To declare component's public interface authors must use a new `expose` options and describe the data that should be exposed.
 
-A component with such an interface could look like this:
+## `expose` option
+
+A several `expose` configurations should be supported.
+
+### Array of strings
 
 ```html
-<template>
-  <input ref="input">
-</template>
-
 <script>
-  export const FOCUS_INPUT = Symbol()
-  
   export default {
-    name: 'MyInput',
-    provide() {
-      const { focusInput } = this
+    expose: ['foo', 'bar', 'baz'],
+    data() {
       return {
-        [FOCUS_INPUT]: focusInput
+        foo: null
       }
     },
     methods: {
-      focusInput() {
-        this.$refs.input.focus()
-      }
+      bar() {},
+    },
+    computed: {
+      baz() {}
     }
   }
 </script>
 ```
 
-This interface could be utilized as following:
+### Object syntax
+
+```html
+<script>
+  export const BAR_SYMBOL = Symbol()
+
+  export default {
+    expose: {
+      foo: 'bar', // expose 'foo' as 'bar'
+      bar: BAR_SYMBOL // expose 'bar' as a BAR_SYMBOL
+    },
+    data() {
+      return {
+        foo: null
+      }
+    },
+    methods: {
+      bar() {}
+    }
+  }
+</script>
+```
+
+### Function
+
+Functional configuration is more complicated because you can easily loose reactivity there.
+
+```html
+<script>
+  export default {
+    expose() {
+      const { foo, bar } = this
+      return {
+        foo, // not reactive
+        bar
+      }
+    },
+    data() {
+      return {
+        foo: null
+      }
+    },
+    methods: {
+      bar() {},
+    }
+  }
+</script>
+```
+
+To solve this issue you could either go with the Composition API or wrap your data inside an object.
+
+```html
+<script>
+  export default {
+    expose() {
+      const { foo, bar } = this
+      return {
+        foo, // foo's value is reactive
+        bar
+      }
+    },
+    data() {
+      return {
+        foo: {
+          value: null
+        }
+      }
+    },
+    methods: {
+      bar() {},
+    }
+  }
+</script>
+```
+
+**Composition API example**
+
+```html
+<script>
+  import { ref } from 'vue'
+
+  export default {
+    name: 'MyComponent',
+    setup() {
+      const foo = ref(null)
+      const bar = () => {}
+      return {
+        foo,
+        bar
+      }
+    },
+    expose() {
+      const { foo, bar } = this
+      return {
+        foo, // reactive
+        bar
+      }
+    },
+  }
+</script>
+```
+
+The exposed interface above could be utilized as following:
 
 ```html
 <template>
-  <MyInput :ref="myInput" />
+  <MyComponent :ref="myComponent" />
 </template>
 
 <script>
-  import { FOCUS_INPUT } from 'MyInput.vue'
-  
   export default {
     mounted() {
-      this.$refs.myInput[FOCUS_INPUT]()
+      console.log(this.$refs.myComponent.foo.value)
+      this.$refs.myComponent.bar()
     }
   }
 </script>
@@ -151,7 +245,7 @@ To expose refs use `mounted` hook and object as a wrapper to preserve reactivity
   export const INPUT_EXPOSED = Symbol()
   
   export default {
-    provide() {
+    expose() {
       const { exposed } = this
       return {
         [INPUT_EXPOSED]: exposed
@@ -182,7 +276,7 @@ Or function refs:
   export const INPUT_EXPOSED = Symbol()
   
   export default {
-    provide() {
+    expose() {
       const { exposed } = this
       return {
         [INPUT_EXPOSED]: exposed
@@ -211,7 +305,7 @@ Alternative way of accessing refs:
   
   export default {
     name: 'MyInput',
-    provide() {
+    expose() {
       return {
         [GET_INPUT_REF]: () => {
           return this.$refs.input
@@ -238,78 +332,15 @@ Alternative way of accessing refs:
 </script>
 ```
 
-Example using Composition API:
-
-```html
-<template>
-  <input ref="inputRef">
-</template>
-
-<script>
-  import { ref } from 'vue'
-  export const INPUT_REF = Symbol()
-  
-  export default {
-    name: 'MyInput',
-    setup() {
-      const inputRef = ref(null)
-      provide(INPUT_REF, inputRef)
-
-      return {
-        inputRef
-      }
-    }
-  }
-</script>
-```
-
-You'll then be able to use it as a ref:
-
-```html
-<template>
-  <MyInput ref="myInput" />
-</template>
-
-<script>
-  import { INPUT_REF } from 'MyInput.vue'
-  
-  export default {
-    setup() {
-      const myInput = ref(null)
-      onMounted(() => {
-        console.log(myInput.value[INPUT_REF].value)
-      })
-
-      return {
-        myInput
-      }
-    }
-  }
-</script>
-```
-
 # Drawbacks
 
-* Should be triggered after data init, `refs` then would require a lot of fiddling around to preserve reactivity (wrapping exposed values inside an object at a minimum)
-* Provides value down the render tree as a side-effect, which may not be the desired behaviour
-* This could cause performance penalty if any injections are used since we have to cycle through every provision in the vnode tree from bottom to top
+* `expose` should be executed after data init, `refs` then would require a lot of fiddling around to preserve reactivity (wrapping exposed values with an object at a minimum)
+* Could be difficult to implement
+* Not backwards compatible (but could only warn in compatibility build for example)
 
 # Alternatives
 
-* Use dedicated hook instead of `provide` but with exactly the same API. Could be called `expose`.
-
-  **Pros**:
-
-  * Does not cause conflicts with other provisions
-  * Clear separation of concerns
-
-  **Cons**:
-
-  * One more option to learn about
-  * Could be confusing to pick one between the `provide` and `expose`
-  * Does not fix the issue with `refs`
-
-* Use events to expose your component's public interface:  
+Using events to expose your component's public interface:  
   ```html
   <template>
     <input ref="input">
@@ -345,3 +376,32 @@ You'll then be able to use it as a ref:
 # Adoption strategy
 
 Components containing any data required by the parent component via `refs` would be required to explicitly declare their public interface.
+
+# Unresolved questions
+
+* Should it work with mixins?
+  
+  **Pros**:
+
+  * Clear contract between mixins and component
+
+  **Cons**:
+
+  * Would require a lot of changes if you use mixins extensively
+  * Rises entry barrier for mixin usage
+  * Does not solve other issues with mixins (implicit props, extending context)
+  * Could be complicated to implement (mixin can extend context but should only access exposed parts of it)
+  * Unclear whether mixins should be able to extend the `expose` property
+
+* Should it work with `$parent` access?
+
+* Should it work in tests?
+  
+  **Pros**:
+
+  * Explicit testing interface
+  * Tests for `expose` interface specifically
+
+  **Cons**:
+
+  * Could lead to exposing too much data just for testing which defeats the purpose
