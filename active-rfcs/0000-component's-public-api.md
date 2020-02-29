@@ -337,6 +337,8 @@ Alternative way of accessing refs:
 * `expose` should be executed after data init, `refs` then would require a lot of fiddling around to preserve reactivity (wrapping exposed values with an object at a minimum)
 * Could be difficult to implement
 * Not backwards compatible (but could only warn in compatibility build for example)
+* Increased bundle size (could be disabled in production)
+* Decreased performance: a mechanism like a proxy is necessary to prevent specific properties to be accessible (could be disabled in production)
 
 # Alternatives
 
