@@ -76,7 +76,7 @@ const routes = [
 ]
 ```
 
-If the current route is `/parent/1/child2`, these links will be active:
+If the current route is `/parent/1/child/2`, these links will be active:
 
 | url               | active | exact active |
 | ----------------- | ------ | ------------ |
