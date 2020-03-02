@@ -38,7 +38,7 @@ import App from './App.vue'
 
 const app = createApp(App)
 
-app.config.ignoredElements = [/^app-/]
+app.config.isCustomElement = tag => tag.startsWith('app-')
 app.use(/* ... */)
 app.mixin(/* ... */)
 app.component(/* ... */)
