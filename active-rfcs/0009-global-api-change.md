@@ -7,7 +7,7 @@
 
 Re-design app bootstrapping and global API.
 
-- Global APIs that globally mutate Vue's behavior are now moved to **app instances** created the new `createApp` method, and their effects are now scoped to that app instance only.
+- Global APIs that globally mutate Vue's behavior are now moved to **app instances** created by the new `createApp` method, and their effects are now scoped to that app instance only.
 
 - Global APIs that are do not mutate Vue's behavior (e.g. `nextTick` and the APIs proposed in [Advanced Reactivity API](https://github.com/vuejs/rfcs/pull/22)) are now named exports as specified in [the Global API Treeshaking RFC](https://github.com/vuejs/rfcs/blob/treeshaking/active-rfcs/0000-global-api-treeshaking.md).
 
