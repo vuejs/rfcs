@@ -70,7 +70,8 @@ const routes = [
       // empty child
       { path: '' },
       // child with id
-      { path: 'child/:id' }
+      { path: 'child/:id' },
+      { path: 'child-second/:id' }
     ]
   }
 ]
@@ -78,14 +79,35 @@ const routes = [
 
 If the current route is `/parent/1/child/2`, these links will be active:
 
-| url               | active | exact active |
-| ----------------- | ------ | ------------ |
-| /parent/1/child/2 | ✅     | ✅           |
-| /parent/1/child/3 | ❌     | ❌           |
-| /parent/1         | ✅     | ❌           |
-| /parent/2         | ❌     | ❌           |
-| /parent/2/child/2 | ❌     | ❌           |
-|                   |        |              |
+| url                      | active | exact active |
+| ------------------------ | ------ | ------------ |
+| /parent/1/child/2        | ✅     | ✅           |
+| /parent/1/child/3        | ❌     | ❌           |
+| /parent/1/child-second/2 | ❌     | ❌           |
+| /parent/1                | ✅     | ❌           |
+| /parent/2                | ❌     | ❌           |
+| /parent/2/child/2        | ❌     | ❌           |
+| /parent/2/child-second/2 | ❌     | ❌           |
+|                          |        |              |
+
+## Unrelated routes
+
+Routes that are unrelated from a record point of view but share a common path are no longer active.
+
+E.g., given these routes:
+
+```js
+const routes = [{ path: '/movies' }, { path: '/movies/new' }]
+```
+
+If the current route is `/parent/new`, these links will be active:
+
+| url         | active | exact active |
+| ----------- | ------ | ------------ |
+| /movies     | ❌     | ❌           |
+| /movies/new | ✅     | ✅           |
+
+**This behavior is different from actual behavior**
 
 ## Repeated params
 
