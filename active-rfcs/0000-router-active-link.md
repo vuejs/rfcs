@@ -88,7 +88,6 @@ If the current route is `/parent/1/child/2`, these links will be active:
 | /parent/2                | ❌     | ❌           |
 | /parent/2/child/2        | ❌     | ❌           |
 | /parent/2/child-second/2 | ❌     | ❌           |
-|                          |        |              |
 
 ## Unrelated routes
 
@@ -97,17 +96,49 @@ Routes that are unrelated from a record point of view but share a common path ar
 E.g., given these routes:
 
 ```js
-const routes = [{ path: '/movies' }, { path: '/movies/new' }]
+const routes = [
+  { path: '/movies' },
+  { path: '/movies/new' },
+  { path: '/movies/search' }
+]
 ```
 
-If the current route is `/parent/new`, these links will be active:
+If the current route is `/movies/new`, these links will be active:
 
-| url         | active | exact active |
-| ----------- | ------ | ------------ |
-| /movies     | ❌     | ❌           |
-| /movies/new | ✅     | ✅           |
+| url            | active | exact active |
+| -------------- | ------ | ------------ |
+| /movies        | ❌     | ❌           |
+| /movies/new    | ✅     | ✅           |
+| /movies/search | ❌     | ❌           |
 
-**This behavior is different from actual behavior**
+Note: **This behavior is different from actual behavior**.
+
+It's worth noting, it is possible to nest them to still benefit from links being _active_:
+
+```js
+const routes = [
+  {
+    path: '/movies',
+    // we need this to render the children (see note below)
+    component: { render: () => h('RouterView') },
+    children: [
+      { path: 'new' },
+      // different child
+      { path: 'search' }
+    ]
+  }
+]
+```
+
+If the current route is `/movies/new`, these links will be active:
+
+| url            | active | exact active |
+| -------------- | ------ | ------------ |
+| /movies        | ✅     | ❌           |
+| /movies/new    | ✅     | ✅           |
+| /movies/search | ❌     | ❌           |
+
+Note: To make this easier to use, we could maybe allow `component` to be absent and internally behave as if there where a `component` option that renders a `RouterView` component
 
 ## Repeated params
 
@@ -116,25 +147,27 @@ With repeating params like
 - `/articles/:id+`
 - `/articles/:id*`
 
-**All params** must match, with the same exact order for a link to be both, _active_ and _exact active_.
+**All params** must match, with the same exact order for a link **to be both**, _active_ and _exact active_.
 
 ## `exact` prop
 
 Before these changes, `exact` worked by matching the whole location. Its main purpose was to get around the `/` caveat but it also checked `query` and `hash`.
 Because of this, with the new active behavior, the [`exact` prop](https://router.vuejs.org/api/#exact) only purpose would be for a link to display `router-link-active` only if `router-link-exact-active` is also present. But this isn't really useful anymore as we can directly target the element using the `router-link-exact-active` class.
-Because of this, I think the `exact` prop can be removed from `router-link`. This outdates https://github.com/vuejs/rfcs/pull/37 while still introducing the behavior of `exact` for the path section of the loction.
+Because of this, I think the `exact` prop can be removed from `router-link`. This outdates https://github.com/vuejs/rfcs/pull/37 while still introducing the behavior of `exact` for the path section of the loction like explained above.
 
 Some users will probably have to change the class used in CSS from `router-link-exact-active` to `router-link-active` to adapt to this change.
 
 # Drawbacks
 
-- This is not backwards compatible. It's probably worth adding `exact-path` in Vue Router v3
+- This is not backwards compatible. It's probably worth adding `exact-path` in Vue Router v3.
 - Users using the `exact` prop will have to rely on the `router-link-exact-active` or use the `exact-active-class` prop.
+- The function `includesQuery` must be added by the user.
 
 # Alternatives
 
-- Leaving the `exact` prop to only apply `router-link-active` when `router-link-exact-active`
-- Keep _active_ behavior of doing an inclusive match of `query` and `hash`
+- Leaving the `exact` prop to only apply `router-link-active` when `router-link-exact-active` as also applied.
+- Keep _active_ behavior of doing an inclusive match of `query` and `hash` instead of just relying on the params.
+- Changing _active_ behavior to only apply to the `path` section of a route (this includes params) and ignore `query` and `hash`.
 
 # Adoption strategy
 
