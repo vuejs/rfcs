@@ -199,7 +199,7 @@ state.count++ // -> 2
 
 **Here `double` is an object that we call a "ref", as it serves as a reactive reference to the internal value it is holding.**
 
-> You might be aware that Vue already has the concept of "refs", but only for referencing DOM elements or component instances in templates ("template refs"). Check out [this](./api.html#template-refs) to see how the new refs system can be used for both logical state and template refs.
+> You might be aware that Vue already has the concept of "refs", but only for referencing DOM elements or component instances in templates ("template refs"). Check out [this](https://composition-api.vuejs.org/api.html#template-refs) to see how the new refs system can be used for both logical state and template refs.
 
 In addition to computed refs, we can also directly create plain mutable refs using the `ref` API:
 
