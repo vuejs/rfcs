@@ -38,7 +38,7 @@ Given a nested route:
 ```js
 {
   path: '/parent',
-  meta: { nested: { requiresAuth: true, isChild: false } },
+  meta: { requiresAuth: true, isChild: false },
   children: [
     { path: 'child', meta: { isChild: true }}
   ]
