@@ -24,6 +24,7 @@ The issues mentioned above are hard or impossible to implement in userland where
 ```
 
 ```js
+// this is only necessary if we care about matching the query
 function includesQuery(outter, inner) {
   for (let key in inner) {
     let innerValue = inner[key]
@@ -45,6 +46,7 @@ function includesQuery(outter, inner) {
 ```
 
 They also make more sense from a router perspective because links will be active based on the route record being active or not. This is specially important for nested routes and aliases which currently are not active if they do not share a part of the current url with the router-link location.
+It also makes more sense from a navigation perspective for an active link not to trigger a new navigation (except in the case of nested routes where it could be a navigation).
 
 # Detailed design
 
@@ -89,7 +91,7 @@ If the current route is `/parent/1/child/2`, these links will be active:
 | /parent/2/child/2        | ❌     | ❌           |
 | /parent/2/child-second/2 | ❌     | ❌           |
 
-## Unrelated routes
+## Unrelated but similiar routes
 
 Routes that are unrelated from a record point of view but share a common path are no longer active.
 
@@ -139,6 +141,59 @@ If the current route is `/movies/new`, these links will be active:
 | /movies/search | ❌     | ❌           |
 
 Note: To make this easier to use, we could maybe allow `component` to be absent and internally behave as if there where a `component` option that renders a `RouterView` component
+
+## Alias
+
+Given that an alias is only a different `path` while keeping everything else on a record, it makes sense for aliases to be active when the `path` they are aliasing is matched and vice versa.
+
+E.g., given these routes:
+
+```js
+const routes = [{ path: '/movies', alias: ['/films'] }]
+```
+
+If the current route is `/movies` **or** `/films`, both links will be active:
+
+| url     | active | exact active |
+| ------- | ------ | ------------ |
+| /movies | ✅     | ✅           |
+| /films  | ✅     | ✅           |
+
+### Nested aliases
+
+The behavior is similar when dealing with nested children of an aliased route.
+
+E.g., given these routes:
+
+```js
+const routes = [
+  {
+    path: '/parent/:id',
+    alias: '/p/:id',
+    children: [
+      // empty child
+      { path: '' },
+      // child with id
+      { path: 'child/:id', alias: 'c/:id' }
+    ]
+  }
+]
+```
+
+If the current route is `/parent/1/child/2`, `/p/1/child/2`, `/p/1/c/2`, or, `/parent/1/c/2` these links will be active:
+
+| url               | active | exact active |
+| ----------------- | ------ | ------------ |
+| /parent/1/child/2 | ✅     | ✅           |
+| /parent/1/c/2     | ✅     | ✅           |
+| /p/1/child/2      | ✅     | ✅           |
+| /p/1/c/2          | ✅     | ✅           |
+| /p/1/child/3      | ❌     | ❌           |
+| /parent/1/child/3 | ❌     | ❌           |
+| /parent/1         | ✅     | ❌           |
+| /p/1              | ✅     | ❌           |
+| /parent/2         | ❌     | ❌           |
+| /p/2              | ❌     | ❌           |
 
 ## Repeated params
 
