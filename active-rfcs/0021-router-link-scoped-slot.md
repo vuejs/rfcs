@@ -1,7 +1,7 @@
 - Start Date: 2019-04-29
 - Target Major Version: Vue (2.x / 3.x) Vue Router (3.x / 4.x)
 - Reference Issues: https://github.com/vuejs/vue-router/issues/2611,
-- Implementation PR: (leave this empty)
+- Implementation PR: Implemented in both [v3.x](https://github.com/vuejs/vue-router/commit/e289ddee99fcc3129e65485e32f394c1308bb98b) and v4.x
 
 # Summary
 
