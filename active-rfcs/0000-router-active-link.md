@@ -195,6 +195,75 @@ If the current route is `/parent/1/child/2`, `/p/1/child/2`, `/p/1/c/2`, or, `/p
 | /parent/2         | ❌     | ❌           |
 | /p/2              | ❌     | ❌           |
 
+### Absolute nested aliases
+
+Nested children can have an absolute `path` by making it start with `/`, in this scenario the same rules apply. Given these routes:
+
+E.g., given these routes:
+
+```js
+const routes = [
+  {
+    path: '/parent/:id',
+    alias: '/p/:id',
+    name: 'parent',
+    children: [
+      // empty child
+      { path: '', alias: ['alias', '/p_:id'], name: 'child' },
+      // child with absolute path. we need to add an `id` because the parent needs it
+      { path: '/p_:id/absolute-a', alias: 'as-absolute-a' },
+      // same as above but the alias is absolute
+      { path: 'as-absolute-b', alias: '/p_:id/absolute-b' }
+    ]
+  }
+]
+```
+
+If the current route is `/p_1/absolute-a`, `/p/1/as-absolute-a`, or, `/parent/1/as-absolute-a`, these links will be active:
+
+| url                  | active | exact active |
+| -------------------- | ------ | ------------ |
+| /p/1/as-absolute-a   | ✅     | ✅           |
+| /p_1/absolute-a      | ✅     | ✅           |
+| /parent/1/absolute-a | ✅     | ✅           |
+| /parent/2/absolute-a | ❌     | ❌           |
+| /parent/1/absolute-b | ❌     | ❌           |
+| /p/1/absolute-b      | ❌     | ❌           |
+| /p_1/absolute-b      | ❌     | ❌           |
+| /parent/1            | ✅     | ❌           |
+| /p/1                 | ✅     | ❌           |
+| /parent/1/alias      | ✅     | ❌           |
+| /p/1/alias           | ✅     | ❌           |
+| /p_1                 | ✅     | ❌           |
+| /parent/2            | ❌     | ❌           |
+| /p/2                 | ❌     | ❌           |
+
+Notice how the empty `path` record is _active_ but not _exact active_ differently from the other child `/p/1/absolute-b`. All its aliases are _active_ as well because they are aliases of an empty `path`. If it was the other way around: the `path` wasn't empty but one of the aliases was an empty `path`, then **none** of them would be active because the original `path` takes precedence over aliases.
+
+### Named nested routes
+
+If the url is resolved through the `name` of the parent, in this case `parent`, **it will not include the empty path child route**. This is important because they both resolve to the same url but when used in `router-link`'s `to` prop, they would yield different results when it comes to being _active_ and/or _exact active_. This is consistent with what they render being different and the rest of the active behavior.
+
+E.g., given the routes from the previous example, **if the current location is `/parent/1` and, both the parent and child views are rendering, meaning we are effectively at `{ name: 'child' }` and not at `{ name: 'parent' }`**, here is a similar table to the ones before but also including `to`:
+
+| `to`'s value                              | resolved url              | active | exact active |
+| ----------------------------------------- | ------------------------- | ------ | ------------ |
+| `{ name: 'parent', params: { id: '1' } }` | `/parent/1` (parent)      | ✅     | ❌           |
+| `'/parent/1'`                             | `/parent/1` (child)       | ✅     | ✅           |
+| `{ name: 'child', params: { id: '1' } }`  | `/parent/1` (child)       | ✅     | ✅           |
+| `'/p_1'`                                  | `/p_1` (child)            | ✅     | ✅           |
+| `'/parent/1/alias'`                       | `/parent/1/alias` (child) | ✅     | ✅           |
+
+But **if the current location is `{ name: 'parent' }`**, it will still yield the same url, `/parent/1`, but a different table:
+
+| `to`'s value                              | resolved url              | active | exact active |
+| ----------------------------------------- | ------------------------- | ------ | ------------ |
+| `{ name: 'parent', params: { id: '1' } }` | `/parent/1` (parent)      | ✅     | ✅           |
+| `'/parent/1'`                             | `/parent/1` (child)       | ❌     | ❌           |
+| `{ name: 'child', params: { id: '1' } }`  | `/parent/1` (child)       | ❌     | ❌           |
+| `'/p_1'`                                  | `/p_1` (child)            | ❌     | ❌           |
+| `'/parent/1/alias'`                       | `/parent/1/alias` (child) | ❌     | ❌           |
+
 ## Repeated params
 
 With repeating params like
