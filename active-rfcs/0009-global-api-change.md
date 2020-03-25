@@ -7,7 +7,7 @@
 
 Re-design app bootstrapping and global API.
 
-- Global APIs that globally mutate Vue's behavior are now moved to **app instances** created the new `createApp` method, and their effects are now scoped to that app instance only.
+- Global APIs that globally mutate Vue's behavior are now moved to **app instances** created by the new `createApp` method, and their effects are now scoped to that app instance only.
 
 - Global APIs that are do not mutate Vue's behavior (e.g. `nextTick` and the APIs proposed in [Advanced Reactivity API](https://github.com/vuejs/rfcs/pull/22)) are now named exports as specified in [the Global API Treeshaking RFC](https://github.com/vuejs/rfcs/blob/treeshaking/active-rfcs/0000-global-api-treeshaking.md).
 
@@ -38,9 +38,9 @@ new Vue({
 import { createApp } from 'vue'
 import App from './App.vue'
 
-const app = createApp()
+const app = createApp(App)
 
-app.config.ignoredElements = [/^app-/]
+app.config.isCustomElement = tag => tag.startsWith('app-')
 app.use(/* ... */)
 app.mixin(/* ... */)
 app.component(/* ... */)
@@ -78,7 +78,9 @@ In this proposal we introduce a new global API, `createApp`:
 ``` js
 import { createApp } from 'vue'
 
-const app = createApp()
+const app = createApp({
+  /* root component definition */
+})
 ```
 
 Calling `createApp` returns an **app instance**. An app instance provides an **app context**. The entire component tree mounted by the app instance share the same app context, which provides the configurations that were previously "global" in Vue 2.x.
@@ -99,6 +101,21 @@ An app instance exposes a subset of the current global APIs. The rule of thumb i
   - `Vue.use` -> `app.use`
 
 All other global APIs that do not globally mutate behavior are now named exports as proposed in [Global API Treeshaking](https://github.com/vuejs/rfcs/pull/19).
+
+The only exception is `Vue.extend`. Since the global `Vue` is no longer a new-able constructor, `Vue.extend` no longer makes sense in terms of constructor extension.
+
+- For extending a base component, the `extends` option should be used instead.
+- For TypeScript type-inference, use the new `defineComponent` global API:
+
+  ``` ts
+  import { defineComponent} from 'vue'
+
+  const App = defineComponent({
+    /* Type inference provided */
+  })
+  ```
+
+  Note that implementation-wise `defineComponent` does nothing - it simply returns the object passed to it. However, in terms of typing, the returned value has a synthetic type of a constructor for manual render function, TSX and IDE tooling support. This mismatch is an intentional trade-off.
 
 ## Mounting App Instance
 
@@ -166,7 +183,7 @@ This config option was introduced with the intention to support native custom el
 Vue.config.ignoredElements = ['my-el', /^ion-/]
 
 // after
-const app = Vue.createApp()
+const app = Vue.createApp({ /* ... */ })
 app.config.isCustomElement = tag => tag.startsWith('ion-')
 ```
 

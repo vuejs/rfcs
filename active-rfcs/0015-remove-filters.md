@@ -51,11 +51,7 @@ Considering there is a possibility of this proposal eventually landing, it is be
 
 That said, the proposal is still at stage 1 and hasn't received updates for quite a while, so it is not entirely clear whether it will end up landing, or whether it will land as it is designed right now. It is risky for Vue to adopt it as part of the official API, since we would be forced to introduce breaking changes if the spec ends up changing.
 
-On the technical side, if we want to enable pipeline operators in Vue templates:
-
-- Since template expressions are parsed using [Acorn](https://github.com/acornjs/acorn), we will need Acorn to support parsing pipeline operators. This should be possible via [Acorn plugins](https://github.com/acornjs/acorn#plugin-developments).
-
-- Generated render function can be piped through Babel (with [appropriate plugins](https://babeljs.io/docs/en/babel-plugin-proposal-pipeline-operator)) for actual transpilation.
+In Vue 3, template expression parsing uses [@babel/parser](https://babeljs.io/docs/en/babel-parser), and support for the pipeline operator syntax in templates can be enabled via the `expressionPlugins` compiler option (which is passed on to `@babel/parser` as its [`plugins` option](https://babeljs.io/docs/en/babel-parser#plugins)). Note that the Vue template compiler option only enables the parsing of the syntax - the generated render function needs to be further transpiled by Babel (which is done by default in the new webpack-based setup).
 
 # Adoption strategy
 
