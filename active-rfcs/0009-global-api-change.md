@@ -91,8 +91,10 @@ An app instance exposes a subset of the current global APIs. The rule of thumb i
 
 - Global configuration
   - `Vue.config` -> `app.config`
-    - `config.productionTip`: removed. ([details](#remove-config-productiontip))
-    - `config.ignoredElements` -> `config.isCustomElement`. ([details](#config-ignoredelements-config-iscustomelement))
+    - `config.productionTip`: removed. ([details](#remove-configproductiontip))
+    - `config.ignoredElements` -> `config.isCustomElement`. ([details](#configignoredelements---configiscustomelement))
+    - `config.keyCodes`: removed. ([details](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0014-drop-keycode-support.md))
+    - `config.optionMergeStrategies`: see [details](#configoptionmergestrategies-behavior-change) for behavior adjustments.
 - Asset registration APIs
   - `Vue.component` -> `app.component`
   - `Vue.directive` -> `app.directive`
@@ -193,6 +195,13 @@ app.config.isCustomElement = tag => tag.startsWith('ion-')
 
 - This will be a new top-level option in the Vue CLI config.
 
+## `config.optionMergeStrategies` Behavior Change
+
+While still supported, due to Vue 3's internal implementation changes, built-in options no longer need merge strategies, so they are no longer exposed. The default `app.config.optionMergeStrategies` is now an empty object. This means:
+
+- Users must now always provide their own merge strategy functions instead of reusing built-in strategies (e.g. you can no longer do `config.optionMergeStrategies.custom = config.optionMergeStrategies.props`)
+- It is no longer possible to overwrite merge strategies for built-in options.
+
 ## Attaching Globally Shared Instance Properties
 
 In 2.x, it was possible to inject globally shared instance properties by simply attaching them to `Vue.prototype`.
@@ -230,4 +239,5 @@ N/A
 - The transformation is straightforward (as seen in the basic example).
 - Moved methods can be replaced with stubs that emit warnings to guide migration.
 - A codemod can also be provided.
-- For `config.ingoredElements`, a compat shim can be easily provided.
+- `config.ingoredElements` can be supported in the compat build.
+- `config.optionMergeStrategies` built-in strategies can be supported in the compat build.
