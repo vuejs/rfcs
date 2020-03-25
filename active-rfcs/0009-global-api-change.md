@@ -25,6 +25,8 @@ Vue.mixin(/* ... */)
 Vue.component(/* ... */)
 Vue.directive(/* ... */)
 
+Vue.prototype.customProperty = () => {}
+
 new Vue({
   render: h => h(App)
 }).$mount('#app')
@@ -44,7 +46,9 @@ app.mixin(/* ... */)
 app.component(/* ... */)
 app.directive(/* ... */)
 
-app.mount('#app')
+app.config.globalProperties.customProperty = () => {}
+
+app.mount(App, '#app')
 ```
 
 # Motivation
@@ -129,6 +133,18 @@ app.mount(App, '#app', {
 })
 ```
 
+### Mounting Behavior Difference from 2.x
+
+When using the compiler-included build and mounting a root component with no template of its own, Vue will attempt to use the mount target element's content as template. Note the differences between the 3.x behavior and 2.x:
+
+- In 2.x, the root instance uses target element's `outerHTML` as template and replaces target element itself.
+
+- In 3.x, the root instance uses target element's `innerHTML` as template and only replaces target element's children.
+
+In most cases this should have no effect on how your app behaves, with the only side effect being that if the target element contains multiple children, the root instance will be mounted as a fragment and its `this.$el` will be pointing to the starting anchor node of the fragment (a DOM Comment node).
+
+In Vue 3, due to the availability of Fragments, it is recommended to use template refs for direct access to DOM nodes instead of relying on `this.$el`.
+
 ## Provide / Inject
 
 An app instance can also provide dependencies that can be injected by any component inside the app:
@@ -176,6 +192,21 @@ app.config.isCustomElement = tag => tag.startsWith('ion-')
 - If `config.isCustomElement` is assigned to when using a runtime-only build, a warning will be emitted instructing the user to pass the option in the build setup instead;
 
 - This will be a new top-level option in the Vue CLI config.
+
+## Attaching Globally Shared Instance Properties
+
+In 2.x, it was possible to inject globally shared instance properties by simply attaching them to `Vue.prototype`.
+
+In Vue 3, since the global `Vue` is no longer a constructor, this is no longer supported. Instead, shared instance properties should be attached to an app instance's `config.globalProperties` instead:
+
+``` js
+// Before
+Vue.prototype.$http = () => {}
+
+// After
+const app = createApp()
+app.config.globalProperties.$http = () => {}
+```
 
 # Drawbacks
 
