@@ -9,13 +9,13 @@ Introduce a dedicated API for defining async components.
 # Basic example
 
 ```js
-import { createAsyncComponent } from "vue"
+import { defineAsyncComponent } from "vue"
 
 // simple usage
-const AsyncFoo = createAsyncComponent(() => import("./Foo.vue"))
+const AsyncFoo = defineAsyncComponent(() => import("./Foo.vue"))
 
 // with options
-const AsyncFooWithOptions = createAsyncComponent({
+const AsyncFooWithOptions = defineAsyncComponent({
   loader: () => import("./Foo.vue"),
   loading: LoadingComponent,
   error: ErrorComponent,
@@ -33,13 +33,13 @@ Per changes introduced in [RFC-0008: Render Function API Change](https://github.
 ## Simple Usage
 
 ```js
-import { createAsyncComponent } from "vue"
+import { defineAsyncComponent } from "vue"
 
 // simple usage
-const AsyncFoo = createAsyncComponent(() => import("./Foo.vue"))
+const AsyncFoo = defineAsyncComponent(() => import("./Foo.vue"))
 ```
 
-`createAsyncComponent` can accept a loader function that returns a Promise resolving to the actual component.
+`defineAsyncComponent` can accept a loader function that returns a Promise resolving to the actual component.
 
 - If the resolved value is an ES module, the `default` export of the module will automatically be used as the component.
 
@@ -54,7 +54,7 @@ const AsyncFoo = createAsyncComponent(() => import("./Foo.vue"))
   }
 
   // after
-  const Foo = createAsyncComponent(() => new Promise((resolve, reject) => {
+  const Foo = defineAsyncComponent(() => new Promise((resolve, reject) => {
     /* ... */
   }))
   ```
@@ -62,9 +62,9 @@ const AsyncFoo = createAsyncComponent(() => import("./Foo.vue"))
 ## Options Usage
 
 ```js
-import { createAsyncComponent } from "vue"
+import { defineAsyncComponent } from "vue"
 
-const AsyncFooWithOptions = createAsyncComponent({
+const AsyncFooWithOptions = defineAsyncComponent({
   loader: () => import("./Foo.vue"),
   loading: LoadingComponent,
   error: ErrorComponent,
@@ -92,7 +92,7 @@ In 2.x, an async component with options is defined as
 Whereas in 3.x it is now:
 
 ```ts
-createAsyncComponent({
+defineAsyncComponent({
   loader: () => Promise<Component>
   // ...other options
 })
