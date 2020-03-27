@@ -17,8 +17,8 @@ const AsyncFoo = defineAsyncComponent(() => import("./Foo.vue"))
 // with options
 const AsyncFooWithOptions = defineAsyncComponent({
   loader: () => import("./Foo.vue"),
-  loading: LoadingComponent,
-  error: ErrorComponent,
+  loadingComponent: LoadingComponent,
+  errorComponent: ErrorComponent,
   delay: 200,
   timeout: 3000
 })
@@ -66,37 +66,47 @@ import { defineAsyncComponent } from "vue"
 
 const AsyncFooWithOptions = defineAsyncComponent({
   loader: () => import("./Foo.vue"),
-  loading: LoadingComponent,
-  error: ErrorComponent,
+  loadingComponent: LoadingComponent,
+  errorComponent: ErrorComponent,
   delay: 100, // default: 200
   timeout: 3000, // default: Infinity
-  suspensible: false // default: true
+  suspensible: false, // default: true
+  retryWhen: error => error.message.match(/fetch/) // default: () => false
+  maxRetries: 5 // default: 3
 })
 ```
 
-Options except `loader` and `suspensible` works exactly the same as in 2.x.
+- The `delay` and `timeout` options work exactly the same as 2.x.
 
 **Difference from 2.x:**
 
-The `component` option is replaced by the new `loader` option, which accepts the same loader function as in the simple usage.
+- The `component` option is replaced by the new `loader` option, which accepts the same loader function as in the simple usage.
 
-In 2.x, an async component with options is defined as
+  In 2.x, an async component with options is defined as
 
-```ts
-() => ({
-  component: Promise<Component>
-  // ...other options
-})
-```
+  ```ts
+  () => ({
+    component: Promise<Component>
+    // ...other options
+  })
+  ```
 
-Whereas in 3.x it is now:
+  Whereas in 3.x it is now:
 
-```ts
-defineAsyncComponent({
-  loader: () => Promise<Component>
-  // ...other options
-})
-```
+  ```ts
+  defineAsyncComponent({
+    loader: () => Promise<Component>
+    // ...other options
+  })
+  ```
+
+- 2.x `loading` and `error` options are renamed to `loadingComponent` and `errorComponent` respectively to be more explicit.
+
+## Retry Control
+
+The new `retryWhen` option expects a function that returns a boolean indicating whether the async component should retry when the loader promise rejects. The function receives the rejection error as the argument so it can conditionally retry only on certain types of errors.
+
+The `maxRetries` option determines how many retries are allowed (default: `3`). When max times of retries have been attempted, the component will go into error state (render the `errorComponent` if provided) with the last failed error.
 
 ## Using with Suspense
 
