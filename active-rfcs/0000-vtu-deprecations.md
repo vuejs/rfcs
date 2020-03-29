@@ -25,33 +25,43 @@ This PR aims to trim down the VTU API, replacing listed methods with improved do
 
 Rarely used, use `emitted` instead.
 
-    expect(wrapper.emitted('change')[0]).toEqual(['param1', 'param2'])
+```js
+expect(wrapper.emitted('change')[0]).toEqual(['param1', 'param2'])
+```
 
 **get -** [Link](https://vue-test-utils.vuejs.org/api/wrapper/#get) 
 
 Recently added, throws error if nothing is matched. Will be merged into `find`.
 
-    expect(wrapper.find('.notExisting')).toThrow()
-    
-    const element = wrapper.find('.notExisting') // will throw error
+```js
+expect(wrapper.find('.notExisting')).toThrow()
+
+const element = wrapper.find('.notExisting') // will throw error
+```
 
 **is -** [Link](https://vue-test-utils.vuejs.org/api/wrapper/#is)
 
 Not that much useful. Use `element.tagName` instead. 
 
-    expect(wrapper.element.tagName).toEqual('div')
+```js
+expect(wrapper.element.tagName).toEqual('div')
+```
 
 **isEmpty -** [Link](https://vue-test-utils.vuejs.org/api/wrapper/#isempty)
 
 Use custom matcher like [jest-dom](https://github.com/testing-library/jest-dom#tobeempty) on the element
 
-    expect(wrapper.element).toBeEmpty()
+```js
+expect(wrapper.element).toBeEmpty()
+```
 
 **isVisible** - [Link](https://vue-test-utils.vuejs.org/api/wrapper/#isvisible)
 
 Use custom matcher like [jest-dom](https://github.com/testing-library/jest-dom#tobevisible)
 
-    expect(wrapper.element).toBeVisible()
+```js
+expect(wrapper.element).toBeVisible()
+```
 
 **isVueInstance -** [Link](https://vue-test-utils.vuejs.org/api/wrapper/#isvueinstance)
 
@@ -65,18 +75,21 @@ Anti-pattern. Test what a prop does, not it's presence or value on the wrapper.
 
 Anti-pattern. Use `data` mounting option to set a specific state.
 
-    const wrapper = mount(Component, { 
-    	data () { 
-    		return { 
-    			field: 'overriden'  
-    		}  
-    	} 
-    })
-    
+```js
+const wrapper = mount(Component, { 
+    data () { 
+        return { 
+            field: 'overriden'  
+        }  
+    } 
+})
+``` 
 
 If you really need to update something after it mounts, just use the instance
 
-    wrapper.vm.field = 'updated field'
+```js
+wrapper.vm.field = 'updated field'
+```
 
 **setMethods** - [Link](https://vue-test-utils.vuejs.org/api/wrapper/#setmethods)
 
@@ -84,55 +97,63 @@ Anti-pattern. Vue does not support arbitrarily replacement of methods, nor shoul
 
 If you need to stub out an action, extract the hard parts away. Then you can unit test them as well.
 
-    // Component.vue
-    import { asyncAction } from 'actions'
-    const Component = {
-    	...,
-    	methods: {
-    		async someAsyncMethod() {
-    			this.result = await asyncAction()
-    		}
-    	}	
-    }
-    
-    // spec.js
-    import { asyncAction } from 'actions'
-    jest.mock('actions')
-    asyncAction.mockResolvedValue({ foo: 'bar' })
-    
-    // rest of your test
+```js
+// Component.vue
+import { asyncAction } from 'actions'
+const Component = {
+    ...,
+    methods: {
+        async someAsyncMethod() {
+            this.result = await asyncAction()
+        }
+    }	
+}
 
+// spec.js
+import { asyncAction } from 'actions'
+jest.mock('actions')
+asyncAction.mockResolvedValue({ foo: 'bar' })
+
+// rest of your test
+
+```
 **setProps -** [Link](https://vue-test-utils.vuejs.org/api/wrapper/#setprops)
 
 Overriding props after the component is mounted is a hack, which introduced lots of errors, especially with watchers in VTU Beta. 
 
 If you need to change a prop, set it on mounted.
 
-    mount(Component, {
-    	props: {
-    		propA: 'value'
-    	}
-    })
+```js
+mount(Component, {
+    props: {
+        propA: 'value'
+    }
+})
+```
 
 If you need to test a prop watcher, wrap your component and test like that.
 
-    import { h } from 'vue'
-    
-    const Parent = {
-    	data: () => ({ propA: 'A' })
-    	render() { return h(Component, { propA: this.propA }) }
-    }
-    
-    const wrapper = mount(Parent)
-    
-    wrapper.vm.propA = 'B'
-    // assert
+```js
+import { h } from 'vue'
 
+const Parent = {
+    data: () => ({ propA: 'A' })
+    render() { return h(Component, { propA: this.propA }) }
+}
+
+const wrapper = mount(Parent)
+
+wrapper.vm.propA = 'B'
+// assert
+
+```
 **text** - [Link](https://vue-test-utils.vuejs.org/api/wrapper/#text)
 
 Use the native element to assert text content.
 
-    expect(wrapper.element.text()).toContain('anything')
+```js
+expect(wrapper.element.text()).toContain('anything')
+```
 
 ### Mounting Options
 
@@ -144,13 +165,15 @@ Should not be needed any more.
 
 merged with **slots** now.  
 
-    mount(Component, {
-    	slots: {
-    		normalSlot: 'text',
-    		scopedSlot: '<div>{{ props.slot }}</div>',
-    		scopedSlot2: () => h('div', this.bar)		
-    	}
-    })
+```js
+mount(Component, {
+    slots: {
+        normalSlot: 'text',
+        scopedSlot: '<div>{{ props.slot }}</div>',
+        scopedSlot2: () => h('div', this.bar)		
+    }
+})
+```
 
 ## Drawbacks
 
