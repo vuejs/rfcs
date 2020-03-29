@@ -37,7 +37,7 @@ router.push('/url').catch(err => {
 In **all** other cases, the promise is resolved. We can know if the navigation failed or not by checking the resolved value:
 
 ```js
-promise.push('/dashboard').then(failure => {
+router.push('/dashboard').then(failure => {
   if (failure) {
     failure instanceof Error // true
     failure.type // NavigationFailure.canceled
@@ -58,7 +58,7 @@ It's the global equivalent of `router.push().catch()`
 The current behavior of Vue Router regarding the promise returned by `push` is inconsistent with `router.afterEach` and `router.onError`. Ideally, we should be able to catch all succeeded and failed navigations globally and locally but we can only do it locally.
 
 - `onError` is only triggered on thrown errors and `next(new Error())`
-- `afterEach` is only called iif there is a navigation
+- `afterEach` is only called if there is a navigation
 - `redirect` should behave the same as `next('/url')` in a Navigation guard
 
 The differences between the Promise resolution/rejection vs `router.afterEach` and `router.onError` are inconsistent and confusing.
