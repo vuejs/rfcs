@@ -140,3 +140,13 @@ An alternative `event` modifier name could be considered to better indicate a ty
 # Adoption strategy
 
 No migration steps required.
+
+# Unresolved questions
+
+## Object prop models
+
+When used with an object prop model should it emit an `update:object.prop` event, or `update:object` with the whole object containing an updated prop?
+
+```html
+<Foo v-model.prop="obj.value" />
+```
