@@ -59,7 +59,7 @@ The current behavior of Vue Router regarding the promise returned by `push` is i
 
 - `onError` is only triggered on thrown errors and `next(new Error())`
 - `afterEach` is only called if there is a navigation
-- `redirect` should behave the same as `next('/url')` in a Navigation guard
+- `redirect` should behave the same as `next('/url')` in a Navigation guard when it comes to the outcome of `router.push` and calls of `router.afterEach`/`router.onError`. The only differenc being that a `redirect` would only trigger leave guards and other before guards for the redirected location but not the original one
 
 The differences between the Promise resolution/rejection vs `router.afterEach` and `router.onError` are inconsistent and confusing.
 
