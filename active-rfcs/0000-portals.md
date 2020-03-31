@@ -108,7 +108,7 @@ When using a render function or JSX, component has to imported first, like any o
 import { Teleport, h } from "vue";
 export default {
   render() {
-    return h("div", [h(Teleport, { target: "#endofbody" }, ["Some content"])]);
+    return h("div", [h(Teleport, { to: "#endofbody" }, ["Some content"])]);
   },
   // or with JSX:
   render() {
