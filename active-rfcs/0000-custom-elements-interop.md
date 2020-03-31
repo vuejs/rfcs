@@ -31,7 +31,7 @@ The default generated render function code is (pseudo code):
 
 ```js
 function render() {
-  const component_plastic_button = resolveComponent("plastic-button")
+  const component_plastic_button = resolveComponent('plastic-button')
   return createVNode(component_plastic_button)
 }
 ```
@@ -42,7 +42,7 @@ If the user wishes to use a native custom element named `plastic-button`, the de
 
 ```js
 function render() {
-  return createVNode("plastic-button") // render as native element
+  return createVNode('plastic-button') // render as native element
 }
 ```
 
@@ -55,10 +55,10 @@ To instruct the compiler to treat `<plastic-button>` as a custom element:
   rules: [
     {
       test: /\.vue$/,
-      use: "vue-loader",
+      use: 'vue-loader',
       options: {
         compilerOptions: {
-          isCustomElement: tag => tag === "plastic-button"
+          isCustomElement: tag => tag === 'plastic-button'
         }
       }
     }
@@ -71,7 +71,7 @@ To instruct the compiler to treat `<plastic-button>` as a custom element:
   ```js
   const app = Vue.createApp(/* ... */)
 
-  app.config.isCustomElement = tag => tag === "plastic-button"
+  app.config.isCustomElement = tag => tag === 'plastic-button'
   ```
 
   Note the runtime config only affects runtime template compilation - it won't affect pre-compiled templates.
@@ -120,7 +120,7 @@ When using in-DOM templates, the template is subject to native HTML parsing rule
 
 In 2.x we recommended working around with these restrictions by using the `is` prop on a native tag:
 
-``` html
+```html
 <table>
   <tr is="blog-post-row"></tr>
 </table>
@@ -128,7 +128,7 @@ In 2.x we recommended working around with these restrictions by using the `is` p
 
 With the behavior change of `is` proposed above, we need to introduce a new directive `v-is` for working around these cases:
 
-``` html
+```html
 <table>
   <tr v-is="'blog-post-row'"></tr>
 </table>
