@@ -31,8 +31,8 @@ The default generated render function code is (pseudo code):
 
 ```js
 function render() {
-  const component_plastic_button = resolveComponent("plastic-button");
-  return createVNode(component_plastic_button);
+  const component_plastic_button = resolveComponent("plastic-button")
+  return createVNode(component_plastic_button)
 }
 ```
 
@@ -42,7 +42,7 @@ If the user wishes to use a native custom element named `plastic-button`, the de
 
 ```js
 function render() {
-  return createVNode("plastic-button"); // render as native element
+  return createVNode("plastic-button") // render as native element
 }
 ```
 
@@ -63,15 +63,15 @@ To instruct the compiler to treat `<plastic-button>` as a custom element:
       }
     }
     // ...
-  ];
+  ]
   ```
 
 - If using on-the-fly template compilation, pass it via `app.config`:
 
   ```js
-  const app = Vue.createApp(/* ... */);
+  const app = Vue.createApp(/* ... */)
 
-  app.config.isCustomElement = tag => tag === "plastic-button";
+  app.config.isCustomElement = tag => tag === "plastic-button"
   ```
 
   Note the runtime config only affects runtime template compilation - it won't affect pre-compiled templates.
