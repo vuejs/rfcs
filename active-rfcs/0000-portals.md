@@ -5,10 +5,10 @@
 
 # Summary
 
-- Adds a `<portal>` component to Vue core
-- the component accepts a DOM selector via a prop
+- Adds a `<teleport>` component to Vue core
+- the component requires a target element, provided through a prop which expects an `HTMLElement` or a `querySelector` string.
 - the component moves its children to the element identified by the DOM selector
-- At the virtual DOM level, the children stay descendants of the `<portal>` though, so they i.e. have access to injections from its ancestors
+- At the virtual DOM level, the children stay descendants of the `<teleport>` though, so they i.e. have access to injections from its ancestors
 
 # Basic example
 
@@ -16,7 +16,7 @@
 <body>
   <div id="app">
     <h1>Move the #content with the portal component</h1>
-    <portal target="#endofbody">
+    <teleport to="#endofbody">
       <div id="content">
         <p>
           this will be moved to #endofbody.<br />
@@ -24,15 +24,13 @@
         </p>
         <Child />
       </div>
-    </portal>
+    </teleport>
   </div>
   <div id="endofbody"></div>
   <script>
-    const { Portal } = window.Vue;
     new Vue({
       el: "#app",
       components: {
-        Portal,
         Child: { template: "<div>Placeholder</div>" }
       }
     });
@@ -42,8 +40,8 @@
 
 This will result in the following behaviour:
 
-1. All of the children of `<portal>` - in this example: `<div id="content">` - will be appended to `<div id="endofbody">`
-2. the `<Child>` component as one of these children will remain a child component of the `<Portal>`'s parent (the Portal is transparent).
+1. All of the children of `<teleport>` - in this example: `<div id="content">` and `<Child />` - will be appended to `<div id="endofbody">`
+2. the `<Child>` component as one of these children will remain a child component of the `<teleport>`'s parent (the `<teleport>` is transparent).
 
 ```html
 <div id="app">
@@ -80,189 +78,215 @@ Many apps have the concept of widgets, where their UI has an outlet (i.e. in a s
 
 In Single Page Applications, where our Javascript controls essentially he whole page, this is generally not a challenge. But in situations where our Vue app only controls a part of the page, it currently proves to be challenging (but impossible) to mount individual elements and components in other parts of the page.
 
-With Portals, we have a straightforward way to mount child components to other locations in the DOM declaratively.
+With `<teleport>`, we have a straightforward way to mount child components to other locations in the DOM declaratively.
 
 # Detailed design
 
-## Globally imported `Portal` component
+## Implementation as an internal component
 
-The `'vue'` package has a named export for a `<Portal>` "component".
+The `<teleport>` "component" is an internal component like `<transition>` and `<keep-alive>`. It's tree-shakable, so if you don't use the feature, the component code will be dropped from the final bundle.
 
-Since this component doesn't have any component logic of its own (Portal functionality would be implemented at the virtual DOM level), so this could be a `Symbol` instead of a full component.
+### Usage in templates
+
+In templates, the compiler will add the import for the `<teleport>` component to the generated code, so it can be used just like this:
 
 ```js
-import { Portal } from "vue";
 export default {
-  template: `<div>
-    <portal target="#endofbody">
-      Some content.
-    </portal>
-  <div>`,
-  components: {
-    Portal
-  }
+  template: `
+    <div>
+      <teleport to="#endofbody">
+        Some content.
+      </teleport>
+    <div>
+  `
 };
 ```
 
-When using a render function, the component can be used directly without first registering it, like any other component:
+When using a render function or JSX, component has to imported first, like any other component:
 
 ```js
-import { Portal, h } from "vue";
+import { Teleport, h } from "vue";
 export default {
   render() {
-    return h("div", [h(Portal, { target: "#endofbody" }, ["Some content"])]);
+    return h("div", [h(Teleport, { target: "#endofbody" }, ["Some content"])]);
   },
   // or with JSX:
   render() {
     <div>
-      <Portal target="#endofbody">Some content</portal>
+      <Telport target="#endofbody">Some content</Teleport>
     </div>;
   }
 };
 ```
 
-If used directly in the browser from a CDN, we can access the Portal as a property on the Vue constructor:
+## using multiple portals on the same target
 
-```js
-const App = {
-  template: `<div>
-    <portal target="#endofbody">
-      Some content.
-    </portal>
-  <div>`,
-  components: {
-    Portal: Vue.Portal
-  }
-};
+A common use case scenario would be a reusable `<Modal>` component of which there might be multiple instances active at the same time. For this kind of scenario, multiple `<teleport>` components can mount their content to the same target element. The order will be a simple `append` - later mounts will be located after earlier ones within the target element.
+
+```html
+<teleport to="#modals">
+  <div>A</div>
+</teleport>
+<teleport to="#modals">
+  <div>B</div>
+</teleport>
+
+<!-- result-->
+<div id="modals">
+  <div>A</div>
+  <div>B</div>
+</div>
 ```
 
-## The `target` prop
+In the discussions for this RFC so far, more complex behaviour (optional prepending, defining the order ...) was discussed, but concerns about complexity and foreseeable issues with SSR and hydration lead us to limit this behaviour to a simple `append`.
 
-The component has only one _required_ prop, named `target`. It accepts a string wich has to be a valid query selector, or an HTMLElement (if used in a browser environment).
+## Props
+
+### `to`
+
+The component has only one _required_ prop, named `to`. It accepts a string wich has to be a valid query selector, or an HTMLElement (if used in a browser environment).
 
 ```html
 <!-- ok -->
-<Portal target="#some-id" />
-<Portal target=".some-class" />
-<Portal target="[data-portal]" />
+<teleport to="#some-id" />
+<teleport to=".some-class" />
+<teleport to="[data-portal]" />
 <!--
   probably too unspecific, but technically valid
   should we allow this or block it?
 -->
-<Portal target="h1" />
+<teleport to="h1" />
 <!-- Wrong -->
-<Portal target="some-string" />
-></Portal>
+<teleport to="some-string" />
+></teleport>
 ```
+
+### `disabled`
+
+This optional prop can be used to disable the portal's functionality, which means that its slot content will not be moved anywhere and instead be rendered where you specified the `<teleport>` in the surrounding parent component.
+
+```html
+<teleport to="#popup" :disabled="displayVideoInline">
+  <video src="./my-movie.mp4">
+</teleport>
+```
+
+Changing its value dynamically allows to move the same DOM elements between the target specified by the `to` prop, and the actual location in the surrounding parent component. This means that any components inside of the `<teleport>` will be kept alive and keep their internal state. Likewise, a `<video>` element will keep its playback state while being moved betweeen these locations.
 
 ## Lifecycle
 
 ### Mounting
 
-When the Portal component is mounted by its parent, it will use the `target` prop's value as a selector.
+When the `<teleport>` component is mounted by its parent, it will use the `to` prop's value as a selector.
 
-- If the query returns an element, the slot children of the `Portal` will be mounted as child nodes of that element in the DOM
-- If this element doesn't exist in the DOM at the moment that this `<Portal>` is mounted, a warning will be logged during development (nothing would happen in production):
+- If the query returns an element, the slot children of the `<teleport>` will be mounted as child nodes of that element in the DOM
+- If this element doesn't exist in the DOM at the moment that this `<teleport>` is mounted, a warning like the following would be logged during development (nothing would happen in production):
 
 ```js
-`Portal could not be mounted to element with selector '${props.target}': element not found in DOM.
+`Teleport content could not be mounted to element with selector '${props.to}': element not found.
 
 // following would be a display where in the component tree this happened etc.
 ```
 
 #### \$parent
 
-If the children of `Portal` contain any components, their `this.$parent` property should reference the `Portal`'s parent component. In other words, these components stay in their original spot in the _component tree_, even though they ended up mounted somewhere else in the _DOM tree_.
+If the children of `<teleport>` contain any components, their `this.$parent` property should reference the `<teleport>`'s parent component. In other words, these components stay in their original spot in the _component tree_, even though they ended up mounted somewhere else in the _DOM tree_.
 
-`Portal`, not being a real component at all, is transparent and will not appear as an ancestor in the `$parent`chain.
+`<teleport>`, not being a real component at all, is transparent and will not appear as an ancestor in the `$parent`chain.
 
 ```html
 <template>
-  <Portal v-bind:target="targetName">
+  <teleport v-bind:to="targetName">
     <Child />
-  </Portal>
-  <template>
-    <script>
-      import { Portal } from 'vue'
-      export default {
-        name: 'Parent'
-        components: {
-          Portal,
-          Child: {
-            template: '<div/>',
-            mounted() {
-              console.log(this.$parent.$options.name )
-              // => 'Parent'
-            }
-          }
-        },
+  </teleport>
+</template>
+<script>
+  export default {
+    name: 'Parent'
+    components: {
+      Child: {
+        template: '<div/>',
+        mounted() {
+          console.log(this.$parent.$options.name )
+          // => 'Parent'
+        }
       }
-    </script></template
-  ></template
->
+    },
+  }
+</script>
 ```
 
 Similarly, using `inject` in `Child` should be able to inject any provided content from `Paren` or one of its ancestors.
 
 ### Updating
 
-The `target` prop can be changed dynamically with `v-bind`. When the value changes, `Portal` will remove the children from the previous target and move them to the new one.
+The `to` prop can be changed dynamically with `v-bind`. When the value changes, `<teleport>` will remove the children from the previous target and move them to the new one.
 
 If the children contain any component instances, these will not be influenced by this. The instances will be kept alive, keep their state etc.
 
 ```html
 <template>
-  <Portal v-bind:target="targetName">
+  <teleport v-bind:to="targetName">
     <p>This can be moved around with the button below</p>
-  </Portal>
+  </teleport>
   <button v-on:click="toggleTarget">Toggle</button>
   <hr />
   <div id="A"></div>
   <div id="B"></div>
-  <template>
-    <script>
-      import { Portal } from "vue";
-      export default {
-        components: { Portal },
-        data: () => ({
-          targetName: "A"
-        }),
-        methods: {
-          toggleTarget() {
-            this.targetName = this.targetName == "A" ? "B" : "A";
-          }
-        }
-      };
-    </script></template
-  ></template
->
+</template>
+<script>
+  export default {
+    data: () => ({
+      targetName: "A"
+    }),
+    methods: {
+      toggleTarget() {
+        this.targetName = this.targetName == "A" ? "B" : "A";
+      }
+    }
+  };
+</script>
 ```
 
-If the new target selector doesn't match any elements, a warning should be logged during development.
+If the new target selector doesn't match any elements:
 
-> **Question:** Should the old content still be removed from the old target in that situation or should everything stay the way it is?
-
-> **Question** What should happen when the parent component re-renders? should the query Selector be run again? Seems like it's unnecessary in most situations, but if we don't, then having a selector that doesn't match anything initially will result in a stale component even if that element pops up later, wouldn't it?
+1. a warning should be logged during development.
+2. The content would stay mounted to the previous target element.
 
 ### Destruction
 
-When a `Portal` is being destroyed (e.g. because its parent component is being destroyed or because of a `v-if`), its children are removed from the DOM and any component instances destroyed just like they were still children iof the parent.
+When a `<teleport>` is being destroyed (e.g. because its parent component is being destroyed or because of a `v-if`), its children are removed from the DOM and any component instances destroyed just like they were still children iof the parent.
+
+## Miscellaneous
+
+### Naming conflict with native portals
+
+the component introduced by this RFC was named `<portal>` in an earlier version of this RFC. But there's proposal for native portals:
+
+- Spec: https://wicg.github.io/portals/
+- Introduction: https://web.dev/hands-on-portals/
+
+Sinc we don't want to have a naming conflict with a future HTML element that may be called `<teleport>`, especially since it's functionality is about something completely different form what portals in libs like Vue or React mean right now, we chose to rename the component to `<teleport>`
+
+Or should we keep it as the concept of what a portal is in Vue, React e.t al. is already "common knowledge" and a new term might confuse people more than it would help?
 
 ### dev-tools
 
-The Portal should not appear in the chain of parent components (`this.$parent`), but it should be identifiable within the virtual DOM so that Vue's dee-tools can show them in their visualisation of the component tree.
+The `<teleport>` should not appear in the chain of parent components (`this.$parent`), but it should be identifiable within the virtual DOM so that Vue's dee-tools can show them in their visualisation of the component tree.
 
-### Using a Portal on an element within a Vue app
+### Using a `<teleport>` on an element within a Vue app
 
 Technically, this proposal allows to select _any_ element in the DOM , including elements that are rendered by our Vue app in some other part of the component tree.
 
 But that puts the portal'd slot content under the control of that other component's lifecycle, which means the content can possibly be removed from the DOM if that component gets destroyed.
 
-Any component that came through a `Portal` would effectively have its DOM removed by still be in the original virtual DOM tree, which would lead to patch errors when these components tried to update.
+Any component that came through a `<teleport>` would effectively have its DOM removed by still be in the original virtual DOM tree, which would lead to patch errors when these components tried to update.
+
+Handling this relaibly would require lots of additional logic and as such, this use case is explicitly **excluded from this RFC**. Teleporting to any DOM element that is controlled by Vue is considered to be an anti-pattern and can lead to the real dom and virtual dom being out of sync.
 
 # Drawbacks
 
-The only notable drawback that we see is the additional code required to implement this. But judging from experiments in the prototype, that code will be very light, as it's just a slightly different way to mount elements at the virtualDOM level.
+The only notable drawback that we see is the additional code required to implement this. But judging from experiments in the prototype, that code will be very light, as it's just a slightly different way to mount elements at the virtualDOM level, and the component itself is tree-shakable.
 
 As it's an additive feature and the functionality is pretty straightforward (one prop defining as target selector), this should also not add much complexity to Vue in terms of documentation or teaching.
 
@@ -280,28 +304,7 @@ People could continue to use these with their existing limitations and drawbacks
 
 # Adoption strategy
 
-Portals is a new feature and as such purely additive in nature.
-
-Since the component is not globally registered (unlike e.g. `<transition>` was in Vue 2.0), there are also not risks if naming conflicts for applications that already use the name `<portal>` in some other context:
-
-```html
-<template>
-  <portal> <!-- custom component --></portal>
-  <VuePortal><!-- portal from this RFC --></VuePortal>
-  <template>
-    <script>
-      import { Portal } from "vue";
-      export default {
-        components: {
-          VuePortal: Portal
-        }
-      };
-    </script></template
-  ></template
->
-```
-
-As such, this feature does not have any impact on the migration of Vue 2.0 applications to Vue 3.0.
+`<teleport>` is a new feature and as such purely additive in nature. As such, this feature does not have any impact on the migration of Vue 2.0 applications to Vue 3.0 except for apps that might have chosen to name one of their comconents `<teleport>` - but that is easily fixable by changing that component's registration name to something else.
 
 Users new to Vue 3.0 or Vue in general will be able to learn about this feature from the docs in the usual way and gradually introduce it into their projects where it makes sense.
 
@@ -309,46 +312,10 @@ Users new to Vue 3.0 or Vue in general will be able to learn about this feature 
 
 As mentioned, several 3rd party plugins/libs implement similar functionality right now.
 
-Some of them may become irrelevant though this RFC, while others, offering functionality that exceeds what this proposal describes, would could adapt their implementation to make use of this proposal's "native" `<portal>` component internally.
+Some of them may become irrelevant though this RFC, while others, offering functionality that exceeds what this proposal describes, would could adapt their implementation to make use of this proposal's "native" `<teleport>` component internally.
 
 If RFC vuejs/vue-next#28 (Render function change) is adopted, these libraries will have to be reworked either way, at which point they can adopt this new feature.
 
 # Unresolved questions
 
-### Mounting to elements controlled by Vue
-
-When portal-ing content to a target element that is controlled by Vue, the portal's content might be removed from the DOM by the component that controls that target element.
-
-- Can we handle this gracefully?
-- If not: Are userland solutions on top of this basic implementations able to work around this (in my opinion: yes)
-- Or is this feature strictly limited to mounting to elements _outside_ of the part of the DOM controlled by Vue?
-
-### Missing Targets
-
-- What do we do if the new target doesn't exist? unmount the old one anyway?
-- Should target selectors re-run on every re-render of the `Portal`'s parent so that initially missing targets can be mounted to once they exist?
-
-### using multiple portals on the same target
-
-portal-vue supports sending content from multiple `<portals>` to the same target. it does so by using a `<portal-target>` component that manages this.
-
-The portal functionality proposed in this RFC requires that each portal has its own target element to mount to.
-
-Should we and if so how can we make n:1 work?
-
-### Naming conflict with native portals
-
-There's proposal for native portals:
-
-- Spec: https://wicg.github.io/portals/
-- Introduction: https://web.dev/hands-on-portals/
-
-We probably don't want to have a naming conflict with a future HTML element that may be called `<portal>`, especially since it's functionality is about something completely different form what portals in libs like Vue or React mean right now.
-
-So should we give the concept of this RFC (and by extension, the component it introduces) another name to prepare for native `<portal>` elements becoming a standard? If so, what would we call it instead?
-
-- `<Teleport>`
-- `<Wormhole>`
-- `<...?>`
-
-Or should we keep it as the concept of what a portal is in Vue, React e.t al. is already "common knowledge" and a new term might confuse people more than it would help?
+n/a
