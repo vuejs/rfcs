@@ -266,7 +266,7 @@ the component introduced by this RFC was named `<portal>` in an earlier version 
 - Spec: https://wicg.github.io/portals/
 - Introduction: https://web.dev/hands-on-portals/
 
-Sinc we don't want to have a naming conflict with a future HTML element that may be called `<teleport>`, especially since it's functionality is about something completely different form what portals in libs like Vue or React mean right now, we chose to rename the component to `<teleport>`
+Sinc we don't want to have a naming conflict with a future HTML element that may be called `<portal>`, especially since it's functionality is about something completely different form what portals in libs like Vue or React mean right now, we chose to rename the component to `<teleport>`
 
 Or should we keep it as the concept of what a portal is in Vue, React e.t al. is already "common knowledge" and a new term might confuse people more than it would help?
 
