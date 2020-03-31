@@ -113,7 +113,7 @@ export default {
   // or with JSX:
   render() {
     <div>
-      <Telport target="#endofbody">Some content</Teleport>
+      <Teleport to="#endofbody">Some content</Teleport>
     </div>;
   }
 };
