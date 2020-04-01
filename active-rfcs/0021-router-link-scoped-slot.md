@@ -134,6 +134,23 @@ is equivalent to
 # Alternatives
 
 - Keeping `event` prop for convienience
+- Use a different named slot instead of a `prop`:
+
+  ```vue
+  <router-link #custom="{ href }">
+    <a :href="href"></a>
+  </router-link>
+
+  <router-link v-slot:custom="{ href }">
+    <a :href="href"></a>
+  </router-link>
+
+  <router-link custom v-slot="{ href }">
+    <a :href="href"></a>
+  </router-link>
+  ```
+
+  The adoption strategy in this case would be similar but the warning would tell the user to use a different slot instead of a prop named `custom`
 
 # Adoption strategy
 
