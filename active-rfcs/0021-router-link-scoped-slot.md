@@ -138,5 +138,5 @@ is equivalent to
 # Adoption strategy
 
 - Document new slot behaviour based on examples
-- Deprecate `tag` and `event` with a message and link to documentation the remove in v4
+- Deprecate `tag` and `event` with a message in v3 and link to documentation, then remove in v4
 - In v3, if no `custom` prop is provided when using a scoped slot, warn the user to use the `custom` prop
