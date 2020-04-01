@@ -9,6 +9,7 @@
 - Remove `event` prop
 - Stop automatically assigning click events to inner anchors
 - Add a scoped-slot API
+- Add a `custom` prop to fully customize `router-link`'s rendering
 
 # Basic example
 
@@ -55,34 +56,12 @@ This implementation would:
 - no longer accepts `event` -> use the scoped slot instead
 - no longer works as a wrapper automatically looking for the first `a` inside -> use the scoped slot instead
 
-## Custom `tag` prop
-
-I am not sure about keeping the `tag` prop if it can be replaced which a scoped slot because it wouldn't handle custom components and except for very simple cases, we will likely use custom UI components instead of the basics ones:
-
-```vue
-<router-link to="/" tag="button">
-  <Icon>home</Icon><span class="xs-hidden">Home</span>
-</router-link>
-```
-
-is equivalent to
-
-```vue
-<router-link to="/" v-slot="{ navigate, isActive, isExactActive }">
-  <button role="link" @click="navigate" :class="{ active: isActive, 'exact-active': isExactActive }">
-    <Icon>home</Icon><span class="xs-hidden">Home</span>
-  </button>
-</router-link>
-```
-
-(see below for explanation about the attributes passed to the scoped-slot)
-
 ## Scoped slot
 
-A scoped slot would get access to every bit of information needed to provide a custom integration and allows applying the active classes, click listener, links, etc at any level. This would allow a better integration with frameworks like Bootstrap (https://getbootstrap.com/docs/4.3/components/navbar/). The idea would be to create a Vue component to avoid the boilerplate like bootstrap-vue does (https://bootstrap-vue.js.org/docs/components/navbar/#navbar)
+A scoped slot would get access to every bit of information needed to provide a custom integration and allows applying the active classes, click listener, links, etc at any level. This would allow a better integration with UI frameworks like Bootstrap (https://getbootstrap.com/docs/4.3/components/navbar/). The idea would be to create a Vue component to avoid the boilerplate like bootstrap-vue does (https://bootstrap-vue.js.org/docs/components/navbar/#navbar)
 
 ```vue
-<router-link to="/" v-slot="{ href, navigate, isActive }">
+<router-link to="/" custom v-slot="{ href, navigate, isActive }">
   <li :class="{ 'active': isActive }">
     <a :href="href" @click="navigate">
       <Icon>home</Icon><span class="xs-hidden">Home</span>
@@ -90,6 +69,30 @@ A scoped slot would get access to every bit of information needed to provide a c
   </li>
 </router-link>
 ```
+
+The `custom` prop is necessary to take full control over `router-link`'s rendering: not rendering a wrapping `a` element.
+
+**Why is a `custom` prop necessary**: in Vue 3, scoped slots and regular slots cannot be differentiated from each other, which means vue router is unable to make the difference between these 3 cases:
+
+```vue
+<router-link to="/" v-slot="{ href, navigate, isActive }"></router-link>
+<router-link to="/" v-slot></router-link>
+<router-link to="/">Some Link</router-link>
+```
+
+In all three cases we need to render the slot content but `router-link` needs to know if it has to render a wrapping `a` element. In Vue 2, we are able to do so by checking `$scopedSlots` but in Vue 3, only `slots` exists. This means that the behavior is slightly different in Vue Router v3 and Vue Router v4:
+
+- In v3, the `custom` prop is required (see [Adoption strategy](#adoption-strategy)) alongside `v-slot`. `router-link` will not wrap the slot content with an `a` element.
+- In v4, the `custom` prop is **not** required alongside `v-slot`. It controls whether `router-link` should wrap its slot content with an `a` element or not:
+  ```vue
+  <router-link to="/" v-slot="{ href }">
+  <router-link to="/" custom v-slot="{ href, navigate }">
+    <a :href="href" @click="navigate">{{ href }}</a>
+  </router-link>
+  <!-- both render the same -->
+  <a href="/">/</a>
+  <a href="/">/</a>
+  ```
 
 ### Accessible variables
 
@@ -100,6 +103,28 @@ The slot should provide values that are computed inside `router-link`:
 - `navigate`: function to trigger navigation (usually attached to a click). Also calls `preventDefault` if the click is directly pressed.
 - `isActive`: true whenever `router-link-active` is applied. Can be modified by `exact` prop
 - `isExactActive`: true whenever `router-link-exact-active` is aplied. Can be modified by `exact` prop.
+
+## The removal of the `tag` prop
+
+The `tag` prop can be replaced which a scoped slot and make the code clearer while not being exposed to any caveat. Its removal will also lighten the vue-router library.
+
+```vue
+<router-link to="/" tag="button">
+  <Icon>home</Icon><span class="xs-hidden">Home</span>
+</router-link>
+```
+
+is equivalent to
+
+```vue
+<router-link to="/" custom v-slot="{ navigate, isActive, isExactActive }">
+  <button role="link" @click="navigate" :class="{ active: isActive, 'exact-active': isExactActive }">
+    <Icon>home</Icon><span class="xs-hidden">Home</span>
+  </button>
+</router-link>
+```
+
+(see above for explanation about the attributes passed to the scoped-slot)
 
 # Drawbacks
 
@@ -114,5 +139,4 @@ The slot should provide values that are computed inside `router-link`:
 
 - Document new slot behaviour based on examples
 - Deprecate `tag` and `event` with a message and link to documentation the remove in v4
-
-# Unresolved questions
+- In v3, if no `custom` prop is provided when using a scoped slot, warn the user to use the `custom` prop
