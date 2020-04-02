@@ -162,7 +162,13 @@ v3 functional components also support [Optional Props Declaration](#TODO). When 
 const Foo = props => h('div', { class: 'foo' }, props.msg)
 ```
 
-When a functional component is leveraging optional props declaration, there is only implicit fallthrough for attributes that are most commonly used and do not clash with potential prop names: `class`, `style`, and `v-on` listeners.
+When a functional component is leveraging optional props declaration, there is only implicit fallthrough for `class`, `style`, and `v-on` listeners.
+
+The reason for `class`, `style` and `v-on` listeners to be whitelisted is because:
+
+- They cover the most common use cases for attribute fallthrough.
+- They have close to no risk of clashing with prop names.
+- They require special merge logic instead of simple overwrites, so handling them implicitly yields more convenience value.
 
 If a functional component with optional props declaration needs to support full attribute fallthrough, it needs to declare `inheritAttrs: false`, pick the desired attrs from `props`, and merge it to the root element:
 
