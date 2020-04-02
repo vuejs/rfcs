@@ -152,6 +152,8 @@ is equivalent to
 
   The adoption strategy in this case would be similar but the warning would tell the user to use a different slot instead of a prop named `custom`
 
+- Create a new component like `router-link-custom` to differentiate the behavior. This solution is however heavier (in terms of size) than a prop or a different named slot.
+
 # Adoption strategy
 
 - Document new slot behaviour based on examples
