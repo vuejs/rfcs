@@ -8,7 +8,7 @@
 - Functional components must be written as plain functions
   - `{ functional: true }` option removed
   - `<template functional>` no longer supported
-- Async component must be created via the `createAsyncComponent` API method
+- Async component must now be created via a dedicated API method
 
 # Basic example
 
@@ -21,9 +21,9 @@ const FunctionalComp = props => {
 ```
 
 ``` js
-import { createAsyncComponent } from 'vue'
+import { defineAsyncComponent } from 'vue'
 
-const AsyncComp = createAsyncComponent(() => import('./Foo.vue'))
+const AsyncComp = defineAsyncComponent(() => import('./Foo.vue'))
 ```
 
 # Motivation
@@ -58,7 +58,7 @@ In 3.x, we intend to support functional components **only** as plain functions:
 ``` js
 import { h } from 'vue'
 
-const FunctionalComp = (props, slots) => {
+const FunctionalComp = (props, { slots, attrs, emit }) => {
   return h('div', `Hello! ${props.name}`)
 }
 ```
@@ -67,11 +67,47 @@ const FunctionalComp = (props, slots) => {
 
 - SFCs will no longer support `<template functional>` - if you need anything more than a function, just use a normal component.
 
-- The function signature has also changed - `h` is now imported globally. Instead of a render context, props and slots and other values are passed in. For more details on how the new arguments can replace 2.x functional render context, see the [Render Function API Change RFC](https://github.com/vuejs/rfcs/pull/28).
+- The function signature has also changed:
+  - `h` is now imported globally.
+  - The function receives two arguments: `props` and a context object that exposes `slots`, `attrs` and `emit`. These are equivalent to their `$`-prefixed equivalents on a stateful component.
 
-## Runtime Props Validation
+## Comparison with Old Syntax
 
-Props declaration is now optional (only necessary when runtime validation is needed). To add runtime validation or default values, attach `props` to the function itself:
+The new function arguments should provide the ability to fully replace the [2.x functional render context](https://vuejs.org/v2/guide/render-function.html#Functional-Components):
+
+- `props` and `slots` have equivalent values;
+- `data` and `children` are no longer necessary (just use `props` and `slots`);
+- `listeners` will be included in `attrs`;
+- `injections` can be replaced using the new `inject` API (part of [Composition API](https://vue-composition-api-rfc.netlify.com/api.html#provide-inject)):
+
+  ``` js
+  import { inject } from 'vue'
+  import { themeSymbol } from './ThemeProvider'
+
+  const FunctionalComp = props => {
+    const theme = inject(themeSymbol)
+    return h('div', `Using theme ${theme}`)
+  }
+  ```
+
+- `parent` access will be removed. This was an escape hatch for some internal use cases - in userland code, props and injections should be preferred.
+
+## Optional Props Declaration
+
+To make it easier to use for simple cases, 3.x functional components do not require `props` to be declared:
+
+```js
+const Foo = props => h('div', props.msg)
+```
+``` html
+<Foo msg="hello!" />
+```
+
+With no explicit props declaration, the first argument `props` will contain everything passed to the component by the parent.
+
+## Explicit Props Declaration
+
+To add explicit props declarations, attach `props` to the function itself:
 
 ``` js
 const FunctionalComp = props => {
@@ -85,27 +121,7 @@ FunctionalComp.props = {
 
 ## Async Component Creation
 
-With the functional component change, Vue's runtime won't be able to tell whether a function is being provided as a functional component or an async component factory. So in v3 async components must now be created via a new API method:
-
-``` js
-import { createAsyncComponent } from 'vue'
-
-const AsyncComp = createAsyncComponent(() => import('./Foo.vue'))
-```
-
-The method also supports advanced options:
-
-``` js
-const AsyncComp = createAsyncComponent({
-  factory: () => import('./Foo.vue'),
-  delay: 200,
-  timeout: 3000,
-  error: ErrorComponent,
-  loading: LoadingComponent
-})
-```
-
-This will make async component creation a little more verbose, but async component creation is typically a low-frequency use case, and are often grouped in the same file (the routing configuration).
+The new async component API is discussed in [its own dedicated RFC](https://github.com/vuejs/rfcs/pull/148).
 
 # Drawbacks
 
@@ -118,7 +134,5 @@ N/A
 # Adoption strategy
 
 - For functional components, a compatibility mode can be provided for one-at-a-time migration.
-
-- For async components, the migration is straightforward and we can emit warnings when function components return Promise instead of VNodes.
 
 - SFCs using `<template functional>` should be converted to normal SFCs.
