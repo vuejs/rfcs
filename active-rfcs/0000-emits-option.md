@@ -18,7 +18,9 @@ const Comp = {
   },
 
   created() {
-    this.$emit('submit', { /* payload */ })
+    this.$emit('submit', {
+      /* payload */
+    })
   }
 }
 ```
@@ -75,11 +77,12 @@ Or it can be an object with event names as its keys. The value of each property 
   }
 }
 ```
+
 ## Fallthrough Control
 
 The new [Attribute Fallthrough Behavior](https://github.com/vuejs/rfcs/blob/amend-optional-props/active-rfcs/0000-attr-fallthrough.md) proposed in [#154](https://github.com/vuejs/rfcs/pull/154) now applies automatic fallthrough for `v-on` listeners used on a component:
 
-``` html
+```html
 <Foo @click="onClick" />
 ```
 
@@ -93,10 +96,10 @@ Event listeners declared by `emits` are also excluded from `this.$attrs` of the 
 
 The Object validator syntax was picked with TypeScript type inference in mind. The validator type signature can be used to type `$emit` calls:
 
-``` ts
+```ts
 const Foo = defineComponent({
   emits: {
-    submit: (payload: { email: string, password: string }) => {
+    submit: (payload: { email: string; password: string }) => {
       // perform runtime validation
     }
   },
@@ -114,6 +117,12 @@ const Foo = defineComponent({
 })
 ```
 
+# Drawbacks
+
+- The option requires some extra effort for all components that emit custom events. However, it is technically optional, and the benefits should outweigh the extra effort needed.
+
+- Runtime validations should only be performed in dev mode but can potentially bloat production bundle size. Props validators have the same issue. Both can be solved with a Babel plugin that transforms `props` and `emits` options to the Array format in production builds. This way the dev only code is stripped but the runtime behavior will stay consistent.
+
 # Adoption strategy
 
 The introduction of the `emits` option should not break any existing usage of `$emit`.
@@ -122,4 +131,4 @@ However, with the fallthrough behavior change, it would be ideal to always decla
 
 1. Provide a codemod that automatically scans all instances of `$emit` calls in a component and generate the `emits` option.
 
-2. Emit a runtime warning when an emitted event isn't explicitly declared using the option.
+2. (Opt-in) Emit a runtime warning when an emitted event isn't explicitly declared using the option.
