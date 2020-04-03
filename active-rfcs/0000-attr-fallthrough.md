@@ -53,9 +53,30 @@ With the following usage:
 
 - In v2, the `@click` will only register a component custom event listener. To attach a native listener to the root of `MyButton`, `@click.native` is needed.
 
-- In v3, the `@click` listener will fallthrough and register a native click listener on the root of `MyButton`. This means component authors no longer need to proxy native events to custom events in order to support `v-on` usage without the `.native` modifier. In fact, the `.native` modifier will be removed altogether.
+- In v3, the `@click` listener will fallthrough and register a native click listener on the root of `MyButton`. This means component authors no longer need to proxy native DOM events to custom events in order to support `v-on` usage without the `.native` modifier. In fact, the `.native` modifier will be removed altogether.
 
-  Note this may result in unnecessary registration of native event listeners when the user is only listening to component custom events, which we discuss below in [Unresolved Questions](#unresolved-questions).
+### Avoiding Unnecessary Native Listeners
+
+The v3 behavior may result in unnecessary registration of native event listeners when the component author intends to use that event name as a component emitted custom event only.
+
+With flat VNode data and the removal of `.native` modifier, all listeners are passed down to the child component as `onXXX` functions:
+
+``` html
+<foo @click="foo" @custom="bar" />
+```
+
+compiles to:
+
+``` js
+h(foo, {
+  onClick: foo,
+  onCustom: bar
+})
+```
+
+With the fallthrough, all parent listeners are applied to the target element as native DOM listeners. In the above example, both a native click event and a custom one emitted by `this.$emit('click')` in the child will trigger the parent's `foo` handler. This may lead to unwanted behavior.
+
+The introduction of the `emits` option, as proposed in [#16](https://github.com/vuejs/rfcs/pull/16), provides a way to explicit declare an event to be a component custom event so that the event's listener will be excluded from the fallthrough (and `this.$attrs` in case of manual control). The two RFCs should be considered in tandem.
 
 ## Explicitly Controlling the Fallthrough
 
@@ -188,33 +209,9 @@ Func.inheritAttrs = false
 # Adoption strategy
 
 - Deprecations can be supported in the compat build:
-
   - `.native` modifier will be a no-op and emit a warning during template compilation.
   - `this.$listeners` can be supported with a runtime warning.
 
 - There could technically be cases where the user relies on the 2.x behavior where `inheritAttrs: false` does not affect `class` and `style`, but it should be very rare. We will have a dedicated item in the migration guide / helper to remind the developer to check for such cases.
 
 - Since functional components uses a new syntax, they will likely require manual upgrades. We should have a dedicated section for functional components in the migration guide.
-
-# Unresolved questions
-
-## Removing Unwanted Listeners
-
-With flat VNode data and the removal of `.native` modifier, all listeners are passed down to the child component as `onXXX` functions:
-
-``` html
-<foo @click="foo" @custom="bar" />
-```
-
-compiles to:
-
-``` js
-h(foo, {
-  onClick: foo,
-  onCustom: bar
-})
-```
-
-When spreading `$attrs` with `v-bind`, all parent listeners are applied to the target element as native DOM listeners. The problem is that these same listeners can also be triggered by custom events - in the above example, both a native click event and a custom one emitted by `this.$emit('click')` in the child will trigger the parent's `foo` handler. This may lead to unwanted behavior.
-
-Props do not suffer from this problem because declared props are removed from `$attrs`. Therefore we should have a similar way to "declare" emitted events from a component. Event listeners for explicitly declared events will be removed from `$attrs` and can only be triggered by custom events emitted by the component via `this.$emit`. There is currently [an open RFC for it](https://github.com/vuejs/rfcs/pull/16) by @niko278. It is complementary to this RFC but does not affect the design of this RFC, so we can leave it for consideration at a later stage, even after Vue 3 release.
