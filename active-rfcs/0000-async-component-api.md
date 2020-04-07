@@ -71,8 +71,13 @@ const AsyncFooWithOptions = defineAsyncComponent({
   delay: 100, // default: 200
   timeout: 3000, // default: Infinity
   suspensible: false, // default: true
-  retryWhen: error => error.message.match(/fetch/) // default: () => false
-  maxRetries: 5 // default: 3
+  onError(error, retry, fail, attempts) {
+    if (error.message.match(/fetch/) && attempts <= 3) {
+      retry()
+    } else {
+      fail()
+    }
+  }
 })
 ```
 
@@ -104,9 +109,23 @@ const AsyncFooWithOptions = defineAsyncComponent({
 
 ## Retry Control
 
-The new `retryWhen` option expects a function that returns a boolean indicating whether the async component should retry when the loader promise rejects. The function receives the rejection error as the argument so it can conditionally retry only on certain types of errors.
+The new `onError` option provides a hook to perform customized retry behavior in case of a loader error:
 
-The `maxRetries` option determines how many retries are allowed (default: `3`). When max times of retries have been attempted, the component will go into error state (render the `errorComponent` if provided) with the last failed error.
+``` js
+const Foo = defineAsyncComponent({
+  // ...
+  onError(error, retry, fail, attempts) {
+    if (error.message.match(/fetch/) && attempts <= 3) {
+      // retry on fetch errors, 3 max attempts
+      retry()
+    } else {
+      fail()
+    }
+  }
+})
+```
+
+Note that `retry/fail` are like `resolve/reject` of a promise: one of them must be called for the error handling to continue.
 
 ## Using with Suspense
 
