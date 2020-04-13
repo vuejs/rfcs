@@ -29,7 +29,7 @@ router.beforeEach((to, from, next) => {
 })
 ```
 
-My proposal is to merge all matched routes meta, from parent to child so we can do `to.matched.requiresAuth`. I believe this is what Nuxt does but I couldn't find a link in the docs.
+My proposal is to merge all matched routes meta, from parent to child so we can do `to.meta.requiresAuth`. I believe this is what Nuxt does but I couldn't find a link in the docs.
 
 # Basic example
 
