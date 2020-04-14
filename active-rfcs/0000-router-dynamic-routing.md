@@ -8,8 +8,8 @@
 Introducing an API that allows adding and removing route records while the router is working
 
 - `router.addRoute(route: RouteRecord)` Add a new route
-- `router.removeRoute(name: string | Symbol)` Remove an existing route
-- `router.hasRoute(name: string | Symbol): boolean` Check if a route exists
+- `router.removeRoute(name: string | symbol)` Remove an existing route
+- `router.hasRoute(name: string | symbol): boolean` Check if a route exists
 - `router.getRoutes(): RouteRecord[]` Get the current list of routes
 
 # Basic example
@@ -115,7 +115,7 @@ router.addRoute('ParentRoute', routeRecord)
 
 ```ts
 interface addRoute {
-  (parentName: string | Symbol, route: RouteRecord): () => void
+  (parentName: string | symbol, route: RouteRecord): () => void
   (route: RouteRecord): () => void
 }
 ```
@@ -126,7 +126,7 @@ Removing a route removes all its children as well. As with `addRoute`, it's nece
 
 ```ts
 interface removeRoute {
-  (name: string | Symbol): () => void
+  (name: string | symbol): void
 }
 ```
 
@@ -136,7 +136,7 @@ Checks if a route exists:
 
 ```ts
 interface hasRoute {
-  (name: string | Symbol): boolean
+  (name: string | symbol): boolean
 }
 ```
 
