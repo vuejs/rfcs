@@ -5,7 +5,7 @@
 
 # Summary
 
-- Explicitely define what a navigation failure is and how and where we can catch them.
+- Explicitly define what a navigation failure is, and how and where we can catch them.
 - Change when the Promised-based `router.push`(and `router.replace` by extension) resolves and rejects.
 - Make `router.push` consistent with `router.afterEach` and `router.onError`.
 
@@ -59,7 +59,7 @@ The current behavior of Vue Router regarding the promise returned by `push` is i
 
 - `onError` is only triggered on thrown errors and `next(new Error())`
 - `afterEach` is only called if there is a navigation
-- `redirect` should behave the same as `next('/url')` in a Navigation guard when it comes to the outcome of `router.push` and calls of `router.afterEach`/`router.onError`. The only differenc being that a `redirect` would only trigger leave guards and other before guards for the redirected location but not the original one
+- `redirect` should behave the same as `next('/url')` in a Navigation guard when it comes to the outcome of `router.push` and calls of `router.afterEach`/`router.onError`. The only difference being that a `redirect` would only trigger leave guards and other before guards for the redirected location but not the original one
 
 The differences between the Promise resolution/rejection vs `router.afterEach` and `router.onError` are inconsistent and confusing.
 
@@ -74,7 +74,7 @@ One of the main points is to be able to consistently handle failed navigations g
   - Triggers `router.onError`
   - Rejects the `Promise` returned by `router.push`
 
-It's important to note there is no overlap in these two groups: if there is an uhandled error in a Navigation Guard, it will trigger `router.onError` as well as rejecting the `Promise` returned by `router.push` but **will not trigger** `router.afterEach`. Cancelling a navigation with `next(false)` will not trigger `router.onError` but will trigger `router.afterEach`
+It's important to note there is no overlap in these two groups: if there is an unhandled error in a Navigation Guard, it will trigger `router.onError` as well as rejecting the `Promise` returned by `router.push` but **will not trigger** `router.afterEach`. Cancelling a navigation with `next(false)` will not trigger `router.onError` but will trigger `router.afterEach`
 
 ## Changes to the Promise resolution and rejection
 
@@ -170,4 +170,4 @@ router.afterEach((to, from, failure) => {
 # Adoption strategy
 
 - `afterEach` and `onError` are relatively simple to migrate, most of the time they are not used many times either.
-- `router.push
+- `router.push` doesn't reject when navigation fails anymore. Any code relying on catching an error should await the promise result instead.
