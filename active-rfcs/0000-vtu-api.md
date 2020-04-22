@@ -7,7 +7,7 @@
 
 VueTestUtils 2.x, which targets Vue 3, will introduce a few new methods and remove some less used ones.
 
-- **Breaking:** `sync` mode removed. All `wrapper` methods return `nextTick`, you must `await` them
+- **Breaking:** `sync` mode removed. All `wrapper` methods return a `Promise` from `nextTick()`.
 - **Breaking:** `find` is now split into `find` and `findComponent`.
 - **Breaking:** Removal of some wrapper properties and methods, as they induce bad testing habits or are obsolete. 
 - **Breaking:** `shallowMount` stubs defaults slots
@@ -26,7 +26,7 @@ VueTestUtils 2.x, which targets Vue 3, will introduce a few new methods and remo
 # Detailed design
 
 - `createLocalVue` is removed. Vue now exposes `createApp`, which creates an isolated app instance. VTU does that under the hood.
-- Fully `async`, each method that involves a mutation returns `nextTick`. Methods like `setValue` and `trigger` can be awaited, ensuring the DOM is re-rendered before each assertion.
+- Fully `async`, each method that induces a mutation returns a `Promise` from `nextTick()`. Methods like `setValue` and `trigger` can be awaited, ensuring the DOM is re-rendered before each assertion.
 - Rewritten completely in TypeScript, giving much improved type hints when writing tests.
 - `shallowMount` will stub default slots of stubbed components. There will be an opt-in configuration to enable rendering slots for stubbed components in a similar manner to VTU beta. There is a limitation that scoped slots will not be able to provide data in such cases.
 - Simple plugin system to allow extending VTU with your own methods. See [Plugins](#plugin-system)
@@ -103,12 +103,13 @@ These settings can also be globally set via the exported `config` object - `conf
 
 [Link](https://vuejs.github.io/vue-test-utils-next-docs/api/#findcomponent)
 
-`findComponent` can find component instances, deeply nested in your component tree. This is most useful for edge case assertions, that are not reflected in the DOM or when using `shallowMount` and asserting props on a stub.
+`findComponent` can search for component instances, nested any level in your component tree. This method is most useful for edge case assertions, that are not reflected directly in the DOM
+ or when using `shallowMount` and asserting props on a stub.
  
-Users should use `find` for the majority of cases, asserting the DOM properties, not the Vue components.
+In most cases, users will use `find` for asserting DOM properties and content. In cases where a Vue component instance is a really needed, use `findComponent`.
 
 - **New** - finds a Vue Component instance by `ref`, `name`, `query` or Component definition. Returns `VueWrapper`.
-- **New** - Only available on `VueWrapper`.
+- **New** - Only available on `VueWrapper` - cannot chain off `find`.
 
 #### findAllComponents
 
