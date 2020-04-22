@@ -165,9 +165,10 @@ router.afterEach((to, from, failure) => {
 
 # Alternatives
 
-- Differentiating `next(false)` from navigations that get overriden by more recent navigations by defining another Navigation Failure
+- Differentiating `next(false)` from navigations that get overridden by more recent navigations by defining another Navigation Failure
 
 # Adoption strategy
 
+- Expose `NavigationFailureType` in vue-router@3 so that Navigation Failures can be told apart from regular Errors. We could also expose a function `isNavigationFailure` to tell them apart.
 - `afterEach` and `onError` are relatively simple to migrate, most of the time they are not used many times either.
 - `router.push` doesn't reject when navigation fails anymore. Any code relying on catching an error should await the promise result instead.
