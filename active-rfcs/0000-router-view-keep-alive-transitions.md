@@ -88,15 +88,9 @@ The warning not being related to Vue Router in any way, this might be quite conf
 
 Pretty much the same as the point above of _forgetting `v-if`_.
 
-Why should we _not_ do this? Please consider:
+# Wrapping `RouterView` with `Transition` or `KeepAlive`
 
-- implementation cost, both in term of code size and complexity
-- whether the proposed feature can be implemented in user space
-- the impact on teaching people Vue
-- integration of this feature with other existing and planned features
-- cost of migrating existing Vue applications (is it a breaking change?)
-
-There are tradeoffs to choosing any path. Attempt to identify them here.
+If the user accidentally wraps `RouterView` with `Transition` or is migrating their application to Vue 3, we could issue a warning pointing to the documentation (this RFC in the meantime) and hinting them to use the `v-slot` api.
 
 # Alternatives
 
