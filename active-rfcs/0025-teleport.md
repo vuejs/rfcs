@@ -314,7 +314,7 @@ As mentioned, several 3rd party plugins/libs implement similar functionality rig
 
 Some of them may become irrelevant though this RFC, while others, offering functionality that exceeds what this proposal describes, would could adapt their implementation to make use of this proposal's "native" `<teleport>` component internally.
 
-If RFC [vuejs/vue-next#28](vuejs/vue-next#28) (Render function change) is adopted, these libraries will have to be reworked either way, at which point they can adopt this new feature.
+If RFC vuejs/vue-next#28 (Render function change) is adopted, these libraries will have to be reworked either way, at which point they can adopt this new feature.
 
 # Unresolved questions
 
