@@ -255,7 +255,7 @@ If the new target selector doesn't match any elements:
 
 ### Destruction
 
-When a `<teleport>` is being destroyed (e.g. because its parent component is being destroyed or because of a `v-if`), its children are removed from the DOM and any component instances destroyed just like they were still children iof the parent.
+When a `<teleport>` is being destroyed (e.g. because its parent component is being destroyed or because of a `v-if`), its children are removed from the DOM and any component instances destroyed just like they were still children of the parent.
 
 ## Miscellaneous
 
@@ -272,13 +272,13 @@ Or should we keep it as the concept of what a portal is in Vue, React e.t al. is
 
 ### dev-tools
 
-The `<teleport>` should not appear in the chain of parent components (`this.$parent`), but it should be identifiable within the virtual DOM so that Vue's dee-tools can show them in their visualisation of the component tree.
+The `<teleport>` should not appear in the chain of parent components (`this.$parent`), but it should be identifiable within the virtual DOM so that Vue's dev-tools can show them in their visualisation of the component tree.
 
 ### Using a `<teleport>` on an element within a Vue app
 
 Technically, this proposal allows to select _any_ element in the DOM , including elements that are rendered by our Vue app in some other part of the component tree.
 
-But that puts the portal'd slot content under the control of that other component's lifecycle, which means the content can possibly be removed from the DOM if that component gets destroyed.
+But that puts the portal's slot content under the control of that other component's lifecycle, which means the content can possibly be removed from the DOM if that component gets destroyed.
 
 Any component that came through a `<teleport>` would effectively have its DOM removed by still be in the original virtual DOM tree, which would lead to patch errors when these components tried to update.
 
