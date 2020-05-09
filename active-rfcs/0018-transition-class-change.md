@@ -55,6 +55,7 @@ The asymmetry and lack of explicitness in `.v-enter` and `.v-leave` makes these 
 - The `<transition>` component's related prop names are also changed:
   - `leave-class` is renamed to `leave-from-class` (in render functions or JSX, can be written as `leaveFromClass`)
   - `enter-class` is renamed to `enter-from-class` (in render functions or JSX, can be written as `enterFromClass`)
+  - `appear-class` is renamed to `appear-from-class` (in render functions or JSX, can be written as `appearFromClass`)
 
 # Adoption strategy
 
