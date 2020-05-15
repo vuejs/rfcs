@@ -1,4 +1,4 @@
-- Start Date: 2020-5-15
+- Start Date: 2020-05-15
 - Target Major Version: 2.x, 3.x
 - Reference Issues: N/A
 - Implementation PR:
@@ -63,6 +63,9 @@ It is often required that we rewrite existing form components that accept `v-mod
 </script>
 ```
 
+# Detailed design
+An error can be thrown when trying to set a prop without setter. However when a prop has a setter (in the `set` property, as in `computed`), an attempt to set the prop will call the prop’s setter.
+
 # Drawbacks
 It may make Vue’s one-way data flow less apparent.
 
@@ -102,3 +105,7 @@ https://github.com/vuejs/rfcs/pull/10:
   };
 </script>
 ```
+
+# Adoption Strategy
+
+https://github.com/vuejs/rfcs/pull/140
