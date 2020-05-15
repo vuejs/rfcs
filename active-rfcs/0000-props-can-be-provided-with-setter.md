@@ -106,6 +106,7 @@ https://github.com/vuejs/rfcs/pull/10:
 </script>
 ```
 
-# Adoption Strategy
-
 https://github.com/vuejs/rfcs/pull/140
+
+# Adoption Strategy
+N/A
