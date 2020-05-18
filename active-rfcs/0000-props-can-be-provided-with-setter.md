@@ -19,7 +19,7 @@
     model: {
       prop: 'value',
       event: 'input'
-    }
+    },
     props: {
       label: String,
       value: {
@@ -54,7 +54,7 @@ It is often required that we rewrite existing form components that accept `v-mod
     model: {
       prop: 'value',
       event: 'input'
-    }
+    },
     props: {
       label: String,
       value: String
@@ -84,7 +84,7 @@ https://github.com/vuejs/rfcs/pull/10:
     model: {
       prop: 'value',
       event: 'input'
-    }
+    },
     props: {
       label: String,
       value: {
