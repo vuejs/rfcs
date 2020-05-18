@@ -64,7 +64,7 @@ It is often required that we rewrite existing form components that accept `v-mod
 ```
 
 # Detailed design
-An error can be thrown when trying to set a prop without setter. However when a prop has a setter (in the `set` property, as in `computed`), an attempt to set the prop will call the prop’s setter.
+An error can be thrown when trying to set a prop without setter. However when a prop has a setter (in the `set` property, the same way as in `computed`), an attempt to set the prop will call the prop’s setter.
 
 # Drawbacks
 It may make Vue’s one-way data flow less apparent.
