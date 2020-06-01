@@ -59,6 +59,8 @@ Currently there are two ways of specifying an offset and both use an `x`/`y` coo
 
 # Detailed design
 
+Even though it is not commented anywhere in the RFC, **`scrollBehavior` can still return a Promise of any of the mentioned types**. It is omitted to focus on the shape of the return type instead of it being able to _await_ inside of `scrollBehavior`.
+
 ## Deprecating `x` and `y`
 
 This aligns with [`Element.scrollTo`](https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollTo) and makes it more natural passing extra options like [`behavior`](https://developer.mozilla.org/en-US/docs/Web/API/ScrollToOptions/behavior).
