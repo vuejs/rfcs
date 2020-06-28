@@ -9,6 +9,8 @@ Composition API : Setup component with a generator function
 
 # Basic example
 
+In practice, avoid non-explicit return/yield in order to avoid better
+
 ```ts
 // feature.js
 export function useFeature() {
@@ -33,13 +35,52 @@ function* setup() {
 }
 ```
 
-This should result to Template Render Context (TRC) :
+_**Current usage for comparison**_
+
+```ts
+function setup() {
+  const { id, setId } = useFeature()
+
+  return {
+    name: ref('foo')
+    id,
+    setId
+  }
+}
+```
+
+Both result to a Template Render Context (TRC) :
 
 ```js
 {
   id: 0,
   setId() { ... },
   name: 'foo'
+}
+```
+
+## Advanced example
+
+Features could be generator function too.
+
+```ts
+const useVirtualScroll = () => ({ virtual: true })
+const useAdminList = () => ({ adminList: [] })
+
+// combine-feature.js
+export function* useCombinedFeatures() {
+  yield useVirtualScroll()
+  yield toRefs(useAdminList())
+}
+
+// component-x.js
+export default {
+  *setup() {
+    yield* useCombinedFeatures()
+    // typings results to Generator<{virtual: boolean;} | {adminList: any[];}, void, unknown>
+
+    yield { name: ref('foo') }
+  },
 }
 ```
 
@@ -55,12 +96,12 @@ If TC39 accept my proposal, we could have something like that :
 
 ```ts
 function* setup() {
-  yield ({ id, setId } = useFeatureA())
+  yield { id, setId } = useFeatureA() // Note it's without brace
 
   // another feature with renaming
-  yield ({ id: featBId, setId: featBSetId } = useFeatureB())
+  yield { id: featBId, setId: featBSetId } = useFeatureB()
 
-  return { name: ref('foo') }
+  yield { name: ref('foo') }
 }
 ```
 
@@ -96,8 +137,27 @@ function getSetupResult(setupFn) {
 # Drawbacks
 
 - We don't have summary of Template Render Function
-- Two ways for creating a Setup function
+- Two ways for setup a component
+- Possible conflicts on keys if yield is used with a function directly without destructuring
 - Generator functions are not mastered by all developers (but should to!)
+
+If composables are generator too, we could have some drawbacks about typing if dynamic function are used:
+
+```ts
+export function* useCombinedFeatures(features: (Function | Function[])[] = []) {
+  yield useVirtualScroll()
+  yield toRefs(useAdminList())
+
+  for (const feature of features) {
+    yield Array.isArray(feature)
+      ? feature[0].apply(null, feature.slice(1))
+      : feature()
+  }
+}
+// ...
+// type resolves to Generator<any, void, unknown>
+yield * useCombinedFeatures([useAuthentication, [useTracking, 'component-x']])
+```
 
 # Adoption strategy
 
