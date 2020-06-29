@@ -171,7 +171,7 @@ type __$props__ = { msg: string }
 
 export default defineComponent({
   props: (['msg'] as unknown) as undefined,
-  setup($props: props__) {
+  setup($props: __$props__) {
     const computedMsg = computed(() => $props.msg + '!!!')
 
     return {
