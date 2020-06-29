@@ -125,7 +125,7 @@ However, this approach has a few issues:
 
 - `Foo` is unused in the script scope, making it annoying when using linter rules that check for unused variables.
 
-- The only safe assumption about an import being a Vue component is the `.vue` extension, which makes it unable to support components authored in non-SFC formats (e.g. `import Foo from './Foo/ts'` can be a component but we can't really be sure).
+- The only safe assumption about an import being a Vue component is the `.vue` extension, which makes it unable to support components authored in non-SFC formats (e.g. `import Foo from './Foo.ts'` can be a component but we can't really be sure).
 
 # Adoption strategy
 
