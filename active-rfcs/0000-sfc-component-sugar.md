@@ -11,9 +11,13 @@ Syntax sugar for reducing component import and registration boilerplate in Singl
 
 ```html
 <component src="./Foo.vue"/>
+<component async src="./Bar.vue"/>
+<component src="./Baz.vue" as="Qux" />
 
 <template>
   <Foo/>
+  <Bar/>
+  <Qux/>
 </template>
 ```
 
