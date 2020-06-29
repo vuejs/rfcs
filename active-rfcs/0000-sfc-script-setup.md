@@ -111,7 +111,8 @@ import { computed } from 'vue'
 export const $options = {
   props: {
     msg: String
-  }
+  },
+  inheritAttrs: false
 }
 
 export const computedMsg = computed(() => $props.msg + '!!!')
