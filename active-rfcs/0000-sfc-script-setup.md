@@ -199,6 +199,8 @@ This is a fully backwards compatible new feature.
 
 ## Magic `let` bindings
 
+> Note: This section is not a part of this RFC but included here merely for reference.
+
 It is technically possible to compile `let` bindings in a way so that root level `let` bindings are implicitly reactive:
 
 ```vue
