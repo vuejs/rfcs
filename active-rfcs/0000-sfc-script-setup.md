@@ -102,13 +102,13 @@ export default {
 
 ## Declaring props or additional options
 
-One problem with `<script setup>` is that it removes the ability to declare other component options, for example `props`. We can solve this by checking a special export, `$options`:
+One problem with `<script setup>` is that it removes the ability to declare other component options, for example `props`. We can solve this by treating the default export as additional options (this also aligns with normal `<script>`):
 
 ```vue
 <script setup>
 import { computed } from 'vue'
 
-export const $options = {
+export default {
   props: {
     msg: String
   },
@@ -124,15 +124,11 @@ This will compile to:
 ```js
 import { computed } from 'vue'
 
-const $options = {
+export default {
   props: {
     msg: String
   },
-  inheritAttrs: false
-}
-
-export default {
-  ...$options,
+  inheritAttrs: false,
   setup($props) {
     const computedMsg = computed(() => $props.msg + '!!!')
 
