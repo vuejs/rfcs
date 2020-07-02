@@ -10,7 +10,7 @@ Given the changes to functional components in Vue 3, `KeepAlive` and `Transition
 ```vue
 <router-view v-slot="{ Component }">
   <transition :name="transitionName" mode="out-in">
-    <component v-if="Component" :is="Component"></component>
+    <component :is="Component"></component>
   </transition>
 </router-view>
 ```
@@ -39,7 +39,7 @@ createRouter({
 })
 ```
 
-The `router-view` will automatically add the `id` prop to the rendered component with the value of the param named `id`. Note you can also do `v-bind="route.params"` like shown in the example above.
+The `router-view` will automatically add the `id` prop to the rendered component with the value of the param named `id`. Note you can also do `v-bind="route.params"` like shown in the example above **instead** of using `props: true`.
 
 ## No match case
 
@@ -47,7 +47,7 @@ When the current location isn't matched by any record registered by the Router, 
 
 ```vue
 <router-view v-slot="{ Component }">
-  <component v-if="Component" :is="Component"></component>
+  <component :is="Component"></component>
   <div v-else>Not Found</div>
 </router-view>
 ```
