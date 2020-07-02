@@ -46,8 +46,8 @@ The `router-view` will automatically add the `id` prop to the rendered component
 When the current location isn't matched by any record registered by the Router, the `matched` array of a `RouteLocation` is empty and, by default, when no _slot_ is provided, it renders nothing. When we provide a _slot_, we can decide of what to display, whether we want to display a _not found_ page or we want the default behavior, we are able to do it. `Component` will be falsy if there is no component to render:
 
 ```vue
-<router-view v-slot="{ Component }">
-  <component :is="Component"></component>
+<router-view v-slot="{ Component, route }">
+  <component v-if="route.matched.length > 0" :is="Component"/>
   <div v-else>Not Found</div>
 </router-view>
 ```
@@ -57,13 +57,27 @@ Note that this behavior is redundant with the _catch all_ route (`path: '/:pathM
 ## `v-slot` properties
 
 - `Component`: _Component_ that can be passed to the function `h` or to the `is` prop of `component`.
-- `route`: Normalized Route location rendered by `RouterView`. Same as `$route`.
+- `route`: Normalized Route location rendered by `RouterView`. Same as `$route` but allows easy and typed access in JSX.
 
-# Drawbacks
-
-# Wrapping `RouterView` with `Transition` or `KeepAlive`
+## Wrapping `RouterView` with `Transition` or `KeepAlive`
 
 If the user accidentally wraps `RouterView` with `Transition` or is migrating their application to Vue 3, we could issue a warning pointing to the documentation (this RFC in the meantime) and hinting them to use the `v-slot` api.
+
+## Using both `KeepAlive` and `Transition` at the same time
+
+When using `KeepAlive` and `Transition` at the same time, we need to do `Transition` then `KeepAlive`:
+
+```vue
+<router-view v-slot="{ Component }">
+  <transition name="fade" mode="out-in">
+    <keep-alive>
+      <component :is="Component"></component>
+    </keep-alive>
+  </transition>
+</router-view>
+```
+
+<!-- # Drawbacks -->
 
 # Alternatives
 
