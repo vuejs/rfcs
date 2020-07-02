@@ -52,6 +52,8 @@ Without this distinction it's even harder to justify a concept of Scoped Slots i
 
 This change would also leave intact current render function API in Vue 3, which is important considering the late stage of Vue 3 development.
 
+Lastly, this change will align Vue terminology with React (Render Props) and Svelte (Slot props), which in result would smoothen migration curve for people coming from React or Svelte world.
+
 # Detailed design
 
 Scoped Slots should be referred to as Slots with props or Slot Props when it comes to actual slot props.
