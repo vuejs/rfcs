@@ -92,9 +92,19 @@ In case we're wrapping such a component using props the code will look as follow
 This is not very user-friendly compared to simply `v-model:bar="bar"` when dealing with local state.
 Wrapper components should not introduce extra barriers when working with `v-model`.
 
+## Why modifier
+
+One may consider having simply `v-model` to deal with both local state binding and event binding.
+Modifier is required in order to solve two problems with this approach:
+
+1. Performance penalty of checking against props
+2. Readability (not being able to distinguish between data that's local and external)
+
 # Detailed design
 
-`prop` modifier is no different from any other `v-model` modifier.
+`prop` modifier changes `v-model` behaviour.
+When applied, `v-model` should no longer mutate model value, but instead emit an event that corresponds to model name with a new model value.
+
 Provided we have such a template:
 
 ```html
@@ -121,17 +131,80 @@ export default {
 
 `prop` modifier is also conflict-free for any other model modifiers, except for `prop` modifier itself.
 
-## Why modifier
+## Computed models
 
-One may consider having simply `v-model` to deal with both local state binding and event binding.
-Modifier is required in order to solve two problems with this approach:
+`prop` modifier does not support model value as a computed property with getter and setter. An error should be raised in that case.
 
-1. Performance penalty of checking against props
-2. Readability (not being able to distinguish between data that's local and external)
+```html
+<template>
+  <input v-model.prop="computedModel">
+</template>
+
+<script>
+  export default {
+    computed: {
+      computedModel: {
+        // should raise an error on component render
+        get() {},
+        set() {},
+      }
+    }
+  }
+</script>
+```
+
+## Deep models
+
+Deep models should return a cloned value with a model value property replaced.
+
+```html
+<template>
+  <input v-model.prop="modelValue.title">
+</template>
+
+<script>
+  export default {
+    props: ['modelValue'],
+  }
+</script>
+```
+
+In the example above `v-model` setter should do the following:
+
+```js
+set(titleValue) {
+  const newValue = Object.assign({}, this.modelValue);
+  newValue.title = titleValue;
+  this.$emit('update:modelValue', newValue);
+}
+```
+
+For arrays it should be:
+
+```html
+<template>
+  <input v-model.prop="modelValue[1]">
+</template>
+
+<script>
+  export default {
+    props: ['modelValue'],
+  }
+</script>
+```
+```js
+set(titleValue) {
+  const newValue = this.modelValue.slice(0);
+  newValue[0] = titleValue;
+  this.$emit('update:modelValue', newValue);
+}
+```
 
 # Drawbacks
 
 A new reserved modifier for model.
+There's already a `prop` modifier for `v-bind` which serves a completely different task.
+Having two modifiers with a same name could result in confusion.
 
 # Alternatives
 
@@ -140,13 +213,3 @@ An alternative `event` modifier name could be considered to better indicate a ty
 # Adoption strategy
 
 No migration steps required.
-
-# Unresolved questions
-
-## Object prop models
-
-When used with an object prop model should it emit an `update:object.prop` event, or `update:object` with the whole object containing an updated prop?
-
-```html
-<Foo v-model.prop="obj.value" />
-```
