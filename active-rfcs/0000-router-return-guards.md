@@ -11,7 +11,7 @@ Allow navigation guards to return the value **or a Promise** of it instead of ca
 // change
 router.beforeEach((to, from, next) => {
   if (!isAuthenticated) next(false)
-  else next
+  else next()
 })
 
 // into
