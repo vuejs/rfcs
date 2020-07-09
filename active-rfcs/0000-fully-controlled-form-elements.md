@@ -80,7 +80,7 @@ Vue implements uncontrolled approach for form elements bindings (i.e. elements t
 
 Vue follows Angular approach to controlled bindings, while Svelte provides a nice balance between strictly controlled and uncontrolled behaviour.
 
-[Compare Vue and Svelte behaviour](https://zkerd.sse.codesandbox.io/)
+[Compare Vue and Svelte model transformations behaviour](https://zkerd.sse.codesandbox.io/)
 
 Examples of two-way binding:
 
