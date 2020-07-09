@@ -27,9 +27,8 @@ Consider such a component:
     computed: {
       controlledModel: {
         get() { return this.value },
-        set(newValue) {
-          if (newValue.length > 1) this.value = newValue[0]
-          else { this.value = newValue }
+        set(value) {
+          this.value = value[0] || null
         },
       }
     }    
@@ -81,7 +80,7 @@ Vue implements uncontrolled approach for form elements bindings (i.e. elements t
 
 Vue follows Angular approach to controlled bindings, while Svelte provides a nice balance between strictly controlled and uncontrolled behaviour.
 
-[Compare Vue and Svelte behaviour](!!!!!!!)
+[Compare Vue and Svelte behaviour](https://zkerd.sse.codesandbox.io/)
 
 Examples of two-way binding:
 
@@ -111,7 +110,15 @@ This is considered a one-way binding as well:
 
 ## Problems of uncontrolled approach
 
-(watchers, forceUpdate, input prevention)
+Uncontrolled approach requires special handling when it comes to state synchronization.
+Right now it's possible to force a controlled mode via `this.$forceUpdate()`, but this creates a couple of problems:
+
+- Developer has to be aware of this behaviour, know about `$forceUpdate` and how it actually works
+- This fix has to be applied for every uncontrolled model that has to be forced into controlled mode
+
+Developers unaware of `$forceUpdate` fix could create their own solutions to the problem, in particular prevent native `keyup` event for validation, which is not sustainable in a long run.
+
+And most importantly, it's an expected behaviour for `v-model`. When a two-way binding is created it is expected that the model is in a full control over the value the UI displays.
 
 ## Benefits of suggested mixed approach
 
@@ -135,29 +142,39 @@ There are many benefits that controlled `v-model` has over uncontrolled.
 
 Controlled `v-model` gives you full control over value transformations. No more need for manual state synchronization, input prevention and any other hacks that were necessary before.
 
-```js
-{
-  model: {
-    get() { return this.value },
-    set(value) {
-      // it just works, user is unable to enter 'foo'
-      if (value === 'foo') return;
-      this.value = value;
-    },
-  }
-}
-```
-
 ### Higher-order models
 
+There also opens up an opportunity for higher-order models to provide model-based validation or transformations.
 
+```html
+<template>
+  <TextInput v-model="priceModel">
+</template>
+
+<script>
+  export default {
+    name: 'PriceInput',
+    props: ['modelValue'],
+    computed: {
+      propModel: {
+        get() { return this.modelValue },
+        set(value) {
+          // User won't be able to pass an invalid number
+          if (Number.isNaN(Number(value))) return;
+          this.$emit('update:modelValue', value);
+        }
+      }
+    }
+  }
+</script>
+```
 
 ### Uncontrolled bindings still possible
 
 It would still be possible to have uncontrolled bindings when necessary. You can achieve that by switching to one-way bindings instead.
 
 ```html
-<input :value="value" @input="onInput">
+<input :modelValue="value" @update:modelValue="onInput">
 ```
 
 # Detailed design
