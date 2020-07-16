@@ -69,7 +69,37 @@ A Controlled version would not allow user input that doesn't correspond to final
 
 ## Current state
 
-Vue implements uncontrolled approach for form elements bindings (i.e. elements that can accept user input).
+Vue implements uncontrolled approach for form elements bindings (i.e. elements that can accept user input) in options API.
+
+### Inconsistency with Composition API
+
+Current `v-model` behaviour is inconsistent between options API or Composition API. The following code will produce a fully controlled `v-model` in Composition API:
+
+```html
+<template>
+  <input v-model="model">
+</template>
+
+<script>
+  import { ref } from 'vue'
+  
+  export default {
+    setup() {
+      const message = ref(null) 
+ 
+      return {
+        get model() { return message.value },
+        set model(value) { 
+          if (value.length > 2) return
+          message.value = value
+        }
+      }
+    }
+  }
+</script>
+```
+
+This RFC intends to align current options API behaviour with Composition API.
 
 ### Comparison with other frameworks
 
