@@ -24,7 +24,7 @@ export default {
 }
 </script>
 
-<style :vars="{ color }">
+<style vars="{ color }">
 .text {
   color: var(--color);
 }
@@ -39,9 +39,9 @@ Now with [most modern browsers supporting native CSS variables](https://caniuse.
 
 # Detailed design
 
-The `<style>` tag in an SFC now supports a `:vars` binding, which accepts an expression for the key/values to inject as CSS variables. The expression must be an object literal and cannot contain computed keys (the compiler will warn such cases - see reasoning in the next section). Other than that, it is evaluated in the same context as expressions inside `<template>`.
+The `<style>` tag in an SFC now supports a `vars` binding, which accepts an expression for the key/values to inject as CSS variables. It is evaluated in the same context as expressions inside `<template>`.
 
-The variables will be applied to the component's root element as inline styles. In the above example, given a `:vars` binding that evaluates to `{ color: 'red' }`, the rendered HTML will be:
+The variables will be applied to the component's root element as inline styles. In the above example, given a `vars` binding that evaluates to `{ color: 'red' }`, the rendered HTML will be:
 
 ```html
 <div style="--color:red" class="text">hello</div>
@@ -49,33 +49,51 @@ The variables will be applied to the component's root element as inline styles. 
 
 ## Usage with `<style scoped>`
 
-When `:vars` is used with `<style scoped>`, we need to make sure the CSS variables do not leak to descendent components or accidentally shadow CSS variables higher up the DOM tree. The applied CSS variables will be prefixed with the component's scope ID:
+When `vars` is used with `<style scoped>`, we need to make sure the CSS variables do not leak to descendent components or accidentally shadow CSS variables higher up the DOM tree. The applied CSS variables will be prefixed with the component's scope ID:
 
 ```html
-<div style="--v-6b53742-color:red" class="text">hello</div>
+<div style="--6b53742-color:red" class="text">hello</div>
 ```
 
-Similarly, CSS variables inside `<style>` that matches the keys in the `:vars` expression will also be rewritten accordingly. This is also why we require the `:vars` expression to be an object literal with no computed keys.
-
-# Alternatives
-
-## Auto Detect Variables
-
-One of the considered alternatives is auto detecting variables to inject using a naming convention:
+Similarly, CSS variables inside `<style>` will also need be rewritten accordingly. With the following code:
 
 ```html
-<style>
-.text {
-  color: var(--v-color);
+<style scoped vars="{ color }">
+h1 {
+  color: var(--color);
 }
 </style>
 ```
 
-However, this has a few disadvantages:
+The inner CSS will be compiled into:
 
-- Intention is less explicit;
+```css
+h1 {
+  color: var(--6b53742-color);
+}
+```
 
-- Requires a full PostCSS parse first to extract matching variables before the main script can be processed. With `:vars` being declared on the `<style>` tag, the compiler can process the `<script>` part without parsing the CSS at all.
+**Note that when `scoped` and `vars` are both present, all CSS variables are considered to be local.** In order to reference a global CSS variable here, use the `global:` prefix:
+
+```html
+<style scoped vars="{ color }">
+h1 {
+  color: var(--color);
+  font-size: var(--global:fontSize);
+}
+</style>
+```
+
+The above compiles into:
+
+```css
+h1 {
+  color: var(--6b53742-color);
+  font-size: var(--fontSize);
+}
+```
+
+When there is only `scoped` and no `vars`, CSS variables are untouched. This preserves backwards compatibility.
 
 # Adoption strategy
 
