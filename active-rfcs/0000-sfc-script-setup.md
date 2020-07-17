@@ -15,10 +15,10 @@ Introduce a compile step for `<script setup>` to improve the authoring experienc
 </template>
 
 <script setup>
-import { ref } from 'vue'
+  import { ref } from 'vue'
 
-export const count = ref(0)
-export const inc = () => count.value++
+  export const count = ref(0)
+  export const inc = () => count.value++
 </script>
 ```
 
@@ -36,9 +36,9 @@ export default {
 
     return {
       count,
-      inc
+      inc,
     }
-  }
+  },
 }
 ```
 
@@ -70,33 +70,31 @@ When a `<script>` tag in an SFC has the `setup` attribute, it is compiled so tha
 
 ## Using `setup()` arguments
 
-The following equivalent of `setup()` arguments are implicitly available inside `<script setup>`:
+Setup arguments can be specified as the value of the `setup` attribute:
 
-- `$props`
-- `$attrs`
-- `$slots`
-- `$emit`
-
-The example code
-
-```js
+```vue
+<script setup="props, { emit }">
 import { watchEffect } from 'vue'
 
-watchEffect(() => console.log($props.msg))
-$emit('foo')
+watchEffect(() => console.log(props.msg))
+emit('foo')
+</script>
 ```
 
-would be compiled into:
+will be compiled into:
 
 ```js
 import { watchEffect } from 'vue'
 
+// setup is exported as a named export so it can be imported and tested
+export function setup(props, { emit }) {
+  watchEffect(() => console.log(props.msg))
+  emit('foo')
+  return {}
+}
+
 export default {
-  setup($props, { emit: $emit }) {
-    watchEffect(() => console.log($props.msg))
-    $emit('foo')
-    return {}
-  }
+  setup,
 }
 ```
 
@@ -105,17 +103,17 @@ export default {
 One problem with `<script setup>` is that it removes the ability to declare other component options, for example `props`. We can solve this by treating the default export as additional options (this also aligns with normal `<script>`):
 
 ```vue
-<script setup>
+<script setup="props">
 import { computed } from 'vue'
 
 export default {
   props: {
-    msg: String
+    msg: String,
   },
-  inheritAttrs: false
+  inheritAttrs: false,
 }
 
-export const computedMsg = computed(() => $props.msg + '!!!')
+export const computedMsg = computed(() => props.msg + '!!!')
 </script>
 ```
 
@@ -124,20 +122,26 @@ This will compile to:
 ```js
 import { computed } from 'vue'
 
-export default {
+const __default__ = {
   props: {
-    msg: String
+    msg: String,
   },
   inheritAttrs: false,
-  setup($props) {
-    const computedMsg = computed(() => $props.msg + '!!!')
+}
 
-    return {
-      computedMsg
-    }
+export function setup(props) {
+  const computedMsg = computed(() => props.msg + '!!!')
+
+  return {
+    computedMsg,
   }
 }
+
+__default__.setup = setup
+export default __default__
 ```
+
+Since `export default` is hoisted outside of `setup()`, it cannot reference variables declared inside. For example, if the default export object references `computedMsg`, it will result in a compile-time error.
 
 ## With TypeScript
 
@@ -166,21 +170,78 @@ import { computed, defineComponent } from 'vue'
 type __$props__ = { msg: string }
 
 export default defineComponent({
-  props: (['msg'] as unknown) as undefined,
+  props: ({
+    msg: String
+  } as unknown) as undefined,
   setup($props: __$props__) {
     const computedMsg = computed(() => $props.msg + '!!!')
 
     return {
-      computedMsg
+      computedMsg,
     }
-  }
+  },
 })
 </script>
 ```
 
-- Runtime props declaration is automatically generated from TS typing to remove the need of double declaration and still ensure correct runtime behavior. (It is force casted into `undefined` to ensure the user provided type is used in the emitted code)
+- Runtime props declaration is automatically generated from TS typing to remove the need of double declaration and still ensure correct runtime behavior.
+
+  - In dev mode, the compiler will try to infer corresponding runtime validation from the types. For example here `msg: String` is inferred from the `msg: string` type.
+
+  - In prod mode, the compiler will generate the array format declaration to reduce bundle size (the props here will be compiled into `['msg']`)
+
+  - The generated props declaration is force casted into `undefined` to ensure the user provided type is used in the emitted code.
 
 - The emitted code is still TypeScript with valid typing, which can be further processed by other tools.
+
+
+## Usage alongside normal `<script>`
+
+There are some cases where the code must be executed in the module scope, for example:
+
+- Declaring named exports that can be imported from the SFC file (`import { named } from './Foo.vue'`)
+
+- Global side effects that should only execute once.
+
+In such cases, a normal `<script>` block can be used alongside `<script setup>`:
+
+```vue
+<script>
+performGlobalSideEffect()
+
+// this can be imported as `import { named } from './*.vue'`
+export const named = 1
+</script>
+
+<script setup>
+import { ref } from 'vue'
+
+export const count = ref(0)
+</script>
+```
+
+the above will compile to:
+
+```js
+import { ref } from 'vue'
+
+performGlobalSideEffect()
+
+export const named = 1
+
+export function setup() {
+  const count = ref(0)
+  return {
+    count
+  }
+}
+
+export default { setup }
+```
+
+## Usage Restrictions
+
+Due to the difference in module execution semantics, code inside `<script setup>` relies on the context of an SFC. When moved into external `.js` or `.ts` files, it may lead to confusions for both developers and tools. Therefore, **`<script setup>`** cannot be used with the `src` attribute.
 
 # Drawbacks
 
@@ -189,89 +250,3 @@ This is yet another way of authoring components, and it requires understanding t
 # Adoption strategy
 
 This is a fully backwards compatible new feature.
-
-
-# Unresolved Questions
-
-## Magic `let` bindings
-
-> Note: This section is not a part of this RFC but included here merely for reference.
-
-It is technically possible to compile `let` bindings in a way so that root level `let` bindings are implicitly reactive:
-
-```vue
-<script setup>
-export let count = 0
-
-export function increment() {
-  count++
-}
-</script>
-```
-
-can be compiled into:
-
-```vue
-<script>
-import { reactive } from 'vue'
-
-export default {
-  setup() {
-    const __ctx__ = shallowReactive({})
-    __ctx__.count = 0
-
-    function increment() {
-      __ctx__.count++
-    }
-
-    return Object.assign(__ctx__, {
-      increment
-    })
-  }
-}
-</script>
-```
-
-This makes the code even more succinct and removes the need to use `ref` in the root scope of the component. However, this may be a bit too magical and there are a number of consistency issues if we enable this behavior:
-
-- Objects are not implicitly reactive:
-
-  ```js
-  export const state = { count: 0 }
-
-  export function increment() {
-    // doesn't work
-    state.count++
-  }
-  ```
-
-  Making root scope objects deeply reactive by default can lead to potential performance problems, since the user may declare a 3rd party object of unknown size.
-
-- Doesn't work inside nested functions:
-
-  ```js
-  function useFeature() {
-    // not reactive, since it's not root level
-    let count = 1
-    const inc = () => count++
-
-    return {
-      count,
-      inc
-    }
-  }
-  ```
-
-  If we also compile functions inside `<script setup>`, then composition functions inside and outside SFCs will behave *very* differently and the mental model is no longer consistent. It also creates friction for extracting reusable functions out of components.
-
-- Dependency tracking no longer explicit:
-
-  ```js
-  export let count = 0
-
-  watchEffect(() => console.log(count))
-  ```
-
-  By looking at the `watchEffect` callback alone, it is not immediately clear whether it tracks any dependencies at all. We will now need to check if a variable is declared via root level `let` to be sure.
-
-Given the above considerations, magical `let` bindings is not a part of the proposed features of this RFC, but it's discussed here to provide context on why we chose not to include it.
