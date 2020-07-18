@@ -145,19 +145,19 @@ Since `export default` is hoisted outside of `setup()`, it cannot reference vari
 
 ## With TypeScript
 
-`<script setup>` should just work with TypeScript in most cases. To make implicitly injected variables like `$props` and `$emit` work with proper types, simply declare them:
+`<script setup>` should just work with TypeScript in most cases. To type setup arguments like `props` and `emit`,, simply declare them:
 
 ```vue
-<script setup lang="ts">
+<script setup="props" lang="ts">
 import { computed } from 'vue'
 
 // declare props using TypeScript syntax
 // this will be auto compiled into runtime equivalent!
-declare const $props: {
+declare const props: {
   msg: string
 }
 
-export const computedMsg = computed(() => $props.msg + '!!!')
+export const computedMsg = computed(() => props.msg + '!!!')
 </script>
 ```
 
@@ -167,19 +167,19 @@ The above will compile to:
 <script lang="ts">
 import { computed, defineComponent } from 'vue'
 
-type __$props__ = { msg: string }
-
 export default defineComponent({
   props: ({
     msg: String
   } as unknown) as undefined,
-  setup($props: __$props__) {
-    const computedMsg = computed(() => $props.msg + '!!!')
+  setup(props: {
+    msg: string
+  }) {
+    const computedMsg = computed(() => props.msg + '!!!')
 
     return {
       computedMsg,
     }
-  },
+  }
 })
 </script>
 ```
