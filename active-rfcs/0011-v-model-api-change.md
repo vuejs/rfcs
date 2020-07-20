@@ -39,7 +39,7 @@ h(Comp, {
 })
 ```
 
-If the component wants to support `v-model` without an argument, it should expect a prop named `modelValue`. To sync its value back to the parent, the child should emit an event named `"update:modelValue"` (see [Render Function API change](https://github.com/vuejs/rfcs/blob/render-fn-api-change/active-rfcs/0000-render-function-api-change.md) for details on the new VNode data structure).
+If the component wants to support `v-model` without an argument, it should expect a prop named `modelValue`. To sync its value back to the parent, the child should emit an event named `"update:modelValue"` (see [Render Function API change](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0008-render-function-api-change.md) for details on the new VNode data structure).
 
 The default compilation output prefixes the prop and event names with `model` to avoid conflict with common prop names.
 

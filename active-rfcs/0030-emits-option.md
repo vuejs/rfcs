@@ -80,7 +80,7 @@ Or it can be an object with event names as its keys. The value of each property 
 
 ## Fallthrough Control
 
-The new [Attribute Fallthrough Behavior](https://github.com/vuejs/rfcs/blob/amend-optional-props/active-rfcs/0000-attr-fallthrough.md) proposed in [#154](https://github.com/vuejs/rfcs/pull/154) now applies automatic fallthrough for `v-on` listeners used on a component:
+The new [Attribute Fallthrough Behavior](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0031-attr-fallthrough.md) proposed in [#154](https://github.com/vuejs/rfcs/pull/154) now applies automatic fallthrough for `v-on` listeners used on a component:
 
 ```html
 <Foo @click="onClick" />
