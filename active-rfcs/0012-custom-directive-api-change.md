@@ -76,7 +76,7 @@ return withDirectives(h('div'), [
 
 Where `vFoo` will be the directive object written by the user, which contains hooks like `mounted` and `updated`.
 
-`withDirectives` returns a cloned VNode with the user hooks wrapped and injected as vnode lifecycle hooks (see [Render Function API Changes](https://github.com/vuejs/rfcs/blob/render-fn-api-change/active-rfcs/0000-render-function-api-change.md#special-reserved-props) for more details):
+`withDirectives` returns a cloned VNode with the user hooks wrapped and injected as vnode lifecycle hooks (see [Render Function API Changes](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0008-render-function-api-change.md#special-reserved-props) for more details):
 
 ``` js
 {
