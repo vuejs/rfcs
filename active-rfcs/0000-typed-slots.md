@@ -1,6 +1,6 @@
 - Start Date: 2020-07-22
 - Target Major Version: 2.x and 3.x
-- Reference Issues: 
+- Reference Issues:
 - Implementation PR:
 
 # Summary
@@ -10,20 +10,15 @@ Allow to define named `slots` and `argument` in the `typescript` to provide auto
 # Basic example
 
 ```ts
-// default slot
-defineComponent({
-  slots: { item: { value: Number } },
-})
-
 // named slots
 defineComponent({
   slots: {
+    // slot name `item`
     item: { value: Number },
   },
   // ...
 })
 ```
-
 
 # Motivation
 
@@ -35,7 +30,6 @@ This will allow to have type inference with using render funcions `h` and it wil
 
 Implementation will be similar to `emit` typings. This can also be used at the run-time to validate the slot as we do with props.
 
-
 # Drawbacks
 
 This is optional, for large applications this will be useful.
@@ -45,8 +39,6 @@ This is optional, for large applications this will be useful.
 There's `web-types.json` (Jetbrains) that describes the slots. AFAIK no solution for `Vetur`
 
 # Adoption strategy
-
-
 
 # Unresolved questions
 
