@@ -29,7 +29,7 @@ router.beforeEach((to, from, next) => {
 Then the promise returned by `router.push` rejects:
 
 ```js
-router.push('/url').catch(err => {
+router.push('/url').catch((err) => {
   // ...
 })
 ```
@@ -37,7 +37,7 @@ router.push('/url').catch(err => {
 In **all** other cases, the promise is resolved. We can know if the navigation failed or not by checking the resolved value:
 
 ```js
-router.push('/dashboard').then(failure => {
+router.push('/dashboard').then((failure) => {
   if (failure) {
     failure instanceof Error // true
     failure.type // NavigationFailure.canceled
@@ -83,16 +83,16 @@ Navigation methods like `push` return a Promise, this promise **resolves** once 
 To differentiate a Navigation that succeeded from one that failed, the `Promise` returned by `push` will resolve to either `undefined` or a `NavigationFailure`:
 
 ```js
-import { NavigationFailureType } from 'vue-router'
+import { NavigationFailureType, isNavigationFailure } from 'vue-router'
 
-router.push('/').then(failure => {
+router.push('/').then((failure) => {
   if (failure) {
     // Having an Error instance allows us to have a Stacktrace and trace back
     // where the navigation was cancelled. This will, in many cases, lead to a
     // Navigation Guard and the corresponding `next()` call that cancelled the
     // navigation
     failure instanceof Error // true
-    if (failure.type === NavigationFailureType.canceled) {
+    if (isNavigationFailure(failure, NavigationFailureType.canceled)) {
       // ...
     }
   }
@@ -111,9 +111,10 @@ By not rejecting the `Promise` when the navigation fails, we are avoiding _Uncau
 
 There are a few different navigation failures, to be able to react differently in your code
 
-Navigation failures can be differentiated through a `type` property. All possible values are hold by an `enum`, `NavigationFailureType`:
+Navigation failures can be differentiated through a `type` property **although you don't need to directly check it**. All possible values are hold by an `enum`, `NavigationFailureType`:
 
-- `cancelled`: `next(false)` inside of a navigation guard or a newer navigation took place while another one was ongoing.
+- `aborted`: a newer navigation took place while the current one was ongoing.
+- `cancelled`: `next(false)` inside of a navigation guard.
 - `duplicated`: Navigating to the same location as the current one will cancel the navigation and not invoke any Navigation guard.
 
 On top of the `type` property, navigation failures also expose `from` and `to` properties, exactly like `router.afterEach`
@@ -148,13 +149,39 @@ router.currentRoute // { path: '/login', redirectedFrom: { path: '/profile/dashb
 Since `router.afterEach` also triggers when a navigation fails, we need a way to know if the navigation succeeded or failed. To do that, we introduce an extra parameter that contains the same _failure_ we could find in a resolved navigation:
 
 ```js
-import { NavigationFailureType } from 'vue-router'
+import { NavigationFailureType, isNavigationFailure } from 'vue-router'
 
 router.afterEach((to, from, failure) => {
-  if (failure) {
-    if (failure.type === NavigationFailureType.canceled) {
-      // ...
-    }
+  if (isNavigationFailure(failure)) {
+    // ...
+  }
+})
+```
+
+## Differentiating Navigation failures
+
+Instead of directly checking the `type` property, we can use the `isNavigationFailure` helper:
+
+```js
+import { NavigationFailureType, isNavigationFailure } from 'vue-router'
+
+router.afterEach((to, from, failure) => {
+  // Any kind of navigation failure
+  if (isNavigationFailure(failure)) {
+    // ...
+  }
+  // Only duplicated navigations
+  if (isNavigationFailure(failure, NavigationFailureType.duplicated)) {
+    // ...
+  }
+  // Aborted or canceled navigations
+  if (
+    isNavigationFailure(
+      failure,
+      NavigationFailureType.aborted | NavigationFailureType.canceled
+    )
+  ) {
+    // ...
   }
 })
 ```
@@ -163,12 +190,8 @@ router.afterEach((to, from, failure) => {
 
 - Breaking change although migration is relatively simple and in many cases will allow the developer to remove existing code
 
-# Alternatives
-
-- Differentiating `next(false)` from navigations that get overridden by more recent navigations by defining another Navigation Failure
-
 # Adoption strategy
 
-- Expose `NavigationFailureType` in vue-router@3 so that Navigation Failures can be told apart from regular Errors. We could also expose a function `isNavigationFailure` to tell them apart.
+- Expose `NavigationFailureType` and `isNavigationFailure` in vue-router@3 so that Navigation Failures can be told apart from regular Errors.
 - `afterEach` and `onError` are relatively simple to migrate, most of the time they are not used many times either.
 - `router.push` doesn't reject when navigation fails anymore. Any code relying on catching an error should await the promise result instead.
