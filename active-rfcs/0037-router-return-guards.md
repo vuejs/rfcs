@@ -76,7 +76,7 @@ router.beforeEach(async (to) => {
 
 ## Errors
 
-Unexpected errors can still be thrown synchronously or synchronously:
+Unexpected errors can still be thrown synchronously or asynchronously:
 
 ```js
 router.beforeEach((to) => {
