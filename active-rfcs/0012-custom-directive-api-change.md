@@ -52,7 +52,7 @@ Existing hooks are renamed to map better to the component lifecycle, with some t
 - **new** `beforeUpdate` (called before the element itself is updated)
 - ~~`update`~~ *removed, use `updated` instead*
 - `componentUpdated` -> `updated` (called after the element itself and its children have been updated)
-- *new* `beforeUnmount`
+- **new** `beforeUnmount`
 - `unbind` -> `unmounted`
 
 ## Usage on Components
