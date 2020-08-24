@@ -46,12 +46,13 @@ Make custom directive hook names more consistent with the component lifecycle.
 
 Existing hooks are renamed to map better to the component lifecycle, with some timing adjustments. Arguments passed to the hooks remain unchanged.
 
-- `bind` -> `beforeMount`
-- `inserted` -> `mounted`
-- `beforeUpdate` *new, called before the element itself is updated*
+- **new** `created` (called before vnode props are applied to DOM node)
+- `bind` -> `beforeMount` (called after vnode props have been applied to DOM node)
+- `inserted` -> `mounted` (called after children have been inserted into the DOM node, and the DOM node itself has been inserted into parent element)
+- **new** `beforeUpdate` (called before the element itself is updated)
 - ~~`update`~~ *removed, use `updated` instead*
-- `componentUpdated` -> `updated`
-- `beforeUnmount` *new*
+- `componentUpdated` -> `updated` (called after the element itself and its children have been updated)
+- **new** `beforeUnmount`
 - `unbind` -> `unmounted`
 
 ## Usage on Components
