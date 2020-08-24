@@ -7,6 +7,7 @@
 
 - Rename the `v-enter` transition class to `v-enter-from`
 - Rename the `v-leave` transition class to `v-leave-from`
+- Rename the `v-appear` transition class to `v-appear-from`
 
 # Basic example
 
@@ -52,9 +53,11 @@ The asymmetry and lack of explicitness in `.v-enter` and `.v-leave` makes these 
 
 - `.v-enter` is renamed to `.v-enter-from`
 - `.v-leave` is renamed to `.v-leave-from`
+- `.v-appear` is renamed to `.v-appear-from`
 - The `<transition>` component's related prop names are also changed:
   - `leave-class` is renamed to `leave-from-class` (in render functions or JSX, can be written as `leaveFromClass`)
   - `enter-class` is renamed to `enter-from-class` (in render functions or JSX, can be written as `enterFromClass`)
+  - `appear-class` is renamed to `appear-from-class` (in render functions or JSX, can be written as `appearFromClass`)
 
 # Adoption strategy
 
