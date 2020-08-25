@@ -98,6 +98,24 @@ export default {
 }
 ```
 
+## Exposing Components
+
+Exports from `<script setup>` are also available to the template when rendering components. For example:
+
+```vue
+<script setup>
+export { default as Foo } from './Foo.vue'
+export { default as Bar } from './Bar.vue'
+export const ok = Math.random()
+</script>
+
+<template>
+  <Foo/>
+  <Bar/>
+  <component :is="ok ? Foo : Bar"/>
+</template>
+```
+
 ## Declaring props or additional options
 
 One problem with `<script setup>` is that it removes the ability to declare other component options, for example `props`. We can solve this by treating the default export as additional options (this also aligns with normal `<script>`):
@@ -194,6 +212,7 @@ export default defineComponent({
 
 - The emitted code is still TypeScript with valid typing, which can be further processed by other tools.
 
+Note that the `props` type declaration value cannot be an imported type, because the SFC compiler does not process external files to extract the prop names.
 
 ## Usage alongside normal `<script>`
 
@@ -237,6 +256,77 @@ export function setup() {
 }
 
 export default { setup }
+```
+
+## Transform API
+
+The `@vue/compiler-sfc` package exposes the `compileScript` method for processing `<script setup>`:
+
+```js
+import { parse, compileScript } from '@vue/compiler-sfc'
+
+const descriptor = parse(`...`)
+
+if (descriptor.scriptSetup) {
+  const result = compileScript(descriptor) // returns SFCScriptBlock
+  console.log(result.code)
+  console.log(result.bindings) // see next section
+}
+```
+
+The compilation requires the entire descriptor to be provided, and the resulting code will include sources from both `<script setup>` and normal `<script>` (if present). It is the higher level tools' (e.g. `vite` or `vue-loader`) responsibility to properly assemble the compiled output.
+
+## Template Binding Optimization
+
+The `SFCScriptBlock` returned by `compiledScript` also exposes a `bindings` object, which is the exported binding metadata gathered during the compilation. For example, given the following `<script setup>`:
+
+```vue
+<script setup="props">
+export const foo = 1
+
+export default {
+  props: ['bar']
+}
+</script>
+```
+
+The `bindings` object will be:
+
+```js
+{
+  foo: 'setup',
+  bar: 'props'
+}
+```
+
+This object can then be passed to the template compiler:
+
+```js
+import { compile } from '@vue/compiler-dom'
+
+compile(template, {
+  bindingMetadata: bindings
+})
+```
+
+With the binding metadata available, the template compiler can generate code that directly access template variables from the corresponding source, without having to go through the render context proxy:
+
+```html
+<div>{{ foo + bar }}</div>
+```
+
+```js
+// code generated without bindingMetadata
+// here _ctx is a Proxy object that dynamically dispatches property access
+function render(_ctx) {
+  return createVNode('div', null, _ctx.foo + _ctx.bar)
+}
+
+// code generated with bindingMetadata
+// bypasses the render context proxy
+function render(_ctx, _cache, $setup, $props, $data) {
+  return createVNode('div', null, $setup.foo + $props.bar)
+}
 ```
 
 ## Usage Restrictions
