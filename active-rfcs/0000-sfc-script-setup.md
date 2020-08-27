@@ -267,7 +267,7 @@ import { parse, compileScript } from '@vue/compiler-sfc'
 
 const descriptor = parse(`...`)
 
-if (descriptor.scriptSetup) {
+if (descriptor.script || descriptor.scriptSetup) {
   const result = compileScript(descriptor) // returns SFCScriptBlock
   console.log(result.code)
   console.log(result.bindings) // see next section
