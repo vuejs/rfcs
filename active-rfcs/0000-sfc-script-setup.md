@@ -47,15 +47,15 @@ In addition, one of the most often complained about aspect of the Composition AP
 This RFC introduces a compiler-powered alternative for the usage of `<script>` inside SFCs that greatly reduces the amount of boilerplate:
 
 ```diff
-import { ref } from 'vue'
-
+- import { ref } from 'vue'
+-
 -export default {
 -  setup() {
 -    const count = ref(0)
-+export const count = ref(0)
++export let count = 0
 -    const inc = () => count.value++
-+export const inc = () => count.value++
-
++export const inc = () => count++
+-
 -    return {
 -      count,
 -      inc
@@ -67,6 +67,115 @@ import { ref } from 'vue'
 # Detailed design
 
 When a `<script>` tag in an SFC has the `setup` attribute, it is compiled so that the code runs in the context of the `setup()` function of the component. All ES module exports are considered values to be exposed to the render context and included in the `setup()` return object.
+
+## Reactive `let` bindings
+
+Root scope `let` bindings are implicitly compiled into refs:
+
+```vue
+<script setup>
+export let count = 0
+
+export function increment() {
+  count++
+}
+</script>
+```
+
+is compiled into:
+
+```vue
+<script setup>
+import { ref } from 'vue'
+
+export default {
+  setup() {
+    let count = ref(0)
+
+    function increment() {
+      count.value++
+    }
+
+    return {
+      count
+    }
+  }
+}
+</script>
+```
+
+Details:
+
+1. This only affects **root level `let` bindings**. `const` declarations and variables declared inside nested functions are not affected:
+
+    ```vue
+    <script setup>
+    // reactive, compiled to ref
+    export let count = 0
+    // not reactive
+    export const max = 10
+    </script>
+    ```
+
+2. Objects declared using root level `let` are deeply reactive (because we are using `ref`):
+
+    ```vue
+    <script setup>
+    // converted with deep reactivity
+    export let state = {
+      count: 0
+    }
+
+    export function increment() {
+      // mutation works
+      state.count++
+      // replacement also works
+      state = { count: 2 }
+    }
+
+    // untouched - mutations are not reactive.
+    // if `config` expects to trigger reactive updates, use `let` instead.
+    export const config = {
+      foo: true
+    }
+    // will not trigger change
+    config.foo = false
+    </script>
+    ```
+
+    **Rule of thumb: use `let` for reactive values, use `const` for non-reactive values.**
+
+3. References to a root level `let` binding are compiled to automatically access its `.value`, so reactivity works whenever they are referenced:
+
+    ```vue
+    <script setup>
+    import { computed, watchEffect } from 'vue'
+
+    let count = 0
+
+    export const double = computed(() => count * 2)
+
+    watchEffect(() => {
+      console.log(`count is: ${count}`)
+    })
+    </script>
+    ```
+
+    Note that `watch` on a let binding does not work, because it is equivalent to `watch(ref.value)`. You will have to wrap it in a getter:
+
+    ```vue
+    <script setup>
+    import { watch } from 'vue'
+
+    let count = 0
+
+    watch(() => count, newCount => {
+      console.log(`count changed: ${newCount}`)
+    })
+    </script>
+    ```
+
+4. You can still use the Composition API to explicitly create refs (e.g. shallow or custom refs) or reactive objects. In fact, the entire reactive let binding feature is just additive syntax sugar - you can use `<script setup>` without relying on it. The API also provides an option to disable it altogether.
 
 ## Using `setup()` arguments
 
@@ -268,7 +377,15 @@ import { parse, compileScript } from '@vue/compiler-sfc'
 const descriptor = parse(`...`)
 
 if (descriptor.script || descriptor.scriptSetup) {
-  const result = compileScript(descriptor) // returns SFCScriptBlock
+  // All options are optional.
+  const options = {
+    // https://babeljs.io/docs/en/babel-parser#plugins
+    babelParserPlugins: []
+    // enable/disable reactive let? (default: true)
+    reactiveLet: false
+  }
+
+  const result = compileScript(descriptor, options) // returns SFCScriptBlock
   console.log(result.code)
   console.log(result.bindings) // see next section
 }
