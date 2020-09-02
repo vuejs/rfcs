@@ -163,7 +163,7 @@ Since `export default` is hoisted outside of `setup()`, it cannot reference vari
 
 ## With TypeScript
 
-`<script setup>` should just work with TypeScript in most cases. To type setup arguments like `props` and `emit`,, simply declare them:
+`<script setup>` should just work with TypeScript in most cases. To type setup arguments like `props` and `emit`, simply declare them:
 
 ```vue
 <script setup="props" lang="ts">
