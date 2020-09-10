@@ -131,7 +131,7 @@ While this would not:
 </script>
 ```
 
-This RFC intends to align current options API behaviour with Composition API.
+This RFC intends to align current options API and Composition API behaviour to a consisted one.
 
 ### Comparison with other frameworks
 
