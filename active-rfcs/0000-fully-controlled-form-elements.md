@@ -73,7 +73,9 @@ Vue implements uncontrolled approach for form elements bindings (i.e. elements t
 
 ### Inconsistency with Composition API
 
-Current `v-model` behaviour is inconsistent between options API or Composition API. The following code will produce a fully controlled `v-model` in Composition API:
+Current `v-model` behaviour is inconsistent between options API or Composition API.
+
+The following code will produce a fully controlled `v-model` in Composition API:
 
 ```html
 <template>
@@ -93,6 +95,36 @@ Current `v-model` behaviour is inconsistent between options API or Composition A
           if (value.length > 2) return
           message.value = value
         }
+      }
+    }
+  }
+</script>
+```
+
+While this would not:
+
+```html
+<template>
+  <input v-model="model">
+</template>
+
+<script>
+  import { ref, computed } from 'vue'
+  
+  export default {
+    setup() {
+      const message = ref(null)
+  
+      const model = computed({
+        get model() { return message.value },
+        set model(value) { 
+          if (value.length > 2) return
+          message.value = value
+        }
+      })
+ 
+      return {
+        model
       }
     }
   }
@@ -205,6 +237,42 @@ It would still be possible to have uncontrolled bindings when necessary. You can
 
 ```html
 <input :modelValue="value" @update:modelValue="onInput">
+```
+
+We can also create uncontrolled bindings in place:
+
+```html
+<input v-model="([])" type="radio" value="foo">
+```
+
+Since `v-model` value is not referencing any reactive value it is uncontrolled.
+
+### Fixes poor `readonly` HTML implementation
+
+HTML's `readonly` attribute prevents input value from any change.
+But it doesn't work for radio buttons and checkboxes because their values don't change, but their checked state does.
+With a controlled `v-model` we can fix this at ease:
+
+```html
+<template>
+  <input type="radio" v-model="inputModel" :value="value">
+</template>
+
+<script>
+  export default {
+    name: 'RadioInput',
+    props: ['modelValue', 'value', 'readonly'],
+    computed: {
+      inputModel: {
+        get() { return this.modelValue },
+        set(value) {
+          if (this.readonly) return;
+          this.$emit('update:modelValue', value);
+        }
+      }
+    }
+  }
+</script>
 ```
 
 # Detailed design
