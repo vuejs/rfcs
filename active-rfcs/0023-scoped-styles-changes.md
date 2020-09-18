@@ -13,12 +13,18 @@ Provide more consistent custom CSS extensions in Single File Component scoped st
 <style scoped>
 /* deep selectors */
 ::v-deep(.foo) {}
+/* shorthand */
+:deep(.foo) {}
 
 /* targeting slot content */
 ::v-slotted(.foo) {}
+/* shorthand */
+:slotted(.foo) {}
 
 /* one-off global rule */
 ::v-global(.foo) {}
+/* shorthand */
+:global(.foo) {}
 </style>
 ```
 
@@ -38,17 +44,19 @@ To avoid the confusion of the dropped `/deep/` combinator, we introduced yet ano
 
 The previous versions of the deep combinator are still supported for compatibility reasons in the current [Vue 2 SFC compiler](https://github.com/vuejs/component-compiler-utils), which again, can be confusing to users. In v3, we are deprecating the support for `>>>` and `/deep/`.
 
-As we were working on the new SFC compiler for v3, we noticed that CSS pseudo elements are in fact semantically NOT [combinators](https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Selectors/Combinators). It is more consistent with idiomatic CSS for pseudo elements to accept arguments instead, so we are also making `::v-deep()` work that way. The current usage of `::v-deep` as a combinator is still supported, however it is considered deprecated and will raise a warning.
+As we were working on the new SFC compiler for v3, we noticed that CSS pseudo elements are in fact semantically NOT [combinators](https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Selectors/Combinators). It is more consistent with idiomatic CSS for pseudo elements to accept arguments instead, so we are also making `::v-deep()` work that way. If you don't care about the explicit `v-` prefix, you can also use the shorter `:deep()` variant, which works exactly the same.
+
+The current usage of `::v-deep` as a combinator is still supported, however it is considered deprecated and will raise a warning.
 
 ## Targeting / Avoiding Slot Content
 
 Currently, slot content passed in from the parent are affected by both the parent's scoped styles AND the child's scoped styles. There is no way to author rules that explicitly target slot content only, or ones that do not affect slot content.
 
-In v3, we intend to make child scoped styles NOT affecting slot content by default. To explicitly target slot content, the `::v-slotted()` pseudo element can be used.
+In v3, we intend to make child scoped styles NOT affecting slot content by default. To explicitly target slot content, the `::v-slotted()` (shorthand: `:slotted()`) pseudo element can be used.
 
 ## One-Off Global Rules
 
-Currently to add a global CSS rule we need to use a separate unscoped `<style>` block. We are introducing a new `::v-global()` pseudo element for one-off global rules.
+Currently to add a global CSS rule we need to use a separate unscoped `<style>` block. We are introducing a new `::v-global()` (shorthand: `:global()`) pseudo element for one-off global rules.
 
 ---
 
