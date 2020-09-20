@@ -5,7 +5,7 @@
 
 # Summary
 
-A new `effectScope` API for `@vue/reactivity` that automatically collects the effects in a function call, and returns a stop handler to clean them up.
+A new `effectScope` API for `@vue/reactivity` that automatically collects the effects in a function call, and returns a `scope` instance that can be cleaned up by passing to the `stop()` API.
 
 # Basic example
 
