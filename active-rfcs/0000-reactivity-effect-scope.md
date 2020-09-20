@@ -25,7 +25,7 @@ stop()
 
 # Motivation
 
-When we use Composition API in the component setup, effects will be collected and bound to the current instance, when the instance get unmounted, this effects will be disposed automatically which I think it's very awesome and convenient.
+When we use Composition API in the component setup, effects will be collected and bound to the current instance. When the instance get unmounted, effects will be disposed automatically. I think it's a very awesome and convenient feature.
 
 However,  when we are using them out side of components or as a standalone package, it's not that ease. For example, this would be how we might need to do for disposing the effects of `computed` & `watch`
 
@@ -97,7 +97,7 @@ stop()
 
 ### Implementation
 
-I have implement a third-party library [@vue-reactivity/scope](https://github.com/vue-reactivity/scope) which is aimed to solve the exact same roblem. However, [it wrapped & re-exported](https://github.com/vue-reactivity/scope/blob/master/src/hijack.ts#L11) the `effect` and `computed` etc to make the auto collecting work. This deviated from the Vue's design and can not be directly reused for Vue applications. As this is a quite low level feature, I think it's better to be done in `@vue/reactivity` itself.
+I have implement a third-party library [@vue-reactivity/scope](https://github.com/vue-reactivity/scope) which is aimed to solve the exact same problem. However, since we have no way to get access the internal states of effect, [it have to  wrapp & re-export](https://github.com/vue-reactivity/scope/blob/master/src/hijack.ts#L11) the APIs (`effect` and `computed` etc.) to make the auto collecting work. This deviated from the Vue's design and can not be directly reused for Vue applications. As this is a quite low level feature, I think it's better to be done in `@vue/reactivity` itself. And could benefit Vue itself and the ecosystem built on top of `@vue/reactivity`.
 
 ### Affects to Vue
 
@@ -115,11 +115,11 @@ With this RFC, `@vue/runtime-dom` might also be able to do some refactoring by u
 # Drawbacks
 
 - doesn't work well with async scope function
-- variables created in the closure will be a bit hard to be accessible for the outer closure. (or maybe we should accept it's return value and passed out?)
+- variables created in the closure will be a bit hard to be accessible for the outer closure. (or maybe we should accept it's return value and pass it out?)
 
 # Alternatives
 
-Maybe a `onEffectCreation` hook, which can provide more flexibility and let users easily create their own scope utils or their custom frameworks' lifecycles. But that might be too flexible.
+Maybe a `onEffectCreation` hook instead, which can provide more flexibility and let users easily create their own scope utils or their custom frameworks' lifecycles. But that might be too flexible.
 
 # Adoption strategy
 
