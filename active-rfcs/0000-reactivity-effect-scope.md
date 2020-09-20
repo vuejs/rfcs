@@ -12,7 +12,7 @@ A new `effectScope` API for `@vue/reactivity` that automatically collects the ef
 ```ts
 // effect, computed, watch, watchEffect created inside the scope will be collected
 
-const stop = effectScope(() => {
+const scope = effectScope(() => {
   const doubled = computed(() => counter.value * 2)
 
   watch(doubled, () => console.log(double.value))
@@ -21,7 +21,17 @@ const stop = effectScope(() => {
 })
 
 // to dispose all effects in the scope
-stop()
+stop(scope)
+```
+
+A scope will be defined as
+
+```ts
+interface EffectScope {
+  uid: number
+  active: boolean
+  effects: (ReactiveEffect | EffectScope)[]
+}
 ```
 
 # Motivation
@@ -83,7 +93,7 @@ function createReactiveEffect( /* ... */ ) {
 Nested scopes should also be collected by its parent scope. And when the parent scope get disposed, all its descendant scopes will be also stopped.
 
 ```ts
-const stop = effectScope(() => {
+const scope = effectScope(() => {
   const doubled = computed(() => counter.value * 2)
   
   // not need to get the stop handler, it will be collected by the outer scope
@@ -95,7 +105,7 @@ const stop = effectScope(() => {
 })
 
 // to dispose all effects, as well as the nested scopes
-stop()
+stop(scope)
 ```
 
 ### Implementation
