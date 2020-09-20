@@ -37,13 +37,13 @@ const doubled = computed(() => counter.value * 2)
 
 disposables.push(() => stop(doubled.effect))
 
-cosnt stopWatch1 = watchEffect(() => {
+const stopWatch1 = watchEffect(() => {
   console.log(`counter: ${counter.value}`
 }))
 
 disposables.push(stopWatch1)
 
-cosnt stopWatch2 = watch(doubled, () => console.log(double.value))
+const stopWatch2 = watch(doubled, () => console.log(double.value))
 
 disposables.push(stopWatch2)
 ```
