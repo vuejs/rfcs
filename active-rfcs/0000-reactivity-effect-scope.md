@@ -24,17 +24,6 @@ const scope = effectScope(() => {
 stop(scope)
 ```
 
-A scope will be defined as
-
-```ts
-interface EffectScope {
-  _isEffectScope: true,
-  id: number
-  active: boolean
-  effects: (ReactiveEffect | EffectScope)[]
-}
-```
-
 # Motivation
 
 In Vue's component `setup()`, effects will be collected and bound to the current instance. When the instance get unmounted, effects will be disposed automatically. This is a convenient and intuitive feature.
@@ -93,6 +82,39 @@ function createReactiveEffect( /* ... */ ) {
 }
 ```
 
+### Scope
+
+A scope instance will be defined as
+
+```ts
+interface EffectScope {
+  (fn: () => void): void
+  _isEffectScope: true
+  id: number
+  active: boolean
+  effects: (ReactiveEffect | EffectScope)[]
+}
+```
+
+In `effectScope`, `effect` created inside the scope will be collected into the `effects` array. A scope instance will be returned by `effectScope`.
+
+```ts
+const scope = effectScope(() => {
+  const doubled = computed(() => counter.value * 2)
+
+  watch(doubled, () => console.log(double.value))
+
+  watchEffect(() => console.log('Count: ', double.value))
+})
+
+```
+
+When passing the scope instance into `stop()` API, it will stop all the effects and nested scopes recursively.
+
+```ts
+stop(scope)
+```
+
 ### Nested Scopes
 
 Nested scopes should also be collected by its parent scope. And when the parent scope get disposed, all its descendant scopes will be also stopped.
@@ -115,7 +137,7 @@ stop(scope)
 
 ### Escaping Nested Scopes
 
-An option can be passed as the second parameters of `effectScope`, allowing nested scopes not be collect by its parent scopes. The same behavior should apply to component's `setup()` scope.
+An option can be passed as the second parameters of `effectScope`, allowing nested scopes not to be collected by its parent scopes. The same behavior should apply to component's `setup()` scope.
 
 ```ts
 let nestedScope
@@ -137,6 +159,25 @@ stop(scope)
 
 // stop the nested scope
 stop(nestedScope)
+```
+
+### Extend the Scope
+
+A scope instance is also a callable function, which allows users to extend the scope and combine their effects.
+
+```ts
+const myScope = effectScope()
+
+myScope(() => {
+  watchEffect(/* ... */)
+})
+
+myScope(() => {
+  watch(/* ... */)
+})
+
+// both watchEffect and watch will be disposed
+stop(myScope)
 ```
 
 ## Implementation
