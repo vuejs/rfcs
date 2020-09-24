@@ -65,7 +65,7 @@ export const baz = computed(() => foo.value + bar)
 ## Multi-line computed
 
 ```html
-<script setup noref>
+<script noref>
 // @computed
 export const baz = (() => {
     let foo = 1
@@ -80,7 +80,7 @@ console.log(baz);
 <summary>Result</summary>
 
 ```html
-<script setup>
+<script>
 import { computed } from 'vue'
 
 export const baz = computed(() => {
