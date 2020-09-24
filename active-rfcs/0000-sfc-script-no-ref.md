@@ -52,7 +52,9 @@ export default {
 
 # Motivation
 
-TODO
+通常編寫代碼時，我們預期不需要`.value`來存取變量，`.value`的存取方式對用戶沒有額外好處。`.value`的特性也導致非ref變量與ref物件一起使用時，容易出現代碼看起來較混亂的情況。
+
+`.value`是ref物件的統一特性，因此我們認為可以利用編譯器將這個特性抺除，同時可以保留響應功能。
 
 # Detailed design
 
