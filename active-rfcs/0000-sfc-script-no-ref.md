@@ -40,6 +40,8 @@ TODO
 
 ## Use with `<script setup>`
 
+`noref`轉換不方式不具有破壞性，因此可以與`<script setup>`同時使用。
+
 ```html
 <script setup noref>
 export let foo = 1 // @ref
@@ -63,6 +65,8 @@ export const baz = computed(() => foo.value + bar)
 </details>
 
 ## Multi-line computed
+
+為了讓Language Service為`baz`獲取正確的類型，多行computed需要使用IIFE。
 
 ```html
 <script noref>
@@ -94,6 +98,10 @@ console.log(baz.value);
 </details>
 
 ## Don't transform
+
+某些情況下需要使用取得ref物件本身而非`.value`，例如在setup() return的時候。
+
+這種情況可以以小括號`()`包裏`no-ref`物件，編譯器會移除`no-ref`物件外的`()`，並抵削一次轉換操作。
 
 ```html
 <script noref>
