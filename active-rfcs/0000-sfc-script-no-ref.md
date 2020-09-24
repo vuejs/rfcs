@@ -154,7 +154,7 @@ export default {
 ```
 </details>
 
-# TypeScript
+## TypeScript
 
 `no-ref`物件可以像一般變量一樣定義類型
 
