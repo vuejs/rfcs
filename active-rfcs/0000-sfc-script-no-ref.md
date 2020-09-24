@@ -18,7 +18,7 @@
 export default {
     setup() {
         let count = 0 // @ref
-        let inc = () => count++
+        const inc = () => count++
 
         return {
             count,
@@ -38,8 +38,8 @@ import { ref } from 'vue'
 
 export default {
     setup() {
-        let count = ref(0)
-        let inc = () => count.value++
+        const count = ref(0)
+        const inc = () => count.value++
 
         return {
             count,
@@ -68,7 +68,7 @@ TODO
 <script setup noref>
 export let foo = 1 // @ref
 export let bar = 2
-export let baz = foo + bar // @computed
+export const baz = foo + bar // @computed
 </script>
 ```
 
@@ -79,9 +79,9 @@ export let baz = foo + bar // @computed
 <script setup>
 import { ref, computed } from 'vue'
 
-export let foo = ref(1)
+export const foo = ref(1)
 export let bar = 2
-export let baz = computed(() => foo.value + bar)
+export const baz = computed(() => foo.value + bar)
 </script>
 ```
 </details>
@@ -93,9 +93,9 @@ export let baz = computed(() => foo.value + bar)
 ```html
 <script noref>
 // @computed
-export let baz = (() => {
-    let foo = 1
-    let bar = 2
+export const baz = (() => {
+    const foo = 1
+    const bar = 2
     return foo + bar
 })()
 console.log(baz);
@@ -109,9 +109,9 @@ console.log(baz);
 <script>
 import { computed } from 'vue'
 
-export let baz = computed(() => {
-    let foo = 1
-    let bar = 2
+export const baz = computed(() => {
+    const foo = 1
+    const bar = 2
     return foo + bar
 })
 console.log(baz.value);
@@ -140,7 +140,7 @@ let baz = (foo)
 <script>
 import { ref } from 'vue'
 
-let foo = ref(1)
+const foo = ref(1)
 let bar = foo.value
 let baz = foo
 </script>
@@ -174,8 +174,8 @@ import { ref } from 'vue'
 
 export default {
     setup() {
-        let foo1 = ref(1)
-        let foo2 = ref(2)
+        const foo1 = ref(1)
+        const foo2 = ref(2)
 
         return {
             foo1,
