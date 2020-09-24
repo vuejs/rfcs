@@ -218,4 +218,4 @@ console.log(baz.value);
 
 # Adoption strategy
 
-TODO
+這是可選及向後兼容的新功能
