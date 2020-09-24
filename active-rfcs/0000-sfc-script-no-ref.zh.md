@@ -5,11 +5,11 @@
 
 # Summary
 
-`<script noref>` is a compilation step performed before `<script setup>`. When using Composition API's responsive objects, writing `.value` can be omitted, thereby reducing code and improving coding experience. This program has the following characteristics:
+`<script noref>`是在`<script setup>`之前執行的編譯步驟，使用Composition API的響應式物件時可以省略編寫`.value`，從而減少代碼和改善編碼體驗。這個方案有以下特點：
 
-- The modification of the existing code to `<script noref>` is symmetrical
-- The compiler conversion is not destructive
-- No need for additional Language Service support
+- 已有代碼轉為`<script noref>`的修改是對稱的
+- 編譯器轉換不具有破壞性
+- 不需要額外Language Service支持
 
 # Basic example
 
@@ -30,7 +30,7 @@ export default {
 ```
 
 <details>
-<summary>Result</summary>
+<summary>編譯結果</summary>
 
 ```html
 <script>
@@ -53,19 +53,19 @@ export default {
 
 # Motivation
 
-Usually when writing code, we expect that `.value` is not needed to access variables, and the access method of `.value` has no additional benefit to users. The characteristics of `.value` also cause the code to look messy when non-ref variables are used with ref objects.
+通常編寫代碼時，我們預期不需要`.value`來存取變量，`.value`的存取方式對用戶沒有額外好處。`.value`的特性也導致非ref變量與ref物件一起使用時，容易出現代碼看起來較混亂的情況。
 
-`.value` is a unified feature of ref objects, so we think we can use the compiler to remove this feature while retaining the response function.
+`.value`是ref物件的統一特性，因此我們認為可以利用編譯器將這個特性抺除，同時可以保留響應功能。
 
 # Detailed design
 
-Change the script tag to `<script noref>` to enable `no-ref` compilation.
+將script標籤改更為`<script noref>`以啟用`no-ref`編譯。
 
-At the end of the variable declaration line or comment `@ref`/`@computed` in the previous line, the variable will be compiled to `ref()`/`computed()`, and the reference of the variable will be added with a `.value` suffix.
+在變量宣告行結尾或前一行注釋`@ref`/`@computed`，變量會被編譯為`ref()`/`computed()`，並且變量的引用處會增加`.value`後綴。
 
 ## Use with `<script setup>`
 
-The `noref` conversion method is not destructive, so it can be used together with `<script setup>`.
+`noref`轉換不方式不具有破壞性，因此可以與`<script setup>`同時使用。
 
 ```html
 <script setup noref>
@@ -76,7 +76,7 @@ export const baz = foo + bar // @computed
 ```
 
 <details>
-<summary>Result</summary>
+<summary>編譯結果</summary>
 
 ```html
 <script setup>
@@ -91,9 +91,9 @@ export const baz = computed(() => foo.value + bar)
 
 ## Don't transform
 
-In some cases, it is necessary to use the ref object itself instead of `.value`, such as when setting up () return.
+某些情況下需要使用取得ref物件本身而非`.value`，例如在setup() return的時候。
 
-In this case, the `no-ref` object in the parentheses `()` package can be used. The compiler will remove the `()` outside the `no-ref` object and eliminate a conversion operation.
+這種情況可以以小括號`()`包裏`no-ref`物件，編譯器會移除`no-ref`物件外的`()`，並抵削一次轉換操作。
 
 ```html
 <script noref>
@@ -104,7 +104,7 @@ let baz = (foo)
 ```
 
 <details>
-<summary>Result</summary>
+<summary>編譯結果</summary>
 
 ```html
 <script>
@@ -117,7 +117,7 @@ let baz = foo
 ```
 </details>
 
-In the case of attribute defaults, the compiler will not perform conversion, so setup() can use attribute defaults or `()` to return ref objects.
+對於屬性缺省的情況編譯器不會進行轉換，因此setup()可以使用屬性缺省或`()`兩種方式return ref物件。
 
 ```html
 <script noref>
@@ -136,7 +136,7 @@ export default {
 ```
 
 <details>
-<summary>Result</summary>
+<summary>編譯結果</summary>
 
 ```html
 <script>
@@ -159,7 +159,7 @@ export default {
 
 ## TypeScript
 
-`no-ref` objects can define types like general variables.
+`no-ref`物件可以像一般變量一樣定義類型。
 
 ```html
 <script lang="ts" noref>
@@ -169,7 +169,7 @@ const bar: string = foo; // @computed
 ```
 
 <details>
-<summary>Result</summary>
+<summary>編譯結果</summary>
 
 ```html
 <script lang="ts">
@@ -184,7 +184,7 @@ const bar = computed<string>(() => foo.value)
 
 ## Multi-line computed
 
-In order for the Language Service to obtain the correct type for `// @computed`, multi-line computed needs to be defined as IIFE.
+為了讓Language Service為`// @computed`獲取正確的類型，多行computed需要定義為IIFE。
 
 ```html
 <script noref>
@@ -199,7 +199,7 @@ console.log(baz);
 ```
 
 <details>
-<summary>Result</summary>
+<summary>編譯結果</summary>
 
 ```html
 <script>
@@ -217,8 +217,8 @@ console.log(baz.value);
 
 # Drawbacks
 
-Compiler implementation can be complicated
+編譯器實現可能很複雜
 
 # Adoption strategy
 
-This is an optional and backward compatible new feature
+這是可選及向後兼容的新功能
