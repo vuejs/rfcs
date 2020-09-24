@@ -185,10 +185,10 @@ const bar = computed<string>(() => foo.value)
 
 ```html
 <script noref>
+let foo = 1 // @ref
+let bar = 2 // @ref
 // @computed
-export const baz = (() => {
-    const foo = 1
-    const bar = 2
+const baz = (() => {
     return foo + bar
 })()
 console.log(baz);
@@ -200,12 +200,12 @@ console.log(baz);
 
 ```html
 <script>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 
-export const baz = computed(() => {
-    const foo = 1
-    const bar = 2
-    return foo + bar
+const foo = ref(1)
+const bar = ref(2)
+const baz = computed(() => {
+    return foo.value + bar.value
 })
 console.log(baz.value);
 </script>
