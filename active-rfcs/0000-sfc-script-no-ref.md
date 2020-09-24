@@ -5,30 +5,50 @@
 
 # Summary
 
-TODO
+`<script noref>`是在`<script setup>`之前執行的編譯步驟，使用Composition API的響應式物件時可以省略編寫`.value`，從而減少代碼和改善編碼體驗。這個方案有以下特點：
+
+- 已有代碼轉為`<script noref>`的修改是對稱的
+- 編譯器轉換不具有破壞性
+- 不需要額外Language Service支持
 
 # Basic example
 
 ```html
 <script noref>
-import { defineComponent } from 'vue'
-
-export default defineComponent({
+export default {
     setup() {
-        let foo = 1 // @ref
-        const bar = 2
-        const baz = foo + bar // @computed
-
-        console.log(baz)
+        let count = 0 // @ref
+        let inc = () => count++
 
         return {
-            foo: (foo),
-            baz: (baz),
+            count,
+            inc,
         }
-    }
-})
+    },
+}
 </script>
 ```
+
+<details>
+<summary>Result</summary>
+
+```html
+<script>
+import { ref } from 'vue'
+
+export default {
+    setup() {
+        let count = ref(0)
+        let inc = () => count.value++
+
+        return {
+            count,
+            inc,
+        }
+    },
+}
+```
+</details>
 
 # Motivation
 
@@ -36,7 +56,9 @@ TODO
 
 # Detailed design
 
-TODO
+將script標籤改更為`<script noref>`以啟用`no-ref`編譯。
+
+在變量宣告行結尾或前一行注釋`@ref`/`@computed`，變量會被編譯為`ref()`/`computed()`，並且變量的引用處會增加`.value`後綴。
 
 ## Use with `<script setup>`
 
@@ -46,7 +68,7 @@ TODO
 <script setup noref>
 export let foo = 1 // @ref
 export let bar = 2
-export const baz = foo + bar // @computed
+export let baz = foo + bar // @computed
 </script>
 ```
 
@@ -59,19 +81,19 @@ import { ref, computed } from 'vue'
 
 export let foo = ref(1)
 export let bar = 2
-export const baz = computed(() => foo.value + bar)
+export let baz = computed(() => foo.value + bar)
 </script>
 ```
 </details>
 
 ## Multi-line computed
 
-為了讓Language Service為`baz`獲取正確的類型，多行computed需要使用IIFE。
+為了讓Language Service為`// @computed`獲取正確的類型，多行computed需要定義為IIFE。
 
 ```html
 <script noref>
 // @computed
-export const baz = (() => {
+export let baz = (() => {
     let foo = 1
     let bar = 2
     return foo + bar
@@ -87,7 +109,7 @@ console.log(baz);
 <script>
 import { computed } from 'vue'
 
-export const baz = computed(() => {
+export let baz = computed(() => {
     let foo = 1
     let bar = 2
     return foo + bar
@@ -106,8 +128,8 @@ console.log(baz.value);
 ```html
 <script noref>
 let foo = 1 // @ref
-const bar = foo
-const baz = (foo)
+let bar = foo
+let baz = (foo)
 </script>
 ```
 
@@ -119,15 +141,55 @@ const baz = (foo)
 import { ref } from 'vue'
 
 let foo = ref(1)
-const bar = foo.value
-const baz = foo
+let bar = foo.value
+let baz = foo
+</script>
+```
+</details>
+
+對於屬性缺省的情況編譯器不會進行轉換，因此setup()可以使用屬性缺省或`()`兩種方式return ref物件。
+
+```html
+<script noref>
+export default {
+    setup() {
+        let foo1 = 1 // @ref
+        let foo2 = 2 // @ref
+
+        return {
+            foo1,
+            foo2: (foo2),
+        }
+    }
+}
+</script>
+```
+
+<details>
+<summary>Result</summary>
+
+```html
+<script>
+import { ref } from 'vue'
+
+export default {
+    setup() {
+        let foo1 = ref(1)
+        let foo2 = ref(2)
+
+        return {
+            foo1,
+            foo2: foo2,
+        }
+    }
+}
 </script>
 ```
 </details>
 
 # Drawbacks
 
-TODO
+編譯器實現可能很複雜
 
 # Adoption strategy
 
