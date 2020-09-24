@@ -86,39 +86,6 @@ export const baz = computed(() => foo.value + bar)
 ```
 </details>
 
-## Multi-line computed
-
-為了讓Language Service為`// @computed`獲取正確的類型，多行computed需要定義為IIFE。
-
-```html
-<script noref>
-// @computed
-export const baz = (() => {
-    const foo = 1
-    const bar = 2
-    return foo + bar
-})()
-console.log(baz);
-</script>
-```
-
-<details>
-<summary>Result</summary>
-
-```html
-<script>
-import { computed } from 'vue'
-
-export const baz = computed(() => {
-    const foo = 1
-    const bar = 2
-    return foo + bar
-})
-console.log(baz.value);
-</script>
-```
-</details>
-
 ## Don't transform
 
 某些情況下需要使用取得ref物件本身而非`.value`，例如在setup() return的時候。
@@ -183,6 +150,64 @@ export default {
         }
     }
 }
+</script>
+```
+</details>
+
+# TypeScript
+
+`no-ref`物件可以像一般變量一樣定義類型
+
+```html
+<script lang="ts" noref>
+let foo: number | string = 1 // @ref
+const bar: string = foo; // @computed
+</script>
+```
+
+<details>
+<summary>Result</summary>
+
+```html
+<script lang="ts">
+import { ref, computed } from 'vue'
+
+const foo = ref<number | string>(1)
+const bar = computed<string>(() => foo.value)
+</script>
+```
+</details>
+
+
+## Multi-line computed
+
+為了讓Language Service為`// @computed`獲取正確的類型，多行computed需要定義為IIFE。
+
+```html
+<script noref>
+// @computed
+export const baz = (() => {
+    const foo = 1
+    const bar = 2
+    return foo + bar
+})()
+console.log(baz);
+</script>
+```
+
+<details>
+<summary>Result</summary>
+
+```html
+<script>
+import { computed } from 'vue'
+
+export const baz = computed(() => {
+    const foo = 1
+    const bar = 2
+    return foo + bar
+})
+console.log(baz.value);
 </script>
 ```
 </details>
