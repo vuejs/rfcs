@@ -91,15 +91,21 @@ export const baz = computed(() => foo.value + bar)
 
 ## Don't transform
 
-某些情況下需要使用取得ref物件本身而非`.value`，例如在setup() return的時候。
+> 為了減少魔法，已經移除抵銷轉換的`()`特性
 
-這種情況可以以小括號`()`包裏`no-ref`物件，編譯器會移除`no-ref`物件外的`()`，並抵削一次轉換操作。
+如果需要引用ref物件，仍然可以在`no-ref` script中使用Composition API。
 
 ```html
-<script noref>
+<script lang="ts" noref>
+import { ref } 'vue'
+
 let foo = 1 // @ref
-let bar = foo
-let baz = (foo)
+let bar = ref(2)
+
+// baz(foo) // type error
+baz(bar) // ok
+
+function baz(val: Ref<number>) { ... }
 </script>
 ```
 
@@ -107,28 +113,30 @@ let baz = (foo)
 <summary>編譯結果</summary>
 
 ```html
-<script>
-import { ref } from 'vue'
+<script lang="ts">
+import { ref } 'vue'
 
-const foo = ref(1)
-let bar = foo.value
-let baz = foo
+let foo = ref(1)
+let bar = ref(2)
+
+// baz(foo.value) // type error
+baz(bar) // ok
+
+function baz(val: Ref<number>) { ... }
 </script>
 ```
 </details>
 
-對於屬性缺省的情況編譯器不會進行轉換，因此setup()可以使用屬性缺省或`()`兩種方式return ref物件。
+對於屬性缺省編譯器不會進行轉換，因此setup()可以使用原本的方式return ref物件。
 
 ```html
 <script noref>
 export default {
     setup() {
-        let foo1 = 1 // @ref
-        let foo2 = 2 // @ref
+        let foo = 1 // @ref
 
         return {
-            foo1,
-            foo2: (foo2),
+            foo,
         }
     }
 }
@@ -144,12 +152,10 @@ import { ref } from 'vue'
 
 export default {
     setup() {
-        const foo1 = ref(1)
-        const foo2 = ref(2)
+        const foo = ref(1)
 
         return {
-            foo1,
-            foo2: foo2,
+            foo,
         }
     }
 }
@@ -164,7 +170,7 @@ export default {
 ```html
 <script lang="ts" noref>
 let foo: number | string = 1 // @ref
-const bar: string = foo; // @computed
+const bar: string = foo // @computed
 </script>
 ```
 
@@ -194,7 +200,7 @@ let bar = 2 // @ref
 const baz = (() => {
     return foo + bar
 })()
-console.log(baz);
+console.log(baz)
 </script>
 ```
 
@@ -210,7 +216,7 @@ const bar = ref(2)
 const baz = computed(() => {
     return foo.value + bar.value
 })
-console.log(baz.value);
+console.log(baz.value)
 </script>
 ```
 </details>

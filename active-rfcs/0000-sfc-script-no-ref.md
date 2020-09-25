@@ -91,15 +91,21 @@ export const baz = computed(() => foo.value + bar)
 
 ## Don't transform
 
-In some cases, it is necessary to use the ref object itself instead of `.value`, such as when setting up () return.
+> To reduce magic, the `()` feature has been removed
 
-In this case, the `no-ref` object in the parentheses `()` package can be used. The compiler will remove the `()` outside the `no-ref` object and eliminate a conversion operation.
+If you need to reference ref objects, you can still use the Composition API in the `no-ref` script.
 
 ```html
-<script noref>
+<script lang="ts" noref>
+import { ref } 'vue'
+
 let foo = 1 // @ref
-let bar = foo
-let baz = (foo)
+let bar = ref(2)
+
+// baz(foo) // type error
+baz(bar) // ok
+
+function baz(val: Ref<number>) { ... }
 </script>
 ```
 
@@ -107,28 +113,30 @@ let baz = (foo)
 <summary>Result</summary>
 
 ```html
-<script>
-import { ref } from 'vue'
+<script lang="ts">
+import { ref } 'vue'
 
-const foo = ref(1)
-let bar = foo.value
-let baz = foo
+let foo = ref(1)
+let bar = ref(2)
+
+// baz(foo.value) // type error
+baz(bar) // ok
+
+function baz(val: Ref<number>) { ... }
 </script>
 ```
 </details>
 
-In the case of attribute defaults, the compiler will not perform conversion, so setup() can use attribute defaults or `()` to return ref objects.
+For attribute less case, the compiler will not perform conversion, so setup() can use the original method to return ref objects.
 
 ```html
 <script noref>
 export default {
     setup() {
-        let foo1 = 1 // @ref
-        let foo2 = 2 // @ref
+        let foo = 1 // @ref
 
         return {
-            foo1,
-            foo2: (foo2),
+            foo,
         }
     }
 }
@@ -144,12 +152,10 @@ import { ref } from 'vue'
 
 export default {
     setup() {
-        const foo1 = ref(1)
-        const foo2 = ref(2)
+        const foo = ref(1)
 
         return {
-            foo1,
-            foo2: foo2,
+            foo,
         }
     }
 }
@@ -164,7 +170,7 @@ export default {
 ```html
 <script lang="ts" noref>
 let foo: number | string = 1 // @ref
-const bar: string = foo; // @computed
+const bar: string = foo // @computed
 </script>
 ```
 
@@ -194,7 +200,7 @@ let bar = 2 // @ref
 const baz = (() => {
     return foo + bar
 })()
-console.log(baz);
+console.log(baz)
 </script>
 ```
 
@@ -210,7 +216,7 @@ const bar = ref(2)
 const baz = computed(() => {
     return foo.value + bar.value
 })
-console.log(baz.value);
+console.log(baz.value)
 </script>
 ```
 </details>
