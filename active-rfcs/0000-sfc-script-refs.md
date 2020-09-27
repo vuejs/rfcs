@@ -47,9 +47,10 @@ export default {
 
 # Motivation
 
-Usually when writing code, we expect that `.value` is not needed to access variables, and the access method of `.value` has no additional benefit to users. The characteristics of `.value` also cause the code to look messy when non-ref variables are used with ref objects.
+Usually when writing code, somebody don't want to write `.value`, and we don't need to access properties other than `value` most time.
+Although it's quite right to write `. value`, it's not elegant.
 
-`.value` is a unified feature of ref objects, so we think we can use the compiler to remove this feature while retaining the response function.
+So i think we can use the compiler to add `.value` `ref()`  while we don't need to write them.
 
 # Detailed design
 
@@ -83,7 +84,7 @@ export const baz = computed(() => foo.value + bar)
 
 ## Don't transform
 
-If you need to reference ref objects, you can still use Composition API in `<script refs>`.
+If you need to define original ref,  you can still use Composition API in `<script refs>`.
 
 ```html
 <script lang="ts" refs>
@@ -99,7 +100,7 @@ function baz(val: Ref<number>) { ... }
 </script>
 ```
 
-For attributes, the compiler will not perform conversion by default, so setup() can use the original method to return ref objects.
+Setup()'s return statement can write as before,references in there will not be transformed.
 
 ```html
 <script refs>
