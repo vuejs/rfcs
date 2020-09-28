@@ -11,15 +11,15 @@ Add `.replace` modifier for `v-bind` to change default merge strategy.
 # Basic example
 
 ```html
-<div foo="bar" v-bind="{ foo: 'qux' }"></div>
+<div foo="bar" v-bind="{ foo: 'baz' }"></div>
 <!--would render to-->
 <div foo="bar"></div>
 ```
 
 ```html
-<div foo="bar" v-bind.replace="{ foo: 'qux' }"></div>
+<div foo="bar" v-bind.replace="{ foo: 'baz' }"></div>
 <!--would render to-->
-<div foo="qux"></div>
+<div foo="baz"></div>
 ```
 
 # Motivation
