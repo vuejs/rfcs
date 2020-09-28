@@ -33,7 +33,7 @@ If you place `v-bind` directive **before** your attributes – it **will not** r
 This change has some serious downsides:
 
 * Reliance on attribute order is not an expected behaviour.
-  We've learned that HTML and CSS never rely on attribute order and this change conflicts with that knowledge.
+  We've learned that HTML and CSS never relies on attribute order and this change goes into conflict with that knowledge.
   
 * Teams might have code standards that define specific order for
   attributes\directives\listeners for better readability and consistency.
