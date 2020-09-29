@@ -1,7 +1,7 @@
 - Start Date: 2020-08-20
 - Target Major Version: 3.x
 - Reference Issues: (fill in existing related issues, if any)
-- Implementation PR: (leave this empty)
+- Implementation PR: [#2195](https://github.com/vuejs/vue-next/pull/2195)
 
 # Summary
 
@@ -66,22 +66,6 @@ It also provides the functionality to `escape` some effects from the component's
 
 # Detailed design
 
-Similar to what we did for `currentInstance`, on effect creation, if the `activeEffectScope` is presented, push itself into the scope.
-
-```ts
-function createReactiveEffect( /* ... */ ) {
-  const effect = function reactiveEffect(): unknown {
-    /* ... */ 
-  } as ReactiveEffect
-  /* ... */
-  
-  if (activeEffectScope)
-    activeEffectScope.effects.push(effect) // <-
-  
-  return effect
-}
-```
-
 ### Scope
 
 A scope instance will be defined as
@@ -137,7 +121,9 @@ stop(scope)
 
 ### Escaping Nested Scopes
 
-An option can be passed as the second parameters of `effectScope`, allowing nested scopes not to be collected by its parent scopes. The same behavior should apply to component's `setup()` scope.
+An option can be passed as the second parameter of `effectScope`. Specifying `detached: true` allows nested scopes not to be collected by its parent scopes. The same behavior should apply to component's `setup()` scope.
+
+This also makes usages like ["lazy initialization"](https://github.com/vuejs/vue-next/issues/1532) possible.
 
 ```ts
 let nestedScope
@@ -147,9 +133,12 @@ const scope = effectScope(() => {
   
   // with "escaped: true" set, 
   // the scope will not be collected and disposed by the outer scope
-  nestedScope = effectScope(() => {
-    watch(doubled, () => console.log(double.value))
-  }, { escaped: true })
+  nestedScope = effectScope(
+    () => {
+      watch(doubled, () => console.log(double.value))
+    }, 
+    { detached: true } // <--
+  )
 
   watchEffect(() => console.log('Count: ', double.value))
 })
@@ -182,25 +171,61 @@ stop(myScope)
 
 ## Implementation
 
+Similar to what we did for `currentInstance`, on effect creation, if the `activeEffectScope` is presented, push itself into the scope.
+
+```ts
+// simplified version 
+
+function createReactiveEffect( /* ... */ ) {
+  const effect = /* ... */
+  
+  if (activeEffectScope)
+    activeEffectScope.effects.push(effect) // <-
+  
+  return effect
+}
+
+export function effectScope(
+  fn?: () => void
+) {
+  /* ... */
+  try {
+    effectScopeStack.push(scope)
+    activeEffectScope = scope
+    fn()
+  } finally {
+    effectScopeStack.pop()
+    activeEffectScope = effectScopeStack[effectScopeStack.length - 1]
+  }
+  return scope
+}
+```
+
+### Existing Library
+
 I have implemented a third-party library [@vue-reactivity/scope](https://github.com/vue-reactivity/scope) which aims to solve the exact same problem. However, since we have no way to get access the internal states of effects, [it has to wrap & re-export](https://github.com/vue-reactivity/scope/blob/master/src/hijack.ts#L11) the APIs (`effect` and `computed` etc.) to make the auto collecting work. This deviated from the Vue's design and can not be directly reused for Vue applications. As this is a quite low-level feature, I think it's better to be done in `@vue/reactivity` itself. And could benefit Vue itself and the ecosystem built on top of `@vue/reactivity`.
 
-## Impact to Vue
+### Pull Request
 
-In `@vue/runtime-dom`, [it wraps the `computed` to add the instance binding](https://github.com/vuejs/vue-next/blob/master/packages/runtime-core/src/apiComputed.ts). This make the following statements NOT equivalent
+A draft PR: [#2195](https://github.com/vuejs/vue-next/pull/2195).
+
+## Impacting Vue
+
+Currently in `@vue/runtime-dom`, [it wraps the `computed` to add the instance binding](https://github.com/vuejs/vue-next/blob/master/packages/runtime-core/src/apiComputed.ts). Which makes the following statements NOT equivalent
 
 ```ts
 import { computed } from '@vue/reactivity'
 import { computed } from 'vue'
-```  
+```
 
 This should not be an issue for most of the users, but for some libraries that would like to only rely on `@vue/reactivity` (for more flexible usages) this might be a pitfall and cause some unwanted side-effects.
 
-With this RFC, `@vue/runtime-dom` might also be able to do some refactoring by using the `effectScope` to collect those effects transparently. So the computed wrapping might not be necessary anymore.
+With this RFC, `@vue/runtime-dom` might also be able to do some refactoring by using the `effectScope` to collect those effects transparently. Effect collecting can be more general from the lower level and the computed rewrapping will not be necessary anymore.
 
 # Drawbacks
 
-- It doesn't work well with async scope function
-- Variables created in the closure will be harder to access from the outer closure (or should we accept it's return value and pass it out?)
+- It doesn't work well with async functions
+- Variables created in the closure will be harder to access from the outer closure (or should we accept the return value and pass it out?)
 
 # Alternatives
 
@@ -233,4 +258,3 @@ This is a new API and should not affect existing code.
 # Unresolved questions
 
 - Naming
-- Migration & Refactoring in `@vue/runtime-dom`
