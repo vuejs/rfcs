@@ -116,8 +116,8 @@ While this would not:
       const message = ref(null)
   
       const model = computed({
-        get model() { return message.value },
-        set model(value) { 
+        get() { return message.value },
+        set(value) { 
           if (value.length > 2) return
           message.value = value
         }
