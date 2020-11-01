@@ -13,21 +13,18 @@
 
 # Basic example
 
+## 1. `<script setup>` now directly exposes top level bindings to template
+
 ```html
 <script setup>
-// imported components are directly usable in template
+// imported components are also directly usable in template
 import Foo from './Foo.vue'
+import { ref } from 'vue'
 
-// declaring a variable that compiles to a ref
-ref: count = 1
-
-function inc() {
-  // the variable can be used like a plain value
-  count++
-}
-
-// access the raw ref object by prefixing with $
-console.log($count.value)
+// write Composition API code just like in a normal setup()
+// but no need to manually return everything
+const count = ref(0)
+const inc = () => { count.value++ }
 </script>
 
 <template>
@@ -40,21 +37,16 @@ console.log($count.value)
 
 ```html
 <script setup>
-import { ref } from 'vue'
 import Foo from './Foo.vue'
+import { ref } from 'vue'
 
 export default {
   setup() {
     const count = ref(1)
-
-    function inc() {
-      count.value++
-    }
-
-    console.log(count.value)
+    const inc = () => { count.value++ }
 
     return {
-      Foo,
+      Foo, // see note below
       count,
       inc
     }
@@ -68,6 +60,58 @@ export default {
 ```
 
 **Note:** the SFC compiler also extracts binding metadata from `<script setup>` and use it during template compilation. This is why the template can use `Foo` as a component here even though it's returned from `setup()` instead of registered via `components` option.
+</details>
+
+## 2. `ref:` sugar makes ref usage more succinct
+
+```html
+<script setup>
+// declaring a variable that compiles to a ref
+ref: count = 1
+
+function inc() {
+  // the variable can be used like a plain value
+  count++
+}
+
+// access the raw ref object by prefixing with $
+console.log($count.value)
+</script>
+
+<template>
+  <button @click="inc">{{ count }}</button>
+</template>
+```
+
+<details>
+<summary>Compiled Output</summary>
+
+```html
+<script setup>
+import { ref } from 'vue'
+
+export default {
+  setup() {
+    const count = ref(1)
+
+    function inc() {
+      count.value++
+    }
+
+    console.log(count.value)
+
+    return {
+      count,
+      inc
+    }
+  }
+}
+</script>
+
+<template>
+  <button @click="inc">{{ count }}</button>
+</template>
+```
 </details>
 
 # Motivation
@@ -558,7 +602,11 @@ Some users may have strong aversion against non-standard semantics in their code
 
 - Single file components look like HTML but isn't actually HTML. It already has its own required structure and implied behavior on how it works as a Vue component. When you see a `*.vue` file, you know it works differently from plain HTML.
 
-- TypeScript isn't a standard. It's a proprietary superset that extends JavaScript.
+- Vue templates are syntactically valid HTML, but the directives are essentially syntax extensions to express framework-specific intent.
+
+- JSX has a spec, but isn't a standard. It's a non-standard syntax extension to JavaScript.
+
+- TypeScript isn't a standard. It's a proprietary superset of JavaScript.
 
 - Decorators has struggled to advance into the spec, yet is being widely used and Angular is completely built on top of it.
 
@@ -574,6 +622,19 @@ ref: count = 0
 console.log(count)
 </script>
 ```
+
+## Yet Another Way of Doing Things
+
+Some may think that Vue already has Options API, Composition API, and Class API (outside of core, as a library) - and this RFC is adding yet another way of authoring a component. This is a valid concern, but it does not warrant an instant dismissal. When we talk about the drawbacks of "different ways of doing the same thing", the more fundamental issue is the learning cost incurred when a user encounters code written in another format he/she is not familiar with. It is therefore important to evaluate the addition based on the trade-off between:
+
+- How much benefit does the new way provide?
+- How much learning cost does the new way introduce?
+
+This is what we did with the Composition API because we believed the scaling benefits provided by Composition API outweighs its learning cost.
+
+Unlike the relatively significant paradigm difference between Options API and Composition API, this RFC is merely syntax sugar with the primary goal of reducing verbosity. It does not fundamentally alter the mental model. Without the ref sugar, Composition API code inside `<script setup>` will be 100% the same with normal Composition API usage (except for the lack of the return object, which is tedious and unnecessary in the first place). The `ref:` sugar is an extension of the ref concept: for a user with prior knowledge of Composition API, it shouldn't be difficult to quickly understand how it works.
+
+That is to say - the syntax proposed in this RFC will not make the code more difficult to understand for someone who already knows Composition API. The initial time needed for a user to learn the syntax should be trivial compared to the improved DX in the long run.
 
 ## Requires dedicated tooling support
 
@@ -599,8 +660,8 @@ Given a piece of code written using the `ref:` sugar, the workflow of extracting
 
 1. Select code range for the code to be extracted
 2. In VSCode command input: `>vetur de-sugar ref usage'
-3. Code gets de-sugared and saved to clipboard
-4. Paste code into external file and wrap into an exported function
+3. Code gets de-sugared
+4. Cut-paste code into external file and wrap into an exported function
 5. Import the function in original file and replace original code.
 
 # Alternatives
