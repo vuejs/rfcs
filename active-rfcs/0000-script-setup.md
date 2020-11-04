@@ -42,7 +42,7 @@ import { ref } from 'vue'
 
 export default {
   setup() {
-    const count = ref(1)
+    const count = ref(0)
     const inc = () => { count.value++ }
 
     return {
@@ -132,9 +132,9 @@ This proposal has two main goals:
 
     - There has been a [proposal for adding native refs to JavaScript](https://github.com/rbuckton/proposal-refs), but it was designed to address a slightly different problem and doesn't seem to have received much attention.
 
-    - A prominent example of altering JavaScript semantics in return for succinct syntax is [Svelte](https://svelte/). It [appropriates a number of JavaScript syntax to express framework-specific behavior](#svelte-syntax-details).
+    - A prominent example of altering JavaScript semantics in return for succinct syntax is [Svelte](https://svelte.dev/). It [appropriates a number of JavaScript syntax to express framework-specific behavior](#svelte-syntax-details).
 
-    In the past, we have tried to stick to strict JavaScript semantics as much as possible. Deviating from standard JavaScript semantics has number of [drawbacks](](#drawbacks)), but we believe there is room for a pragmatic trade-off where "breaking out of the box" a little bit can result in substantial improvements in developer experience.
+    In the past, we have tried to stick to strict JavaScript semantics as much as possible. Deviating from standard JavaScript semantics has number of [drawbacks](#drawbacks), but we believe there is room for a pragmatic trade-off where "breaking out of the box" a little bit can result in substantial improvements in developer experience.
 
 # Detailed design
 
