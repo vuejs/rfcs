@@ -19,7 +19,7 @@ const MyComponent = {
     return () => (
       <!vt>
         <div> {{ count }} </div>
-        <button :click="inc" :disabled="count >= max">inc</button>
+        <button @click="inc" :disabled="count >= max">inc</button>
       </!vt>
     )
   }
