@@ -5,15 +5,11 @@
 
 # Summary
 
-- Introduce a new script type in Single File Components: `<script setup>`, which exposes all its top level bindings to the template.
+Introduce a new script type in Single File Components: `<script setup>`, which exposes all its top level bindings to the template.
 
-- Introduce a compiler-based syntax sugar for using refs without `.value` inside `<script setup>`.
-
-- **Note:** this is intended to replace the current `<script setup>` as proposed in [#182](https://github.com/vuejs/rfcs/pull/182).
+**Note:** this is intended to replace the current `<script setup>` as proposed in [#182](https://github.com/vuejs/rfcs/pull/182).
 
 # Basic example
-
-## 1. `<script setup>` now directly exposes top level bindings to template
 
 ```html
 <script setup>
@@ -62,79 +58,13 @@ export default {
 **Note:** the SFC compiler also extracts binding metadata from `<script setup>` and use it during template compilation. This is why the template can use `Foo` as a component here even though it's returned from `setup()` instead of registered via `components` option.
 </details>
 
-## 2. `ref:` sugar makes ref usage more succinct
-
-```html
-<script setup>
-// declaring a variable that compiles to a ref
-ref: count = 1
-
-function inc() {
-  // the variable can be used like a plain value
-  count++
-}
-
-// access the raw ref object by prefixing with $
-console.log($count.value)
-</script>
-
-<template>
-  <button @click="inc">{{ count }}</button>
-</template>
-```
-
-<details>
-<summary>Compiled Output</summary>
-
-```html
-<script setup>
-import { ref } from 'vue'
-
-export default {
-  setup() {
-    const count = ref(1)
-
-    function inc() {
-      count.value++
-    }
-
-    console.log(count.value)
-
-    return {
-      count,
-      inc
-    }
-  }
-}
-</script>
-
-<template>
-  <button @click="inc">{{ count }}</button>
-</template>
-```
-</details>
-
 # Motivation
 
-This proposal has two main goals:
+This proposal's main goal is reducing the verbosity of Composition API usage inside Single File Components (SFCs) by directly exposing the context of `<script setup>` to the template.
 
-1. Reduce verbosity of Single File Component `<script>` by directly exposing its context to the template.
+We have a prior proposal for `<script setup>` [here](https://github.com/vuejs/rfcs/blob/sfc-improvements/active-rfcs/0000-sfc-script-setup.md), which is currently implemented (but marked as experimental). The old proposal opted for the `export` syntax so that the code would play well with unused variable checks.
 
-    We have a prior proposal for `<script setup>` [here](https://github.com/vuejs/rfcs/blob/sfc-improvements/active-rfcs/0000-sfc-script-setup.md), which is currently implemented (but marked as experimental). The old proposal opted for the `export` syntax so that the code would play well with unused variable checks.
-
-    This proposal takes a different direction based on the premise that we can offer customized linter rules in `eslint-plugin-vue`. This allows us to aim for the most succinct syntax possible.
-
-2. Improve ergonomics of refs with the `ref:` syntax sugar.
-
-    Ever since the introduction of the Composition API, one of the primary unresolved questions is the use of refs vs. reactive objects. It can be cumbersome to use `.value` everywhere, and it is easy to miss if not using a type system. Some users specifically lean towards using `reactive()` exclusively so that they don't have to deal with refs.
-
-    The existence of ref is mostly a design trade-off due to the constraints of the language we are working with: JavaScript. JavaScript does not provide a native way to pass reactive bindings around without wrapping it with an object. This means that **it is impossible to use refs like normal variable bindings without altering or augmenting JavaScript semantics.**
-
-    - There has been a [proposal for adding native refs to JavaScript](https://github.com/rbuckton/proposal-refs), but it was designed to address a slightly different problem and doesn't seem to have received much attention.
-
-    - A prominent example of altering JavaScript semantics in return for succinct syntax is [Svelte](https://svelte/). It [appropriates a number of JavaScript syntax to express framework-specific behavior](#svelte-syntax-details).
-
-    In the past, we have tried to stick to strict JavaScript semantics as much as possible. Deviating from standard JavaScript semantics has number of [drawbacks](](#drawbacks)), but we believe there is room for a pragmatic trade-off where "breaking out of the box" a little bit can result in substantial improvements in developer experience.
+This proposal takes a different direction based on the premise that we can offer customized linter rules in `eslint-plugin-vue`. This allows us to aim for the most succinct syntax possible.
 
 # Detailed design
 
@@ -189,6 +119,34 @@ export default {
 
 **Note:** The SFC compiler also extracts binding metadata from `<script setup>` and use it during template compilation. Therefore in the template, `Foo` can be used as a component even though it's returned from `setup()` instead of registered via `components` option.
 </details>
+<p></p>
+
+### Scoping Mental Model
+
+Some users may be concerned that it is no longer clear what variables are exposed to the template vs. those that are not. However, it can be argued that there is no practical benefits in being able to tell this.
+
+In the past we have always considered the `<script>` and `<template>` parts of an SFC to be separate parts that need an explicit protocol to be "connected". It does feel different to have this separation blurred. However, if we switch the scoping mental model to view an SFC as returning a render function from the `setup()` closure instead:
+
+```js
+function setup() {
+  let a = 1
+  let b = a + 1
+
+  // the returned function has access to everything inside setup()
+  // however it may or may not use all of them.
+  return () => {
+    return h('div', b)
+  }
+}
+```
+
+This does require different handling when linting for unused variables, but SFCs already require the usage of `eslint-plugin-vue` which can be made to adapt to this new scoping model.
+
+### Closed by Default
+
+In a Vue component, everything exposed to the template is implicitly exposed on the component instance, which can be retrieved by a parent component via template refs. That is to say, up to this point the **template render context** and the **imperative public interface** of a component is one and the same. We have found this to be problematic because the two use cases do not always align perfectly. In fact, most of the time we are over-exposing on the public interface front. This is why we are discussing an explicit way to define a component's imperative public interface in https://github.com/vuejs/rfcs/pull/210.
+
+`<script setup>` as proposed in this RFC, if following current behavior, will be vastly over-exposing on the imperative public interface, therefore a component using `<script setup>` will be **closed by default**. That is to say, its public imperative interface will be an empty object unless bindings are explicitly exposed. How to explicitly expose imperative public interface will be finalized in https://github.com/vuejs/rfcs/pull/210.
 
 ### Setup Signature
 
@@ -277,182 +235,7 @@ export default {
 ```
 </details>
 
-## Ref Syntax
-
-Code inside `<script setup>` can use a special `ref:` declaration to declare variables that can be used as a normal variable, but are compiled into refs:
-
-```html
-<script setup>
-ref: count = 0
-
-function inc() {
-  count++
-}
-</script>
-
-<template>
-  <button @click="inc">{{ count }}</button>
-</template>
-```
-
-`ref: count = 0` is a [labeled statement](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/label) which is syntactically valid in both JS/TS. However, we are using it as a variable declaration here. The compiler will:
-
-1. Convert it to a proper variable declaration
-2. Wrap its initial value with `ref()`
-3. Rewrite all references to `count` into `count.value`.
-
-<details>
-<summary>Compiled Output</summary>
-
-```js
-import { ref } from 'vue'
-
-export default {
-  setup() {
-    const count = ref(0)
-
-    function inc() {
-      count.value++
-    }
-
-    return {
-      count,
-      inc
-    }
-  }
-}
-```
-</details>
-<p></p>
-
-Note that the syntax is opt-in: all Composition APIs can be used inside `<script setup>` without ref sugar:
-
-```html
-<script setup>
-import { ref } from 'vue'
-
-const count = ref(0)
-
-function inc() {
-  count.value++
-}
-</script>
-
-<template>
-  <button @click="inc">{{ count }}</button>
-</template>
-```
-
-### Accessing Raw Ref
-
-It is common for an external composition function to expect a raw ref object as argument, so we need a way to access the raw underlying ref object for bindings declared via `ref:`. To deal with that, every `ref:` binding will have a corresponding `$`-prefixed counter part that exposes the raw ref:
-
-```js
-ref: count = 1
-console.log($count.value) // 1
-
-$count.value++
-console.log(count) // 2
-
-watch($count, newCount => {
-  console.log('new count is: ', newCount)
-})
-```
-
-<details>
-<summary>Compiled Output</summary>
-
-```js
-const count = ref(1)
-console.log(count.value) // 1
-
-count.value++
-console.log(count.value) // 2
-
-watch(count, newCount => {
-  console.log('new count is: ', newCount)
-})
-```
-</details>
-
-### Interaction with Non-Literals
-
-`ref:` will wrap assignment values with `ref()`. If the value is already a ref, it will be returned as-is. This means we can use `ref:` with any function that returns a ref, for example `computed`:
-
-```js
-import { computed } from 'vue'
-
-ref: count = 0
-ref: plusOne = computed(() => count + 1)
-console.log(plusOne) // 1
-```
-
-<details>
-<summary>Compiled Output</summary>
-
-```js
-import { computed, ref } from 'vue'
-
-const count = ref(0)
-// `ref()` around `computed()` is a no-op here since return value
-// from `computed()` is already a ref.
-const plusOne = ref(computed(() => count.value + 1))
-```
-</details>
-<p></p>
-
-Or, any custom composition function that returns a ref:
-
-```js
-import { useMyRef } from './composables'
-
-ref: myRef = useMyRef()
-console.log(myRef) // no need for .value
-```
-
-<details>
-<summary>Compiled Output</summary>
-
-```js
-import { useMyRef } from './composables'
-import { ref } from 'vue'
-
-// if useMyRef() returns a ref, it will be untouched
-// otherwise it's wrapped into a ref
-const myRef = ref(useMyRef())
-console.log(myRef.value)
-```
-</details>
-<p></p>
-
-**Note:** if using TypeScript, this behavior creates a typing mismatch which we will discuss in [TypeScript Integration](#typescript-integration) below.
-
-### Destructuring
-
-It is common for a composition function to return an object of refs. To declare multiple ref bindings with destructuring, we can use [Destructuring Assignment](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment):
-
-```js
-ref: ({ x, y } = useMouse())
-```
-
-<details>
-<summary>Compiled Output</summary>
-
-```js
-import { ref } from 'vue'
-
-const { x: __x, y: __x } = useMouse()
-const x = ref(__x)
-const y = toRef(__y)
-```
-</details>
-<p></p>
-
-**Note:** object destructuring must be wrapped in parens - this is JavaScript's own syntax requirement to avoid ambiguity with a block statement.
-
 ## TypeScript Integration
-
-### Typing props, slots, and emit
 
 To type setup arguments like `props`, `slots` and `emit`, simply declare them:
 
@@ -527,25 +310,6 @@ Details on runtime props generation:
 - The emitted code is still TypeScript with valid typing, which can be further processed by other tools.
 </details>
 
-### Ref Declaration and Raw Ref Access
-
-Unlike normal variable declarations, the `ref:` syntax has some special behavior in terms of typing:
-
-- The declared variable always has the raw value type, regardless of whether the assigned value is a `Ref` type or not (always unwraps)
-
-- The accompanying `$`-prefixed raw access variable always has a `Ref` type. If the right hand side value type already extends `Ref`, it will be used as-is; otherwise it will be wrapped as `Ref<T>`.
-
-The following table demonstrates the resulting types of different usage:
-
-| source | resulting type for `count` | resulting type for `$count` |
-|--------|----------------------------|-----------------------------|
-|`ref: count = 1`|`number`|`Ref<number>`|
-|`ref: count = ref(1)`|`number`|`Ref<number>`|
-|`ref: count = computed(() => 1)`|`number`|`ComputedRef<number>`|
-|`ref: count = computed({ get:()=>1, set:_=>_ })`|`number`|`WritableComputedRef<number>`|
-
-How to support this in Vetur is [discussed in the appendix](#ref-typescript-support-implementation-details).
-
 ## Usage alongside normal `<script>`
 
 There are some cases where the code must be executed in the module scope, for example:
@@ -596,101 +360,19 @@ Due to the difference in module execution semantics, code inside `<script setup>
 
 # Drawbacks
 
-## Non-standard semantics
+## Tooling Compatiblity
 
-Some users may have strong aversion against non-standard semantics in their code. Many of the Vue team members held such concerns as well. However, consider that:
+This new scoping model will require tooling adjustments in two aspects:
 
-- Single file components look like HTML but isn't actually HTML. It already has its own required structure and implied behavior on how it works as a Vue component. When you see a `*.vue` file, you know it works differently from plain HTML.
+1. ESLint rules like `no-unused-vars`. We will need a replacement rule in `eslint-plugin-vue` that takes both the `<script setup>` and `<template>` expressions into account.
 
-- Vue templates are syntactically valid HTML, but the directives are essentially syntax extensions to express framework-specific intent.
+2. Vetur and other IDEs will need to provide dedicated handling for this new `<script setup>` model in order to provide template expression type checking / props validation, etc.
 
-- JSX has a spec, but isn't a standard. It's a non-standard syntax extension to JavaScript.
-
-- TypeScript isn't a standard. It's a proprietary superset of JavaScript.
-
-- Decorators has struggled to advance into the spec, yet is being widely used and Angular is completely built on top of it.
-
-Granted, adding non-standard semantics to JavaScript still creates added learning cost and mental overhead, so we should carefully evaluate the trade-offs of each addition.
-
-With that in mind, we believe `ref:`'s ergonomics value easily outweighs the cost. This is also why we are limiting this proposal to `ref:` only, since ref access is the only problem that requires alternative semantics to solve.
-
-It can also be argued that the `ref:` syntax isn't far too removed from standard JavaScript. The following code is actually valid JavaScript in non-strict mode - if you copy it into an `.html` file, it will run as expected:
-
-```html
-<script>
-ref: count = 0
-console.log(count)
-</script>
-```
-
-## Yet Another Way of Doing Things
-
-Some may think that Vue already has Options API, Composition API, and Class API (outside of core, as a library) - and this RFC is adding yet another way of authoring a component. This is a valid concern, but it does not warrant an instant dismissal. When we talk about the drawbacks of "different ways of doing the same thing", the more fundamental issue is the learning cost incurred when a user encounters code written in another format he/she is not familiar with. It is therefore important to evaluate the addition based on the trade-off between:
-
-- How much benefit does the new way provide?
-- How much learning cost does the new way introduce?
-
-This is what we did with the Composition API because we believed the scaling benefits provided by Composition API outweighs its learning cost.
-
-Unlike the relatively significant paradigm difference between Options API and Composition API, this RFC is merely syntax sugar with the primary goal of reducing verbosity. It does not fundamentally alter the mental model. Without the ref sugar, Composition API code inside `<script setup>` will be 100% the same with normal Composition API usage (except for the lack of the return object, which is tedious and unnecessary in the first place). The `ref:` sugar is an extension of the ref concept: for a user with prior knowledge of Composition API, it shouldn't be difficult to quickly understand how it works.
-
-That is to say - the syntax proposed in this RFC will not make the code more difficult to understand for someone who already knows Composition API. The initial time needed for a user to learn the syntax should be trivial compared to the improved DX in the long run.
-
-## Requires dedicated tooling support
-
-Appropriating the labeled statement syntax creates a semantic mismatch that leads to integration issues with tooling (linter, TypeScript, IDE support).
-
-This was also one of the primary reservations we had about Svelte 3's design when it was initially proposed. However since then, the Svelte team has managed to provide good tooling/IDE support via its [language tools](https://github.com/sveltejs/language-tools), even for TypeScript.
-
-Vue's single file component also already requires dedicated tooling like `eslint-plugin-vue` and Vetur. The team has already discussed the technical feasibility of providing such support and there should be no hard technical blocks to make it work. We are confident that we can provide:
-
-- Special syntax highlight of `ref:` declared variables in Vetur (so that it's more obvious it's a reactive variable)
-- Proper type check via Vetur and dedicated command line checker
-- Proper linting via `eslint-plugin-vue`
-
-## Extracting in-component logic
-
-The `ref:` syntax sugar is only available inside single file components. Different syntax in and out of components makes it difficult to extract and reuse cross-component logic from existing components.
-
-This is still an issue for Svelte, since Svelte compilation strategy only works inside Svelte components. The generated code assumes a component context and isn't human-maintainable.
-
-In Vue's case, what we are proposing here is a very thin syntax sugar on top of idiomatic Composition API code. The most important thing to note here is that the code written with the sugar can be easily de-sugared into what a developer would have written without the sugar, and extracted into external JavaScript files for composition.
-
-Given a piece of code written using the `ref:` sugar, the workflow of extracting it into an external composition function could be:
-
-1. Select code range for the code to be extracted
-2. In VSCode command input: `>vetur de-sugar ref usage'
-3. Code gets de-sugared
-4. Cut-paste code into external file and wrap into an exported function
-5. Import the function in original file and replace original code.
+One thing to note is that `<script setup>` syntax should make it easier for tools to analyze available bindings to the template compared to current Options API inside `<script setup>` (especially with mixins). A potential approach is transforming the entire SFC into a TSX file (similar to [svelte2tsx](https://github.com/sveltejs/language-tools/tree/master/packages/svelte2tsx)) for type-checking and refactoring support only.
 
 # Alternatives
 
-## Comment-based syntax
-
-```html
-<script setup>
-import Foo from './Foo.vue'
-import { computed } from 'vue'
-
-// @ref
-let count = 1
-
-function inc() {
-  count++
-}
-</script>
-
-<template>
-  <Foo :count="count" @click="inc" />
-</template>
-```
-
-## Other related proposals
-
-- https://github.com/vuejs/rfcs/pull/182 (current `<script setup>` implementation)
-- https://github.com/vuejs/rfcs/pull/213
-- https://github.com/vuejs/rfcs/pull/214
+https://github.com/vuejs/rfcs/pull/182 (current `<script setup>` implementation)
 
 # Adoption strategy
 
@@ -698,56 +380,7 @@ This feature is opt-in. Existing SFC usage is unaffected.
 
 # Unresolved questions
 
-## Ref Usage in Nested Function Scopes
-
-Technically, `ref:` doesn't have to be limited to root level scope and can be used anywhere `let` declarations can be used, including nested function scope:
-
-```js
-function useMouse() {
-  ref: x = 0
-  ref: y = 0
-
-  function update(e) {
-    x = e.pageX
-    y = e.pageY
-  }
-
-  onMounted(() => window.addEventListener('mousemove', update))
-  onUnmounted(() => window.removeEventListener('mousemove', update))
-
-  return {
-    x: $x,
-    y: $y
-  }
-}
-```
-
-<details>
-<summary>Compiled Output</summary>
-
-```js
-function useMouse() {
-  const x = ref(0)
-  const y = ref(0)
-
-  function update(e) {
-    x.value = e.pageX
-    y.value = e.pageY
-  }
-
-  onMounted(() => window.addEventListener('mousemove', update))
-  onUnmounted(() => window.removeEventListener('mousemove', update))
-
-  return {
-    x,
-    y
-  }
-}
-```
-</details>
-<p></p>
-
-This will make the compilation (and accompanying linter / language service support) more complicated - I'm not sure if it's better to limit `ref:` usage to top scope bindings only.
+This RFC depends on https://github.com/vuejs/rfcs/pull/210 being resolved first.
 
 # Appendix
 
@@ -821,62 +454,3 @@ function render(_ctx, _cache, $setup, $props, $data) {
   return createVNode('div', null, $setup.foo + $props.bar)
 }
 ```
-
-## Ref TypeScript Support Implementation Details
-
-There are two issues that prevent `ref:` from working out of the box with TypeScript. Given the following code:
-
-```ts
-ref: count = x
-```
-
-1. TS won't know `count` should be treated as a local variable
-2. If `x` has type `Ref<T>`, there will be a type mismatch since we expect to use `count` as `T`.
-
-The general idea is to pre-transform the code into alternative TypeScript for type checking only (different from runtime-oriented output), get the diagnostics, and map them back. This will be performed by Vetur for IDE intellisense, and via a dedicated command line tool for type checking `*.vue` files (e.g. VTI or `@vuedx/typecheck`).
-
-Example
-
-```ts
-// source
-ref: count = x
-
-// transformed
-import { ref, unref } from 'vue'
-
-let count = unref(x)
-let $count = ref(x)
-```
-
-`ref` and `unref` here are used solely for type conversion purposes since their signatures are:
-
-```ts
-function ref<T>(value: T): T extends Ref ? T : Ref<T>
-function unref<T>(value: T): T extends Ref<infer V> ? V : T
-```
-
-For destructuring:
-
-```ts
-// source
-ref: ({ foo, bar } = useX())
-
-// transformed
-import { ref, unref } from 'vue'
-
-const { foo: __foo, bar: __bar } = useX()
-let foo = unref(__foo)
-let $foo = ref(__foo)
-let bar = unref(__bar)
-let $bar = ref(__bar)
-```
-
-## Svelte Syntax Details
-
-- `export` is used to created component props [[details](https://svelte.dev/docs#1_export_creates_a_component_prop)]
-
-- `let` bindings are considered reactive (invalidation calls are automatically injected after assignments to `let` bindings during compilation). [[details](https://svelte.dev/docs#2_Assignments_are_reactive)]
-
-- Labeled statements starting with `$` are used to denote computed values / reactive statements. [[details](https://svelte.dev/docs#3_$_marks_a_statement_as_reactive)]
-
-- Imported svelte stores (the loose equivalent of a ref in Vue) can be used like a normal variable by using its `$`-prefixed counterpart. [[details](https://svelte.dev/docs#4_Prefix_stores_with_$_to_access_their_values)]
