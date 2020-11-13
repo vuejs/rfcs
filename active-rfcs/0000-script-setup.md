@@ -13,14 +13,16 @@ Introduce a new script type in Single File Components: `<script setup>`, which e
 
 ```html
 <script setup>
-// imported components are also directly usable in template
-import Foo from './Foo.vue'
-import { ref } from 'vue'
+  // imported components are also directly usable in template
+  import Foo from './Foo.vue'
+  import { ref } from 'vue'
 
-// write Composition API code just like in a normal setup()
-// but no need to manually return everything
-const count = ref(0)
-const inc = () => { count.value++ }
+  // write Composition API code just like in a normal setup()
+  // but no need to manually return everything
+  const count = ref(0)
+  const inc = () => {
+    count.value++
+  }
 </script>
 
 <template>
@@ -33,21 +35,23 @@ const inc = () => { count.value++ }
 
 ```html
 <script setup>
-import Foo from './Foo.vue'
-import { ref } from 'vue'
+  import Foo from './Foo.vue'
+  import { ref } from 'vue'
 
-export default {
-  setup() {
-    const count = ref(1)
-    const inc = () => { count.value++ }
+  export default {
+    setup() {
+      const count = ref(1)
+      const inc = () => {
+        count.value++
+      }
 
-    return {
-      Foo, // see note below
-      count,
-      inc
-    }
+      return {
+        Foo, // see note below
+        count,
+        inc,
+      }
+    },
   }
-}
 </script>
 
 <template>
@@ -56,6 +60,7 @@ export default {
 ```
 
 **Note:** the SFC compiler also extracts binding metadata from `<script setup>` and use it during template compilation. This is why the template can use `Foo` as a component here even though it's returned from `setup()` instead of registered via `components` option.
+
 </details>
 
 # Motivation
@@ -74,7 +79,7 @@ To opt-in to the syntax, add the `setup` attribute to the `<script>` block:
 
 ```html
 <script setup>
-// syntax enabled
+  // syntax enabled
 </script>
 ```
 
@@ -84,8 +89,8 @@ Any top-level bindings (both variables and imports) declared inside `<script set
 
 ```html
 <script setup>
-import Foo from './Foo.vue'
-const msg = 'Hello!'
+  import Foo from './Foo.vue'
+  const msg = 'Hello!'
 </script>
 
 <template>
@@ -98,18 +103,18 @@ const msg = 'Hello!'
 
 ```html
 <script>
-import Foo from './Foo.vue'
+  import Foo from './Foo.vue'
 
-export default {
-  setup() {
-    const msg = 'Hello!'
+  export default {
+    setup() {
+      const msg = 'Hello!'
 
-    return {
-      Foo,
-      msg
-    }
+      return {
+        Foo,
+        msg,
+      }
+    },
   }
-}
 </script>
 
 <template>
@@ -118,10 +123,11 @@ export default {
 ```
 
 **Note:** The SFC compiler also extracts binding metadata from `<script setup>` and use it during template compilation. Therefore in the template, `Foo` can be used as a component even though it's returned from `setup()` instead of registered via `components` option.
+
 </details>
 <p></p>
 
-### Scoping Mental Model
+### Scoping mental model
 
 Some users may be concerned that it is no longer clear what variables are exposed to the template vs. those that are not. However, it can be argued that there is no practical benefits in being able to tell this.
 
@@ -140,74 +146,86 @@ function setup() {
 }
 ```
 
+In fact, we have also introduced an [inline template](#inline-template-mode) option that will compile SFCs into this format. By inlining the generated render function inside `setup()` scope, we can directly access in scope variables without having to go through the render proxy. This can lead to decent performance gains.
+
 This does require different handling when linting for unused variables, but SFCs already require the usage of `eslint-plugin-vue` which can be made to adapt to this new scoping model.
 
-### Closed by Default
+### Closed by default
 
 In a Vue component, everything exposed to the template is implicitly exposed on the component instance, which can be retrieved by a parent component via template refs. That is to say, up to this point the **template render context** and the **imperative public interface** of a component is one and the same. We have found this to be problematic because the two use cases do not always align perfectly. In fact, most of the time we are over-exposing on the public interface front. This is why we are discussing an explicit way to define a component's imperative public interface in https://github.com/vuejs/rfcs/pull/210.
 
 `<script setup>` as proposed in this RFC, if following current behavior, will be vastly over-exposing on the imperative public interface, therefore a component using `<script setup>` will be **closed by default**. That is to say, its public imperative interface will be an empty object unless bindings are explicitly exposed. How to explicitly expose imperative public interface will be finalized in https://github.com/vuejs/rfcs/pull/210.
 
-### Setup Signature
+### Declaring options and setup context
 
-The value of the `setup` attribute will be used as the arguments of the `setup()` function:
-
-```html
-<script setup="props, { emit }">
-console.log(props.msg)
-emit('foo')
-</script>
-```
-
-<details>
-<summary>Compiled Output</summary>
+In order to declare options like `props` and `emits`, and also receive arguments that are passed to the `setup()` function, we can use the newly introduced `useOptions` API:
 
 ```html
-<script>
-export default {
-  setup(props, { emit }) {
-    console.log(props.msg)
-    emit('foo')
-  }
-}
-</script>
-```
-</details>
+<script setup>
+  import { useOptions } from 'vue'
 
-### Declaring Component Options
-
-`export default` can still be used inside `<script setup>` for declaring component options such as props. Note that the exported expression will be hoisted out of `setup()` scope so it won't be able to reference variables declared in `<script setup>` (a compile error will be emitted in this case).
-
-```html
-<script setup="props">
-export default {
-  props: {
-    msg: String
-  }
-}
-
-console.log(props.msg)
-</script>
-```
-
-<details>
-<summary>Compiled Output</summary>
-
-```html
-<script>
-export default {
-  ...({
+  const { props, emit, slots, attrs } = useOptions({
     props: {
-      msg: String
-    }
-  }),
-  setup(props) {
-    console.log(props.msg)
-  }
-}
+      foo: String,
+    },
+    emits: ['change', 'delete'],
+  })
+
+  // setup code
 </script>
 ```
-</details>
+
+The return value of `useOptions` is the setup context (2nd argument passed to `setup()`). Note that in current core API, the setup context does not expose `props` - in order to align the concepts, we are updating the setup context to expose `props` as well.
+
+**Compiled output**
+
+```html
+<script>
+  export default {
+    props: {
+      foo: String,
+    },
+    emits: ['change', 'delete'],
+    setup(_, { props, emit, slots, attrs }) {
+      // setup code
+    },
+  }
+</script>
+```
+
+**Additional notes:**
+
+- `useOptions` provides type inference similar to `defineComponent`.
+
+- `useOptions` is a **compiler hint function**: it is compiled away when `<script setup>` is processed. The actual runtime implementation is a no-op and should never be called. Doing so will result in a runtime warning.
+
+- The options passed to `useOptions` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
+
+### Type-only props/emit declarations
+
+Props and emits can also be declared using pure-type syntax by passing a literal type argument to `useOptions`:
+
+```ts
+const { props, emit } = useOptions<{
+  props: {
+    foo: string
+    bar?: number
+  }
+  emit: (e: 'update' | 'delete', id: number) => void
+}>()
+```
+
+- `useOptions` can only use either runtime declaration OR type declartion. Using both at the same time will result in a compile error.
+
+- When using type declaration, equivalent runtime declaration is automatically generated from static analysis to remove the need of double declaration and still ensure correct runtime behavior.
+
+  - In dev mode, the compiler will try to infer corresponding runtime validation from the types. For example here `foo: String` is inferred from the `foo: string` type. If the type is a reference to an imported type, the inferred result will be `foo: null` (equal to `any` type) since the compiler does not have information of external files.
+
+  - In prod mode, the compiler will generate the array format declaration to reduce bundle size (the props here will be compiled into `['msg']`)
+
+  - The emitted code is still TypeScript with valid typing, which can be further processed by other tools.
+
+- As of now, the type declaration argument must be a literal type to ensure correct static analysis. This can be improved in the future.
 
 ### Top level await
 
@@ -215,7 +233,7 @@ Top level `await` can be used inside `<script setup>`. The resulting `setup()` f
 
 ```html
 <script setup>
-const post = await fetch(`/api/post/1`).then(r => r.json())
+  const post = await fetch(`/api/post/1`).then((r) => r.json())
 </script>
 ```
 
@@ -224,90 +242,16 @@ const post = await fetch(`/api/post/1`).then(r => r.json())
 
 ```html
 <script>
-export default {
-  async setup() {
-    const post = await fetch(`/api/post/1`).then(r => r.json())
+  export default {
+    async setup() {
+      const post = await fetch(`/api/post/1`).then((r) => r.json())
 
-    return { post }
+      return { post }
+    },
   }
-}
-</script>
-```
-</details>
-
-## TypeScript Integration
-
-To type setup arguments like `props`, `slots` and `emit`, simply declare them:
-
-```html
-<script setup="props, { emit, slots }" lang="ts">
-import { VNode } from 'vue'
-
-// declare props using TypeScript syntax
-// this will be auto compiled into runtime equivalent!
-declare const props: {
-  msg: string
-}
-
-// declare allowed emit signatures via overload
-declare function emit(e: 'add', msg: string): void
-declare function emit(e: 'remove', id: number): void
-
-// you can even declare slot types
-declare const slots: {
-  default: () => VNode[]
-}
-
-emit('add', props.msg)
 </script>
 ```
 
-Runtime props and emits declaration is automatically generated from TS typing to remove the need of double declaration and still ensure correct runtime behavior. Note that the `props` type declaration value cannot be an imported type, because the SFC compiler does not process external files to extract the prop names.
-
-<details>
-<summary>Compile Output</summary>
-
-```html
-<script lang="ts">
-import { VNode, defineComponent } from 'vue'
-
-declare function __emit__(e: 'add', msg: string): void
-declare function __emit__(e: 'remove', id: number): void
-
-declare const slots: {
-  default: () => VNode[]
-}
-
-export default defineComponent({
-  // runtime declaration for props
-  props: {
-    msg: { type: String, required: true }
-  } as unknown as undefined,
-
-  // runtime declaration for emits
-  emits: ["add"] as unknown as undefined,
-
-  setup(props: { msg: string }, { emit }: {
-    emit: typeof __emit__,
-    slots: slots,
-    attrs: Record<string, any>
-  }) {
-    emit('add', props.msg)
-    return {}
-  }
-})
-</script>
-```
-
-Details on runtime props generation:
-
-- In dev mode, the compiler will try to infer corresponding runtime validation from the types. For example here `msg: String` is inferred from the `msg: string` type.
-
-- In prod mode, the compiler will generate the array format declaration to reduce bundle size (the props here will be compiled into `['msg']`)
-
-- The generated props declaration is force casted into `undefined` to ensure the user provided type is used in the emitted code.
-
-- The emitted code is still TypeScript with valid typing, which can be further processed by other tools.
 </details>
 
 ## Usage alongside normal `<script>`
@@ -322,14 +266,14 @@ In such cases, a normal `<script>` block can be used alongside `<script setup>`:
 
 ```html
 <script>
-performGlobalSideEffect()
+  performGlobalSideEffect()
 
-// this can be imported as `import { named } from './*.vue'`
-export const named = 1
+  // this can be imported as `import { named } from './*.vue'`
+  export const named = 1
 </script>
 
 <script setup>
-let count = 0
+  let count = 0
 </script>
 ```
 
@@ -347,11 +291,12 @@ export default {
   setup() {
     const count = ref(0)
     return {
-      count
+      count,
     }
-  }
+  },
 }
 ```
+
 </details>
 
 ## Usage restrictions
@@ -402,6 +347,59 @@ if (descriptor.script || descriptor.scriptSetup) {
 
 The compilation requires the entire descriptor to be provided, and the resulting code will include sources from both `<script setup>` and normal `<script>` (if present). It is the higher level tools' (e.g. `vite` or `vue-loader`) responsibility to properly assemble the compiled output.
 
+## Inline Template Mode
+
+Inline template mode can be enabled via the `inlineTemplate` option:
+
+```js
+compileScript(descriptor, { inlineTemplate: true })
+```
+
+This will compile the SFC template as well and inline it inside the `setup()` function generated from `<script setup>`. Example:
+
+```html
+<script setup>
+  import { ref } from 'vue'
+
+  const count = ref(0)
+
+  function inc() {
+    count.value++
+  }
+</script>
+<template>
+  <button @click="inc">{{ count }}</button>
+</template>
+```
+
+**Compiled to:**
+
+```js
+import { ref, unref, createVNode, toDisplayString } from 'vue'
+
+export default {
+  setup() {
+    const count = ref(0)
+
+    function inc() {
+      count.value++
+    }
+
+    return () => {
+      createVNode(
+        'div',
+        {
+          onClick: inc,
+        },
+        toDisplayString(unref(count))
+      )
+    }
+  },
+}
+```
+
+Note some bindings need to be wrapped with `unref` - the compiler performs some heuristics to avoid this when possible. For example, function declarations and const declarations with literal initial values will not be wrapped with `unref`.
+
 ## Template binding optimization
 
 The `SFCScriptBlock` returned by `compiledScript` also exposes a `bindings` object, which is the exported binding metadata gathered during the compilation. For example, given the following `<script setup>`:
@@ -411,7 +409,7 @@ The `SFCScriptBlock` returned by `compiledScript` also exposes a `bindings` obje
 export const foo = 1
 
 export default {
-  props: ['bar']
+  props: ['bar'],
 }
 </script>
 ```
@@ -431,7 +429,7 @@ This object can then be passed to the template compiler:
 import { compile } from '@vue/compiler-dom'
 
 compile(template, {
-  bindingMetadata: bindings
+  bindingMetadata: bindings,
 })
 ```
 
@@ -454,3 +452,5 @@ function render(_ctx, _cache, $setup, $props, $data) {
   return createVNode('div', null, $setup.foo + $props.bar)
 }
 ```
+
+The binding information is also used in inline template mode to generate more efficient code.
