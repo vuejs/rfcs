@@ -158,13 +158,13 @@ In a Vue component, everything exposed to the template is implicitly exposed on 
 
 ### Declaring options and setup context
 
-In order to declare options like `props` and `emits`, and also receive arguments that are passed to the `setup()` function, we can use the newly introduced `useOptions` API:
+In order to declare options like `props` and `emits`, and also receive arguments that are passed to the `setup()` function, we can use the newly introduced `defineOptions` API:
 
 ```html
 <script setup>
-  import { useOptions } from 'vue'
+  import { defineOptions } from 'vue'
 
-  const { props, emit, slots, attrs } = useOptions({
+  const { props, emit, slots, attrs } = defineOptions({
     props: {
       foo: String,
     },
@@ -175,7 +175,7 @@ In order to declare options like `props` and `emits`, and also receive arguments
 </script>
 ```
 
-The return value of `useOptions` is the setup context (2nd argument passed to `setup()`). Note that in current core API, the setup context does not expose `props` - in order to align the concepts, we are updating the setup context to expose `props` as well.
+The return value of `defineOptions` is the setup context (2nd argument passed to `setup()`). Note that in current core API, the setup context does not expose `props` - in order to align the concepts, we are updating the setup context to expose `props` as well.
 
 **Compiled output**
 
@@ -195,18 +195,18 @@ The return value of `useOptions` is the setup context (2nd argument passed to `s
 
 **Additional notes:**
 
-- `useOptions` provides type inference similar to `defineComponent`.
+- `defineOptions` provides type inference similar to `defineComponent`.
 
-- `useOptions` is a **compiler hint function**: it is compiled away when `<script setup>` is processed. The actual runtime implementation is a no-op and should never be called. Doing so will result in a runtime warning.
+- `defineOptions` is a **compiler hint function**: it is compiled away when `<script setup>` is processed. The actual runtime implementation is a no-op and should never be called. Doing so will result in a runtime warning.
 
-- The options passed to `useOptions` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
+- The options passed to `defineOptions` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
 
 ### Type-only props/emit declarations
 
-Props and emits can also be declared using pure-type syntax by passing a literal type argument to `useOptions`:
+Props and emits can also be declared using pure-type syntax by passing a literal type argument to `defineOptions`:
 
 ```ts
-const { props, emit } = useOptions<{
+const { props, emit } = defineOptions<{
   props: {
     foo: string
     bar?: number
@@ -215,7 +215,7 @@ const { props, emit } = useOptions<{
 }>()
 ```
 
-- `useOptions` can only use either runtime declaration OR type declartion. Using both at the same time will result in a compile error.
+- `defineOptions` can only use either runtime declaration OR type declartion. Using both at the same time will result in a compile error.
 
 - When using type declaration, equivalent runtime declaration is automatically generated from static analysis to remove the need of double declaration and still ensure correct runtime behavior.
 
