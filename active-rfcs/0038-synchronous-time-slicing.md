@@ -13,7 +13,7 @@ This is an internal implementation and no API changes.
 
 # Motivation
 
-The [current scheduler implementation](https://github.com/vuejs/vue-next/blob/master/packages/runtime-core/src/scheduler.ts#L192) is using microtask and empty a queue synchronously. Because of the execution mechanism of microtask, it will block the browser. We call it `[jank](https://developer.mozilla.org/en-US/docs/Glossary/Jank)`
+The [current scheduler implementation](https://github.com/vuejs/vue-next/blob/master/packages/runtime-core/src/scheduler.ts#L192) is using microtask and empty a queue synchronously. Because of the execution mechanism of microtask, it will block the browser. We call it [jank](https://developer.mozilla.org/en-US/docs/Glossary/Jank)
 
 If we can slice the microtask properly, we can effectively alleviate this problem.
 
