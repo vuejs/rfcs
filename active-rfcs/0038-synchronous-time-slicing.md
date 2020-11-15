@@ -61,7 +61,7 @@ const flush = function () {
   }
 }
 
-export const queueJobs = (cb) => queue.push(cb) === 1 && Promise.resolve().then(flush)
+export const nextTick = (cb) => queue.push(cb) === 1 && Promise.resolve().then(flush)
 ```
 
 # Alternatives
@@ -80,4 +80,4 @@ And it is not difficult to implement it, I can land it soon.
 
 # Unresolved questions
 
-None, everything is ready~
+It cannot be emulated by setTimeout.
