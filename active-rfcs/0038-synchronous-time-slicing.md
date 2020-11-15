@@ -5,7 +5,7 @@
 
 # Summary
 
-Time slicing of microtask using requestanimationFrame.
+Time slicing of microtask using requeustAnimationFrame.
 
 # Basic example
 
@@ -21,7 +21,7 @@ If we can slice the microtask properly, we can effectively alleviate this proble
 
 Frankly, I found that RAF does not defer the microtask to the next tick, so slicing a microtask with the RAF has very little invasive.
 
-1. As before, it's still synchronous.
+1. As before, it's still synchronous and keepping the order.
 
 2. We can't slice according to 16ms or single component, because the granularity is too small, many small components don't need a 16ms.
 
