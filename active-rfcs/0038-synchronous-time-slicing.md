@@ -54,7 +54,7 @@ const flush = function () {
     deferQueue.push(queue)
     queue.length = 0
   }
-  if (readQueue.length + queue.length + deferQueue.length > 0) {
+  if (queue.length + deferQueue.length > 0) {
     requestAnimationFrame(flush)
   } else {
     frame = 0
