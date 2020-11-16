@@ -5,7 +5,7 @@
 
 # Summary
 
-Support injecting component-state-driven CSS variables into Single File Components styles.
+Support using component-state-driven CSS variables into Single File Components styles.
 
 # Basic example
 
@@ -15,19 +15,25 @@ Support injecting component-state-driven CSS variables into Single File Componen
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      color: 'red'
-    }
+  export default {
+    data() {
+      return {
+        color: 'red',
+        font: {
+          size: '2em'
+        }
+      }
+    },
   }
-}
 </script>
 
-<style vars="{ color }">
-.text {
-  color: var(--color);
-}
+<style>
+  .text {
+    color: var(--v-bind:color);
+
+    /* shorthand + nested property access */
+    font-size: var(--:font.size);
+  }
 </style>
 ```
 
@@ -39,61 +45,103 @@ Now with [most modern browsers supporting native CSS variables](https://caniuse.
 
 # Detailed design
 
-The `<style>` tag in an SFC now supports a `vars` binding, which accepts an expression for the key/values to inject as CSS variables. It is evaluated in the same context as expressions inside `<template>`.
-
-The variables will be applied to the component's root element as inline styles. In the above example, given a `vars` binding that evaluates to `{ color: 'red' }`, the rendered HTML will be:
+The `<style>` tag in an SFC now supports CSS variables that start with the `v-bind:` prefix (or `:` as shorthand), for example:
 
 ```html
-<div style="--color:red" class="text">hello</div>
-```
-
-## Usage with `<style scoped>`
-
-When `vars` is used with `<style scoped>`, we need to make sure the CSS variables do not leak to descendent components or accidentally shadow CSS variables higher up the DOM tree. The applied CSS variables will be prefixed with the component's scope ID:
-
-```html
-<div style="--6b53742-color:red" class="text">hello</div>
-```
-
-Similarly, CSS variables inside `<style>` will also need be rewritten accordingly. With the following code:
-
-```html
-<style scoped vars="{ color }">
-h1 {
-  color: var(--color);
-}
+<style>
+  .text {
+    color: var(--v-bind:color);
+    font-size: var(--:font.size);
+  }
 </style>
 ```
 
-The inner CSS will be compiled into:
+It should be noted that CSS variables names technically must be valid CSS identifiers which cannot contain characters like `:` or `.`. However, the syntax proposed in this RFC is used purely as a compile-time hint and is **not** included in the final runtime CSS. In terms of tooling integration, all major CSS parsers in the ecosystem can parse `var()` correctly with arbitrary inner content (verified on [ASTExplorer](https://astexplorer.net/)).
+
+When such CSS variables are detected, the SFC compiler will perform the following:
+
+1. Rewrite the variable to a hashed version. The above will be rewritten to:
+
+   ```html
+   <style>
+     .text {
+       color: var(--6b53742-color);
+       font-size: var(--6b53742-font_size);
+     }
+   </style>
+   ```
+
+   Note the hashing will be applied in all cases, regardless of whether `<style>` tag is scoped or not. This means injected CSS variables will never accidentally leak into child components.
+
+2. The corresponding variables will be injected to the component's root element as inline styles. For the example above, the final rendered DOM will look like this:
+
+   ```html
+   <div style="--6b53742-color:red;--6b53742-font_size:2em" class="text">
+     hello
+   </div>
+   ```
+
+   The injection is reactive - so if the component's `color` property changes, the injected CSS variable will be updated accordingly. This update is applied independent of the component's template update so changes to a CSS-only reactive property won't trigger template re-renders.
+
+## Compilation Details
+
+In order to inject the CSS variables, the compiler needs to generate and inject code like the following into the component's `setup()` function:
+
+```js
+import { useCssVars } from 'vue'
+
+export default {
+  setup() {
+    // ...
+    useCssVars(_ctx => ({
+      color: _ctx.color,
+      font_size: _ctx.font.size
+    }))
+  }
+}
+```
+
+...where the `useCssVars` runtime helper sets up a `watchEffect` to reactively apply the variables to the DOM.
+
+# Drawbacks
+
+## Compilation cost
+
+The compilation strategy requires the script compilation to do a parse of the `<style>` tag content first in order to determine the list of variables to expose. This will result in some duplicated CSS parsing cost, and will also cause `<style>` changes that affect the injected variables list to trigger HMR updates that reset the component state because it alters the generated JavaScript.
+
+## Prettier integration
+
+Currently, Prettier will attempt to format content inside `var(...)` when it contains colons or quotes, even thought technically it should not:
 
 ```css
-h1 {
-  color: var(--6b53742-color);
+.text {
+  color: var(--v-bind:color);
+  font-size: var(--:font.size);
+}
+
+/* Prettier will format the above to: */
+.text {
+  color: var(--v-bind: color);
+  font-size: var(--: font.size);
 }
 ```
 
-**Note that when `scoped` and `vars` are both present, all CSS variables are considered to be local.** In order to reference a global CSS variable here, use the `global:` prefix:
+Technically, the compilation strategy can handle this just fine by trimming the bound expression, but it can be a bit of an annoyance to users.
 
-```html
-<style scoped vars="{ color }">
-h1 {
-  color: var(--color);
-  font-size: var(--global:fontSize);
-}
-</style>
-```
+TODO: file prettier issue
 
-The above compiles into:
+# Alternatives
+
+A possible alternative syntax is
 
 ```css
-h1 {
-  color: var(--6b53742-color);
-  font-size: var(--fontSize);
+.text {
+  color: var(--{{ color }});
+  font-size: var(--{{ font.size }});
 }
 ```
 
-When there is only `scoped` and no `vars`, CSS variables are untouched. This preserves backwards compatibility.
+However, [cssom](https://www.npmjs.com/package/cssom), one of the widely used CSS parsers, will strip away the curly braces inside `var()`. This may not be a real issue since `cssom` is primarily used in `jsdom` and not in IDE tooling.
 
 # Adoption strategy
 
