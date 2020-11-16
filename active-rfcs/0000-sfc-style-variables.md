@@ -107,7 +107,9 @@ export default {
 
 ## Compilation cost
 
-The compilation strategy requires the script compilation to do a parse of the `<style>` tag content first in order to determine the list of variables to expose. This will result in some duplicated CSS parsing cost, and will also cause `<style>` changes that affect the injected variables list to trigger HMR updates that reset the component state because it alters the generated JavaScript.
+The compilation strategy requires the script compilation to do a parse of the `<style>` tag content first in order to determine the list of variables to expose. This will result in some duplicated CSS parsing cost.
+
+In cases where no `v-bind:` variables are used, a quick regex check can skip a full parse, so the feature should have negligible impact on components that are not using it.
 
 ## Prettier integration
 
@@ -129,19 +131,6 @@ Currently, Prettier will attempt to format content inside `var(...)` when it con
 Technically, the compilation strategy can handle this just fine by trimming the bound expression, but it can be a bit of an annoyance to users.
 
 TODO: file prettier issue
-
-# Alternatives
-
-A possible alternative syntax is
-
-```css
-.text {
-  color: var(--{{ color }});
-  font-size: var(--{{ font.size }});
-}
-```
-
-However, [cssom](https://www.npmjs.com/package/cssom), one of the widely used CSS parsers, will strip away the curly braces inside `var()`. This may not be a real issue since `cssom` is primarily used in `jsdom` and not in IDE tooling.
 
 # Adoption strategy
 
