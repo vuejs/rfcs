@@ -748,7 +748,7 @@ We agree with that to a certain extent. However, we believe that:
 
 Some users used Angular 1 controllers as examples of how the design could lead to poorly written code. The biggest difference between the Composition API and Angular 1 controllers is that it doesn't rely on a shared scope context. This makes it significantly easier to split out logic into separate functions, which is the core mechanism of JavaScript code organization.
 
-Any JavaScript program starts with an entry file (think of it as the `setup()` for a program). We organize the program by splitting it into functions and modules based on logical concerns. **The Composition API enables us to do the same for Vue component code.** In other words, skills in writing well-organized JavaScript code translates directly into skills of writing well-organized Vue code when using the Composition API.
+Any JavaScript program starts with an entry file (think of it as the `setup()` for a program). We organize the program by splitting it into functions and modules based on logical concerns. **The Composition API enables us to do the same for Vue component code.** In other words, skills in writing well-organized JavaScript code translate directly into skills of writing well-organized Vue code when using the Composition API.
 
 ## Adoption strategy
 
