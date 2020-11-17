@@ -20,8 +20,8 @@ Support using component-state-driven CSS variables into Single File Components s
       return {
         color: 'red',
         font: {
-          size: '2em'
-        }
+          size: '2em',
+        },
       }
     },
   }
@@ -29,10 +29,10 @@ Support using component-state-driven CSS variables into Single File Components s
 
 <style>
   .text {
-    color: var(--v-bind:color);
+    color: v-bind(color);
 
-    /* shorthand + nested property access */
-    font-size: var(--:font.size);
+    /* expressions (wrap in quotes) */
+    font-size: v-bind('font.size');
   }
 </style>
 ```
@@ -45,30 +45,36 @@ Now with [most modern browsers supporting native CSS variables](https://caniuse.
 
 # Detailed design
 
-The `<style>` tag in an SFC now supports CSS variables that start with the `v-bind:` prefix (or `:` as shorthand), for example:
+The `<style>` tag in an SFC now supports a custom CSS function named `v-bind`:
 
 ```html
+<!-- in Vue SFC -->
 <style>
   .text {
-    color: var(--v-bind:color);
-    font-size: var(--:font.size);
+    color: v-bind(color);
   }
 </style>
 ```
 
-It should be noted that CSS variables names technically must be valid CSS identifiers which cannot contain characters like `:` or `.`. However, the syntax proposed in this RFC is used purely as a compile-time hint and is **not** included in the final runtime CSS. In terms of tooling integration, all major CSS parsers in the ecosystem can parse `var()` correctly with arbitrary inner content (verified on [ASTExplorer](https://astexplorer.net/)).
+As expected, this would bind the `color` declaration's value to the `color` property of the component's state, reactively.
+
+The `v-bind` function can support arbitrary JavaScript expressions inside, but since JavaScript expressions may contain characters that are not valid in CSS identifiers, they will need to be wrapped in quotes most of the time:
+
+```css
+.text {
+  font-size: v-bind('theme.font.size');
+}
+```
 
 When such CSS variables are detected, the SFC compiler will perform the following:
 
-1. Rewrite the variable to a hashed version. The above will be rewritten to:
+1. Rewrite the `v-bind()` to a native `var()` with a hashed variable name. The above will be rewritten to:
 
-   ```html
-   <style>
-     .text {
-       color: var(--6b53742-color);
-       font-size: var(--6b53742-font_size);
-     }
-   </style>
+   ```css
+    .text {
+      color: var(--6b53742-color);
+      font-size: var(--6b53742-theme_font_size);
+    }
    ```
 
    Note the hashing will be applied in all cases, regardless of whether `<style>` tag is scoped or not. This means injected CSS variables will never accidentally leak into child components.
@@ -76,7 +82,7 @@ When such CSS variables are detected, the SFC compiler will perform the followin
 2. The corresponding variables will be injected to the component's root element as inline styles. For the example above, the final rendered DOM will look like this:
 
    ```html
-   <div style="--6b53742-color:red;--6b53742-font_size:2em" class="text">
+   <div style="--6b53742-color:red;--6b53742-theme_font_size:2em;" class="text">
      hello
    </div>
    ```
@@ -85,52 +91,36 @@ When such CSS variables are detected, the SFC compiler will perform the followin
 
 ## Compilation Details
 
-In order to inject the CSS variables, the compiler needs to generate and inject code like the following into the component's `setup()` function:
+- In order to inject the CSS variables, the compiler needs to generate and inject code like the following into the component's `setup()` function:
 
-```js
-import { useCssVars } from 'vue'
+  ```js
+  import { useCssVars } from 'vue'
 
-export default {
-  setup() {
-    // ...
-    useCssVars(_ctx => ({
-      color: _ctx.color,
-      font_size: _ctx.font.size
-    }))
+  export default {
+    setup() {
+      // ...
+      useCssVars((_ctx) => ({
+        color: _ctx.color,
+        theme_font_size: _ctx.theme.font.size,
+      }))
+    },
   }
-}
-```
+  ```
 
-...where the `useCssVars` runtime helper sets up a `watchEffect` to reactively apply the variables to the DOM.
+  ...where the `useCssVars` runtime helper sets up a `watchEffect` to reactively apply the variables to the DOM.
 
-# Drawbacks
+- The compilation strategy requires the script compilation to do a simple regex parse of the `<style>` tag content first in order to determine the list of variables to expose. However, this parse phase won't be as costly as a full AST-based parse.
 
-## Compilation cost
+- In production, the variable names can be further hashed to reduce CSS footprint:
 
-The compilation strategy requires the script compilation to do a parse of the `<style>` tag content first in order to determine the list of variables to expose. This will result in some duplicated CSS parsing cost.
+   ```css
+    .text {
+      color: var(--x3b2fs2);
+      font-size: var(--29fh29g);
+    }
+   ```
 
-In cases where no `v-bind:` variables are used, a quick regex check can skip a full parse, so the feature should have negligible impact on components that are not using it.
-
-## Prettier integration
-
-Currently, Prettier will attempt to format content inside `var(...)` when it contains colons or quotes, even thought technically it should not:
-
-```css
-.text {
-  color: var(--v-bind:color);
-  font-size: var(--:font.size);
-}
-
-/* Prettier will format the above to: */
-.text {
-  color: var(--v-bind: color);
-  font-size: var(--: font.size);
-}
-```
-
-Technically, the compilation strategy can handle this just fine by trimming the bound expression, but it can be a bit of an annoyance to users.
-
-TODO: file prettier issue
+   Corresponding generated JavaScript code will be using the same hashes accordingly.
 
 # Adoption strategy
 
