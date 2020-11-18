@@ -24,7 +24,7 @@ const renderer = createBundleRenderer(bundle, {
 # Motivation
 
 `shouldPrefetch` and `shouldPreload` gives us opportunity to remove scripts that are not needed on initial load.
-Right now we can only use it for whole app, which is very limited. Best scenarios to use it is when we have conditional loading scripts.
+Right now we can only use it for whole app, which is very limited. Best scenarios are when we have conditional lazy loading scripts.
 Here are examples that will be possible with this change (and it's not possible right now):
 - load scripts based on authorization,
 - load locales for specific url (`de.json` for `/de`, etc),
@@ -34,7 +34,7 @@ Here are examples that will be possible with this change (and it's not possible 
 # Detailed design
 
 This will extend current api of `shouldPrefetch` and `shouldPreload`. Right now we have file name and file type.
-So what we need to do is just pass to it ssr context. Here is proposition https://github.com/vuejs/vue/pull/11712
+So what we just need to call `shouldPrefetch/shouldPreload` with ssr context. Here is proposition https://github.com/vuejs/vue/pull/11712
 
 ```
   shouldPreload: (file, type, context) => {}
