@@ -68,18 +68,6 @@ It also provides the functionality to `escape` some effects from the component's
 
 ### Scope
 
-A scope instance will be defined as
-
-```ts
-interface EffectScope {
-  (fn: () => void): void
-  _isEffectScope: true
-  id: number
-  active: boolean
-  effects: (ReactiveEffect | EffectScope)[]
-}
-```
-
 In `effectScope`, `effect` created inside the scope will be collected into the `effects` array. A scope instance will be returned by `effectScope`.
 
 ```ts
@@ -95,6 +83,8 @@ const scope = effectScope(() => {
 When passing the scope instance into `stop()` API, it will stop all the effects and nested scopes recursively.
 
 ```ts
+import { stop } from 'vue'
+
 stop(scope)
 ```
 
@@ -103,6 +93,8 @@ stop(scope)
 Nested scopes should also be collected by its parent scope. And when the parent scope get disposed, all its descendant scopes will be also stopped.
 
 ```ts
+import { stop } from 'vue'
+
 const scope = effectScope(() => {
   const doubled = computed(() => counter.value * 2)
   
@@ -125,6 +117,8 @@ An option can be passed as the second parameter of `effectScope`. Specifying `de
 This also makes usages like ["lazy initialization"](https://github.com/vuejs/vue-next/issues/1532) possible.
 
 ```ts
+import { stop } from 'vue'
+
 let nestedScope
 
 const scope = effectScope(() => {
@@ -148,6 +142,25 @@ stop(scope)
 // stop the nested scope
 stop(nestedScope)
 ```
+
+### Forward returning values
+
+Values returned in the scope function will be forward as the return value of `effectScope` and able to be destructured.
+
+```ts
+const scope = effectScope(() => {
+  const { x } = useMouse()
+  const doubled = computed(() => x.value * 2)
+
+  return { x, doubled }
+})
+
+const { x, doubled } = scope
+
+console.log(doubled.value)
+```
+
+The return value should be an object.
 
 ### onCleanup
 
@@ -188,7 +201,28 @@ myScope(() => {
 stop(myScope)
 ```
 
+The extending function will also forward its return values
+
+```ts
+const { foo } = myScope(() => {
+  return {
+    foo: computed(/* ... */)
+  }
+})
+```
+
 ## Implementation
+
+A scope instance could be defined as
+
+```ts
+interface EffectScope {
+  _isEffectScope: true
+  id: number
+  active: boolean
+  effects: (ReactiveEffect | EffectScope)[]
+}
+```
 
 Similar to what we did for `currentInstance`, on effect creation, if the `activeEffectScope` is presented, push itself into the scope.
 
@@ -244,12 +278,11 @@ With this RFC, `@vue/runtime-dom` might also be able to do some refactoring by u
 # Drawbacks
 
 - It doesn't work well with async functions
-- Variables created in the closure will be harder to access from the outer closure (or should we accept the return value and pass it out?)
+- ~~Variables created in the closure will be harder to access from the outer closure (or should we accept the return value and pass it out?)~~
 
 # Alternatives
 
 Maybe an `onEffectCreation` hook instead, which will be called on every effect creation. This can provide more flexibility and even let users create their own scope utils or custom frameworks' lifecycles.
-
 
 ```ts
 onEffectCreation((effect) => {
@@ -276,4 +309,4 @@ This is a new API and should not affect existing code.
 
 # Unresolved questions
 
-- Naming
+None
