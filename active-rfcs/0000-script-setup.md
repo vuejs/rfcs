@@ -62,6 +62,22 @@ Introduce a new script type in Single File Components: `<script setup>`, which e
 **Note:** the SFC compiler also extracts binding metadata from `<script setup>` and use it during template compilation. This is why the template can use `Foo` as a component here even though it's returned from `setup()` instead of registered via `components` option.
 
 </details>
+<p></p>
+
+**Declaring Props and Emits**
+
+```html
+<script setup>
+  import { defineProps, defineEmit } from 'vue'
+
+  // expects props options
+  const props = defineProps({
+    foo: String,
+  })
+  // expects emits options
+  const emit = defineEmits(['update', 'delete'])
+</script>
+```
 
 # Motivation
 
@@ -89,12 +105,49 @@ Any top-level bindings (both variables and imports) declared inside `<script set
 
 ```html
 <script setup>
-  import Foo from './Foo.vue'
   const msg = 'Hello!'
 </script>
 
 <template>
-  <Foo>{{ msg }}</Foo>
+  <div>{{ msg }}</div>
+</template>
+```
+
+<details>
+<summary>Compiled Output</summary>
+
+```html
+<script>
+  export default {
+    setup() {
+      const msg = 'Hello!'
+
+      return {
+        msg,
+      }
+    },
+  }
+</script>
+
+<template>
+  <div>{{ msg }}</div>
+</template>
+```
+
+</details>
+<p></p>
+
+### Exposing Components and Directives
+
+Values in the scope of `<script setup>` can also be used directly as custom component tag names, similar to how it works in JSX:
+
+```html
+<script setup>
+  import Foo from './Foo.vue'
+</script>
+
+<template>
+  <Foo />
 </template>
 ```
 
@@ -107,25 +160,57 @@ Any top-level bindings (both variables and imports) declared inside `<script set
 
   export default {
     setup() {
-      const msg = 'Hello!'
-
       return {
         Foo,
-        msg,
       }
     },
   }
 </script>
 
 <template>
-  <Foo>{{ msg }}</Foo>
+  <Foo />
 </template>
 ```
 
-**Note:** The SFC compiler also extracts binding metadata from `<script setup>` and use it during template compilation. Therefore in the template, `Foo` can be used as a component even though it's returned from `setup()` instead of registered via `components` option.
+**Note**: in this case the template compiler has the binding information to generate code that directly use `Foo` from setup bindings instead of dynamically resolving it.
 
 </details>
 <p></p>
+
+Directives work in a similar fashion, except that a directive named `v-my-dir` will map to a setup scope variable named `vMyDir`:
+
+```html
+<script setup>
+  import vMyDir from './directives/my-dir'
+</script>
+
+<template>
+  <div v-my-dir />
+</template>
+```
+
+<details>
+<summary>Compiled Output</summary>
+
+```html
+<script>
+  import vMyDir from './directives/my-dir'
+
+  export default {
+    setup() {
+      return {
+        vMyDir,
+      }
+    },
+  }
+</script>
+
+<template>
+  <div v-my-dir />
+</template>
+```
+
+</details>
 
 ### Scoping mental model
 
@@ -156,66 +241,67 @@ In a Vue component, everything exposed to the template is implicitly exposed on 
 
 `<script setup>` as proposed in this RFC, if following current behavior, will be vastly over-exposing on the imperative public interface, therefore a component using `<script setup>` will be **closed by default**. That is to say, its public imperative interface will be an empty object unless bindings are explicitly exposed. How to explicitly expose imperative public interface will be finalized in https://github.com/vuejs/rfcs/pull/210.
 
-### Declaring options and setup context
+### Declaring props, emits and setup context
 
-In order to declare options like `props` and `emits`, and also receive arguments that are passed to the `setup()` function, we can use the newly introduced `defineOptions` API:
+In order to declare options like `props` and `emits`, and also access the setup context object, we can use the `defineProps`, `defineEmit` and `useContext` APIs:
 
 ```html
 <script setup>
-  import { defineOptions } from 'vue'
+  import { defineProps, defineEmit, useContext } from 'vue'
 
-  const { props, emit, slots, attrs } = defineOptions({
-    props: {
-      foo: String,
-    },
-    emits: ['change', 'delete'],
+  const props = defineProps({
+    foo: String,
   })
-
+  const emit = defineEmit(['change', 'delete'])
+  const { slots, attrs } = useContext()
   // setup code
 </script>
 ```
 
-The return value of `defineOptions` is the setup context (2nd argument passed to `setup()`). Note that in current core API, the setup context does not expose `props` - in order to align the concepts, we are updating the setup context to expose `props` as well.
-
-**Compiled output**
+<details>
+<summary>Compiled output</summary>
 
 ```html
 <script>
+  import { useContext } from 'vue'
+
   export default {
     props: {
       foo: String,
     },
     emits: ['change', 'delete'],
-    setup(_, { props, emit, slots, attrs }) {
+    setup(props, { emit }) {
+      const { slots, attrs } = useContext()
       // setup code
     },
   }
 </script>
 ```
 
-**Additional notes:**
+</details>
 
-- `defineOptions` provides type inference similar to `defineComponent`.
+- `defineProps` and `defineEmit` provides proper type inference based on the options passed.
 
-- `defineOptions` is a **compiler hint function**: it is compiled away when `<script setup>` is processed. The actual runtime implementation is a no-op and should never be called. Doing so will result in a runtime warning.
+- `defineProps` and `defineEmit` are **compiler hints**. They are compiled away when `<script setup>` is processed. The actual runtime implementations are no-ops and should never be called. Doing so will result in a runtime warning.
 
-- The options passed to `defineOptions` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
+- The options passed to `defineProps` and `defineEmit` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
+
+- `useContext()` is an actual runtime API that simply returns the same context object passed to `setup()`.
 
 ### Type-only props/emit declarations
 
-Props and emits can also be declared using pure-type syntax by passing a literal type argument to `defineOptions`:
+Props and emits can also be declared using pure-type syntax by passing a literal type argument to `defineProps` or `defineEmit`:
 
 ```ts
-const { props, emit } = defineOptions<{
-  props: {
-    foo: string
-    bar?: number
-  }
-  emit: (e: 'update' | 'delete', id: number) => void
+const props = defineProps<{
+  foo: string
+  bar?: number
 }>()
+
+const emit = defineEmit<(e: 'update' | 'delete', id: number) => void>()
 ```
 
-- `defineOptions` can only use either runtime declaration OR type declartion. Using both at the same time will result in a compile error.
+- `defineProps` or `defineEmit` can only use either runtime declaration OR type declaration. Using both at the same time will result in a compile error.
 
 - When using type declaration, equivalent runtime declaration is automatically generated from static analysis to remove the need of double declaration and still ensure correct runtime behavior.
 
@@ -253,6 +339,10 @@ Top level `await` can be used inside `<script setup>`. The resulting `setup()` f
 ```
 
 </details>
+
+<p></p>
+
+Relevant: https://github.com/vuejs/rfcs/issues/234
 
 ## Usage alongside normal `<script>`
 
@@ -299,6 +389,14 @@ export default {
 
 </details>
 
+## `inheritAttrs`
+
+The `<script setup>` syntax provides the ability to express equivalent functionality of all existing Options API options except `inheritAttrs`. To declare `inheritAttrs: false` when using `<script setup>`, simply add `inherit-attrs="false"` to the `<template>` tag:
+
+```html
+<template inherit-attrs="false"> ... </template>
+```
+
 ## Usage restrictions
 
 Due to the difference in module execution semantics, code inside `<script setup>` relies on the context of an SFC. When moved into external `.js` or `.ts` files, it may lead to confusions for both developers and tools. Therefore, **`<script setup>`** cannot be used with the `src` attribute.
@@ -325,7 +423,8 @@ This feature is opt-in. Existing SFC usage is unaffected.
 
 # Unresolved questions
 
-This RFC depends on https://github.com/vuejs/rfcs/pull/210 being resolved first.
+- Providing props default values when using type-only props declaration.
+- This RFC depends on https://github.com/vuejs/rfcs/pull/210.
 
 # Appendix
 
@@ -418,7 +517,7 @@ The `bindings` object will be:
 
 ```js
 {
-  foo: 'setup',
+  foo: 'setup-const',
   bar: 'props'
 }
 ```
