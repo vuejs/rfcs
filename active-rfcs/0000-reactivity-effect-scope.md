@@ -90,7 +90,6 @@ const scope = effectScope(() => {
 
   watchEffect(() => console.log('Count: ', double.value))
 })
-
 ```
 
 When passing the scope instance into `stop()` API, it will stop all the effects and nested scopes recursively.
@@ -148,6 +147,26 @@ stop(scope)
 
 // stop the nested scope
 stop(nestedScope)
+```
+
+### onCleanup
+
+A `onCleanup` hook is passed to the scope function
+
+```ts
+const scope = effectScope((onCleanup) => {
+  const doubled = computed(() => counter.value * 2)
+
+  watch(doubled, () => console.log(double.value))
+
+  watchEffect(() => console.log('Count: ', double.value))
+
+  onCleanup(()=> {
+    console.log('cleaned!')
+  })
+})
+
+stop(scope) // logs 'cleaned!'
 ```
 
 ### Extend the Scope
