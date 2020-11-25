@@ -144,10 +144,13 @@ Values in the scope of `<script setup>` can also be used directly as custom comp
 ```html
 <script setup>
   import Foo from './Foo.vue'
+  import MyComponent from './MyComponent.vue'
 </script>
 
 <template>
   <Foo />
+  <!-- kebab-case also works -->
+  <my-component />
 </template>
 ```
 
@@ -157,11 +160,13 @@ Values in the scope of `<script setup>` can also be used directly as custom comp
 ```html
 <script>
   import Foo from './Foo.vue'
+  import MyComponent from './MyComponent.vue'
 
   export default {
     setup() {
       return {
         Foo,
+        MyComponent,
       }
     },
   }
@@ -169,6 +174,7 @@ Values in the scope of `<script setup>` can also be used directly as custom comp
 
 <template>
   <Foo />
+  <my-component />
 </template>
 ```
 
@@ -177,15 +183,15 @@ Values in the scope of `<script setup>` can also be used directly as custom comp
 </details>
 <p></p>
 
-Directives work in a similar fashion, except that a directive named `v-my-dir` will map to a setup scope variable named `vMyDir`:
+Directives work in a similar fashion - a directive named `v-my-dir` will map to a setup scope variable named `myDir`:
 
 ```html
 <script setup>
-  import vMyDir from './directives/my-dir'
+  import { directive as clickOutside } from 'v-click-outside'
 </script>
 
 <template>
-  <div v-my-dir />
+  <div v-click-outside />
 </template>
 ```
 
@@ -194,22 +200,21 @@ Directives work in a similar fashion, except that a directive named `v-my-dir` w
 
 ```html
 <script>
-  import vMyDir from './directives/my-dir'
+  import { directive as clickOutside } from 'v-click-outside'
 
   export default {
     setup() {
       return {
-        vMyDir,
+        clickOutside,
       }
     },
   }
 </script>
 
 <template>
-  <div v-my-dir />
+  <div v-click-outside />
 </template>
 ```
-
 </details>
 
 ### Scoping mental model
