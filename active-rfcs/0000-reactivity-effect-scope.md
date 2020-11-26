@@ -162,19 +162,19 @@ console.log(doubled.value)
 
 The return value should be an object.
 
-### onCleanup
+### onStop
 
-A `onCleanup` hook is passed to the scope function
+A `onStop` hook is passed to the scope function
 
 ```ts
-const scope = effectScope((onCleanup) => {
+const scope = effectScope((onStop) => {
   const doubled = computed(() => counter.value * 2)
 
   watch(doubled, () => console.log(double.value))
 
   watchEffect(() => console.log('Count: ', double.value))
 
-  onCleanup(()=> {
+  onStop(()=> {
     console.log('cleaned!')
   })
 })
@@ -184,18 +184,18 @@ stop(scope) // logs 'cleaned!'
 
 ### Extend the Scope
 
-A scope instance is also a callable function, which allows users to extend the scope and combine their effects.
+A scope can be extended by passing it into the `extend` option of `effectScope` calls.
 
 ```ts
 const myScope = effectScope()
 
-myScope(() => {
+effectScope(() => {
   watchEffect(/* ... */)
-})
+}, { extend: myScope })
 
-myScope(() => {
+effectScope(() => {
   watch(/* ... */)
-})
+}, { extend: myScope })
 
 // both watchEffect and watch will be disposed
 stop(myScope)
@@ -204,11 +204,11 @@ stop(myScope)
 The extending function will also forward its return values
 
 ```ts
-const { foo } = myScope(() => {
+const { foo } = effectScope(() => {
   return {
     foo: computed(/* ... */)
   }
-})
+}, { extend: myScope })
 ```
 
 ## Implementation
@@ -221,6 +221,7 @@ interface EffectScope {
   id: number
   active: boolean
   effects: (ReactiveEffect | EffectScope)[]
+  extend: (fn: ()=>T) => EffectScopeReturns<T>
 }
 ```
 
