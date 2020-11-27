@@ -21,6 +21,18 @@ defineComponent({
 
 This would allow us to do typechecking in the `slot` binding and on when we use that `slot`.
 
+## Type only
+
+```ts
+defineComponent({
+  slots: null as {
+    // slot name `item`
+    item: { value: SlotType<number> }
+  },
+  // ...
+})
+```
+
 ## SFC
 
 ```vue
