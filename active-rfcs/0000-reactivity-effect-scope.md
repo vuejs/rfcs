@@ -5,7 +5,7 @@
 
 # Summary
 
-A new `effectScope` API for `@vue/reactivity` that automatically collects the effects in a function call, and returns a `scope` instance that can be cleaned up by passing to the `stop()` API.
+A new `effectScope` and `extendScope` API for `@vue/reactivity` that automatically collects the effects in a function call, and returns a `scope` instance that can be cleaned up by passing to the `stop()` API.
 
 # Basic example
 
@@ -80,7 +80,7 @@ const scope = effectScope(() => {
 })
 ```
 
-When passing the scope instance into `stop()` API, it will stop all the effects and nested scopes recursively.
+When passing the scope instance into the `stop()` API, it will stop all the effects and nested scopes recursively.
 
 ```ts
 import { stop } from 'vue'
@@ -174,7 +174,7 @@ const scope = effectScope((onStop) => {
 
   watchEffect(() => console.log('Count: ', double.value))
 
-  onStop(()=> {
+  onStop(() => {
     console.log('cleaned!')
   })
 })
@@ -184,31 +184,33 @@ stop(scope) // logs 'cleaned!'
 
 ### Extend the Scope
 
-A scope can be extended by passing it into the `extend` option of `effectScope` calls.
+An API `extendScope` is also introduced in this PR to extend an existing scope.
 
 ```ts
+import { effectScope, extendScope } from 'vue'
+
 const myScope = effectScope()
 
-effectScope(() => {
+extendScope(myScope, () => {
   watchEffect(/* ... */)
-}, { extend: myScope })
+})
 
-effectScope(() => {
+effectScope(myScope, () => {
   watch(/* ... */)
-}, { extend: myScope })
+})
 
 // both watchEffect and watch will be disposed
 stop(myScope)
 ```
 
-The extending function will also forward its return values
+`extendScope` will also forward its return values
 
 ```ts
-const { foo } = effectScope(() => {
+const { foo } = extendScope(myScope, () => {
   return {
     foo: computed(/* ... */)
   }
-}, { extend: myScope })
+})
 ```
 
 ## Implementation
