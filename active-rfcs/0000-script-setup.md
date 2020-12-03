@@ -75,7 +75,7 @@ Introduce a new script type in Single File Components: `<script setup>`, which e
     foo: String,
   })
   // expects emits options
-  const emit = defineEmits(['update', 'delete'])
+  const emits = defineEmits(['update', 'delete'])
 </script>
 ```
 
@@ -257,7 +257,7 @@ In order to declare options like `props` and `emits`, and also access the setup 
   const props = defineProps({
     foo: String,
   })
-  const emit = defineEmit(['change', 'delete'])
+  const emits = defineEmit(['change', 'delete'])
   const { slots, attrs } = useContext()
   // setup code
 </script>
@@ -303,7 +303,7 @@ const props = defineProps<{
   bar?: number
 }>()
 
-const emit = defineEmit<(e: 'update' | 'delete', id: number) => void>()
+const emits = defineEmit<(e: 'update' | 'delete', id: number) => void>()
 ```
 
 - `defineProps` or `defineEmit` can only use either runtime declaration OR type declaration. Using both at the same time will result in a compile error.
