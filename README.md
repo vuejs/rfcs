@@ -85,13 +85,9 @@ present convincing motivation, demonstrate understanding of the
 impact of the design, or are disingenuous about the drawbacks or
 alternatives tend to be poorly-received**.
 
-* Submit a pull request. As a pull request the RFC will receive design
-feedback from the larger community, and the author should be prepared
-to revise it in response.
+* Submit a pull request. Make sure to follow the pull request template and open a corresponding discussion thread.
 
-* Build consensus and integrate feedback. RFCs that have broad support
-are much more likely to make progress than those that don't receive any
-comments.
+* Build consensus and integrate feedback in the discussion thread. RFCs that have broad support are much more likely to make progress than those that don't receive any comments.
 
 * Eventually, the [core team] will decide whether the RFC is a candidate
 for inclusion in Vue.
