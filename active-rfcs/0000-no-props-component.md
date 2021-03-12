@@ -59,6 +59,7 @@ When `noProps:true` the component:
 - `$attrs` will be bound to the `vm` (just like props are)
 - `class` and `style` will not be bound to the `vm` since they will be treated as native and allowed to fallthrough.
 - `props` cannot be declared with using `noProps:true`
+- If a attribute has the same name as a local property (`computed`, `data`, `methods`, etc), it should warn and do not update or override the local property, that attribute should be added on the `$attrs` or `$props` object
 
 # Drawbacks
 
