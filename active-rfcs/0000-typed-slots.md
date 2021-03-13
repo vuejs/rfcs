@@ -1,7 +1,7 @@
 - Start Date: 2020-07-22
 - Target Major Version: 2.x and 3.x
 - Reference Issues:
-- Implementation PR:
+- Implementation PR: https://github.com/vuejs/vue-next/pull/2693
 
 # Summary
 
