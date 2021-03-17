@@ -1,7 +1,7 @@
 - Start Date: 2021-03-16
 - Target Major Version: 2.x/3.x
 - Reference Issues: https://github.com/vuejs/vue-next/issues/2084, https://github.com/vuejs/vue-next/issues/2077, https://github.com/vuejs/vue-next/issues/1518, https://github.com/vuejs/vue/issues/6259, https://github.com/vuejs/vue/issues/8028, https://github.com/vuejs/vue/issues/10487
-- Implementation PR: (WIP) https://github.com/vuejs/vue-next/pull/3414
+- Implementation PR: https://github.com/vuejs/vue-next/pull/3414
 
 # Summary
 
