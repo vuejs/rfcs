@@ -1,4 +1,4 @@
-- Start Date: 2019-04-29
+- Start Date: 2021-03-21
 - Implementation PR: https://github.com/vuejs/vue/pull/11967
 
 # Summary
