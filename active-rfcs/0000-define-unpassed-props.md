@@ -33,13 +33,12 @@ I think the current `props` behaviour is just to accommodate the scenario where 
 ```html
 <comp />
 // are equivalent
-<comp :foo="undefined">
-  <script>
-    props: {
-      foo: String
-    }
-  </script></comp
->
+<comp :foo="undefined" />
+<script>
+  props: {
+    foo: String
+  }
+</script>
 ```
 
 But this behaviour is not consistent with prop type Boolean, because `Boolean` is implicitly `false`
@@ -81,6 +80,7 @@ defineComponent({
 - You can't distinguish `undefined` from a non passed prop.
 
 In this case you can provide a `Symbol` or `object` to make it unique to the component, [playground](https://sfc.vuejs.org/#eyJBcHAudnVlIjoiPHRlbXBsYXRlPlxuICA8Y29tcD48L2NvbXA+XG4gIDxjb21wIDpmb289J3VuZGVmaW5lZCc+PC9jb21wPlxuICA8Y29tcCA6Zm9vPVwie2E6IDF9XCI+PC9jb21wPlxuPC90ZW1wbGF0ZT5cblxuPHNjcmlwdD5cbiBpbXBvcnQgeyBkZWZpbmVDb21wb25lbnQgfSBmcm9tICd2dWUnXG4gaW1wb3J0IENvbXAgZnJvbSAnLi9Db21wLnZ1ZSdcbiAgXG5leHBvcnQgZGVmYXVsdCBkZWZpbmVDb21wb25lbnQoe1xuICBjb21wb25lbnRzOiB7XG4gICAgQ29tcFxuICB9LFxuICBcbn0pO1xuPC9zY3JpcHQ+IiwiQ29tcC52dWUiOiI8dGVtcGxhdGU+XG5cdDxwPlxuICAgIGZvbzoge3tpc0RlY2xhcmVkfX1cbiAgPC9wPlxuPC90ZW1wbGF0ZT5cbjxzY3JpcHQ+XG5cbmNvbnN0IG4gPSB7fVxuXG5leHBvcnQgZGVmYXVsdCB7XG4gIHByb3BzOiB7XG4gICAgZm9vOiB7XG4gICAgIFx0dHlwZTogT2JqZWN0LFxuXHRcdFx0ZGVmYXVsdCgpe1xuICAgICAgICByZXR1cm4gblxuICAgICAgfVxuICAgIH0sXG4gIH0sXG4gIHNldHVwKHByb3BzKXtcbiAgICBjb25zdCBpc0RlY2xhcmVkID0gcHJvcHMuZm9vICE9PSBuO1xuICAgIFxuICAgIHJldHVybiB7XG4gICAgICBpc0RlY2xhcmVkXG4gICAgfVxuIH1cbn1cbjwvc2NyaXB0PiJ9):
+
 ```ts
 const UNIQUE_INSTANCE = {}
 
@@ -88,14 +88,14 @@ defineComponent({
   props: {
     foo: {
       type: Object,
-      default(){
+      default() {
         return UNIQUE_INSTANCE
-      }
-    }
+      },
+    },
   },
   setup(props) {
     const isProvided = props.foo !== UNIQUE_INSTANCE
-  }
+  },
 })
 ```
 
