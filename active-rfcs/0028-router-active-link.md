@@ -118,11 +118,16 @@ Note: **This behavior is different from actual behavior**.
 It's worth noting, it is possible to nest them to still benefit from links being _active_:
 
 ```js
+// Vue 3
+import { h } from 'vue'
+import { RouterView } from 'vue-router'
+
 const routes = [
   {
     path: '/movies',
     // we need this to render the children (see note below)
-    component: { render: () => h('RouterView') },
+    component: { render: () => h(RouterView) },
+    // for vue 2 use render: h => h('RouterView')
     children: [
       { path: 'new' },
       // different child
