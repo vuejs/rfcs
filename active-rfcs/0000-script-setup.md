@@ -75,7 +75,7 @@ Introduce a new script type in Single File Components: `<script setup>`, which e
     foo: String,
   })
   // expects emits options
-  const emit = defineEmits(['update', 'delete'])
+  const emit = defineEmit(['update', 'delete'])
 </script>
 ```
 
