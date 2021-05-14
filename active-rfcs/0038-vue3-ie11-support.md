@@ -10,7 +10,7 @@
 
 # Motivation
 
-We have been asked about IE11 support since the start of Vue 3's development, tracing back to end of 2018. Many users have asked whether Vue 3 will support IE11, and our original plan was to release Vue 3 and let it stablizie first, and add IE11 support at a later stage. During the long development process, we've also made research and experiments for IE11 compatibility on the side, but due to the complexity involved and amount of other work at hand, it's been de-prioritized down the road.
+We have been asked about IE11 support since the start of Vue 3's development, tracing back to end of 2018. Many users have asked whether Vue 3 will support IE11, and our original plan was to release Vue 3 and let it stabilize first, and add IE11 support at a later stage. During the long development process, we've also made research and experiments for IE11 compatibility on the side, but due to the complexity involved and amount of other work at hand, it's been de-prioritized down the road.
 
 When we take another look at the problem today in 2021, the browser and JavaScript landscape has changed quite a bit. More developers are now using modern language features, and more importantly [Microsoft itself has started to actively push users away from IE](https://techcommunity.microsoft.com/t5/windows-it-pro-blog/the-perils-of-using-internet-explorer-as-your-default-browser/ba-p/331732) with its investment in Edge. It is also [dropping IE11 support in its own major projects like Microsoft 365](https://techcommunity.microsoft.com/t5/microsoft-365-blog/microsoft-365-apps-say-farewell-to-internet-explorer-11-and/ba-p/1591666). Just a few days ago [WordPress also made the decision to drop IE11 support](https://make.wordpress.org/core/2021/03/25/discussion-summary-dropping-support-for-ie11/). IE11's global usage has [dropped below 1%](https://caniuse.com/usage-table). When we are talking about public-facing websites and apps, IE11 is on a clear fast decline.
 
@@ -34,7 +34,7 @@ Supporting IE11 also means we have to consider language features used in the ent
 
 The complexity would still be somewhat acceptable if it can be fully contained within Vue itself. However, after discussing with community members, we realized the co-existence of two reactivity implementations inevitably leaks to library authors as well.
 
-By supporting IE11 in Vue 3, library authors essenitally need to make that call as well. Library authors will have to account for what build of Vue 3 their library is running with (on top of potentially also supporting Vue 2) - and if they decide to support IE11, they have to author their library with all the ES5 reactivity caveats in mind.
+By supporting IE11 in Vue 3, library authors essentially need to make that call as well. Library authors will have to account for what build of Vue 3 their library is running with (on top of potentially also supporting Vue 2) - and if they decide to support IE11, they have to author their library with all the ES5 reactivity caveats in mind.
 
 ### Contributing to IE11's staying power
 
