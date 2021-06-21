@@ -68,7 +68,7 @@ Introduce a new script type in Single File Components: `<script setup>`, which e
 
 ```html
 <script setup>
-  import { defineProps, defineEmit } from 'vue'
+  import { defineProps, defineEmits } from 'vue'
 
   // expects props options
   const props = defineProps({
@@ -248,16 +248,16 @@ In a Vue component, everything exposed to the template is implicitly exposed on 
 
 ### Declaring props, emits and setup context
 
-In order to declare options like `props` and `emits`, and also access the setup context object, we can use the `defineProps`, `defineEmit` and `useContext` APIs:
+In order to declare options like `props` and `emits`, and also access the setup context object, we can use the `defineProps`, `defineEmits` and `useContext` APIs:
 
 ```html
 <script setup>
-  import { defineProps, defineEmit, useContext } from 'vue'
+  import { defineProps, defineEmits, useContext } from 'vue'
 
   const props = defineProps({
     foo: String,
   })
-  const emit = defineEmit(['change', 'delete'])
+  const emit = defineEmits(['change', 'delete'])
   const { slots, attrs } = useContext()
   // setup code
 </script>
@@ -285,17 +285,17 @@ In order to declare options like `props` and `emits`, and also access the setup 
 
 </details>
 
-- `defineProps` and `defineEmit` provides proper type inference based on the options passed.
+- `defineProps` and `defineEmits` provides proper type inference based on the options passed.
 
-- `defineProps` and `defineEmit` are **compiler hints**. They are compiled away when `<script setup>` is processed. The actual runtime implementations are no-ops and should never be called. Doing so will result in a runtime warning.
+- `defineProps` and `defineEmits` are **compiler hints**. They are compiled away when `<script setup>` is processed. The actual runtime implementations are no-ops and should never be called. Doing so will result in a runtime warning.
 
-- The options passed to `defineProps` and `defineEmit` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
+- The options passed to `defineProps` and `defineEmits` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
 
 - `useContext()` is an actual runtime API that simply returns the same context object passed to `setup()`.
 
 ### Type-only props/emit declarations
 
-Props and emits can also be declared using pure-type syntax by passing a literal type argument to `defineProps` or `defineEmit`:
+Props and emits can also be declared using pure-type syntax by passing a literal type argument to `defineProps` or `defineEmits`:
 
 ```ts
 const props = defineProps<{
@@ -303,10 +303,10 @@ const props = defineProps<{
   bar?: number
 }>()
 
-const emit = defineEmit<(e: 'update' | 'delete', id: number) => void>()
+const emit = defineEmits<(e: 'update' | 'delete', id: number) => void>()
 ```
 
-- `defineProps` or `defineEmit` can only use either runtime declaration OR type declaration. Using both at the same time will result in a compile error.
+- `defineProps` or `defineEmits` can only use either runtime declaration OR type declaration. Using both at the same time will result in a compile error.
 
 - When using type declaration, equivalent runtime declaration is automatically generated from static analysis to remove the need of double declaration and still ensure correct runtime behavior.
 
