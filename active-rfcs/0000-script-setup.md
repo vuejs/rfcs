@@ -215,6 +215,7 @@ Directives work in a similar fashion - a directive named `v-my-dir` will map to 
   <div v-click-outside />
 </template>
 ```
+
 </details>
 
 ### Scoping mental model
@@ -298,10 +299,11 @@ In order to declare options like `props` and `emits`, and also access the setup 
 Props and emits can also be declared using pure-type syntax by passing a literal type argument to `defineProps` or `defineEmits`:
 
 ```ts
-const props = defineProps<{
-  foo: string
-  bar?: number
-}>()
+const props =
+  defineProps<{
+    foo: string
+    bar?: number
+  }>()
 
 const emit = defineEmits<(e: 'update' | 'delete', id: number) => void>()
 ```
@@ -394,12 +396,44 @@ export default {
 
 </details>
 
-## `inheritAttrs`
+## Automatic `name` Inference
 
-The `<script setup>` syntax provides the ability to express equivalent functionality of all existing Options API options except `inheritAttrs`. To declare `inheritAttrs: false` when using `<script setup>`, simply add `inherit-attrs="false"` to the `<template>` tag:
+Vue 3 SFCs automatically infers the component's name from the component's **filename** in the following cases:
+
+- Dev warning formatting
+- DevTools inspection
+- Recursive self-reference. E.g. a file named `FooBar.vue` can refer to itself as `<FooBar/>` in its template.
+
+  This has lower priority than explicity registered/imported components. If you have a named import that conflicts with the component's inferred name, you can alias it:
+
+  ```js
+  import { FooBar as FooBarChild } from './components'
+  ```
+
+In most cases, explicit `name` declaration is not needed. The only cases where you do need it is when you need the `name` for `<keep-alive>` inclusion / exclusion or direct inspection of the component's options.
+
+## Declaring Additional Options
+
+The `<script setup>` syntax provides the ability to express equivalent functionality of most existing Options API options except for a few:
+
+- `name`
+- `inheritAttrs`
+- Custom options needed by plugins or libraries
+
+If you need to delcare these options, use a separate normal `<script>` block with `export default`:
 
 ```html
-<template inherit-attrs="false"> ... </template>
+<script>
+export default {
+  name: 'CustomName',
+  inheritAttrs: false,
+  customOptions: {}
+}
+</script>
+
+<script setup>
+  // script setup logic
+</script>
 ```
 
 ## Usage restrictions
