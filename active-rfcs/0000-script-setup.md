@@ -247,19 +247,19 @@ In a Vue component, everything exposed to the template is implicitly exposed on 
 
 `<script setup>` as proposed in this RFC, if following current behavior, will be vastly over-exposing on the imperative public interface, therefore a component using `<script setup>` will be **closed by default**. That is to say, its public imperative interface will be an empty object unless bindings are explicitly exposed. How to explicitly expose imperative public interface will be finalized in https://github.com/vuejs/rfcs/pull/210.
 
-### Declaring props, emits and setup context
+### Declaring `props` and `emits`
 
-In order to declare options like `props` and `emits`, and also access the setup context object, we can use the `defineProps`, `defineEmits` and `useContext` APIs:
+To declare options like `props` and `emits` with full type inference support, we can use the `defineProps` and `defineEmits` APIs:
 
 ```html
 <script setup>
-  import { defineProps, defineEmits, useContext } from 'vue'
+  import { defineProps, defineEmits } from 'vue'
 
   const props = defineProps({
     foo: String,
   })
+
   const emit = defineEmits(['change', 'delete'])
-  const { slots, attrs } = useContext()
   // setup code
 </script>
 ```
@@ -269,15 +269,12 @@ In order to declare options like `props` and `emits`, and also access the setup 
 
 ```html
 <script>
-  import { useContext } from 'vue'
-
   export default {
     props: {
       foo: String,
     },
     emits: ['change', 'delete'],
     setup(props, { emit }) {
-      const { slots, attrs } = useContext()
       // setup code
     },
   }
@@ -292,7 +289,20 @@ In order to declare options like `props` and `emits`, and also access the setup 
 
 - The options passed to `defineProps` and `defineEmits` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
 
-- `useContext()` is an actual runtime API that simply returns the same context object passed to `setup()`.
+### Using `slots` and `attrs`
+
+Usage of `slots` and `attrs` inside `<script setup>` should be relatively rare, since you can access them directly as `$slots` and `$attrs` in the template. In the rare case where you do need them, use the `useSlots` and `useAttrs` helpers respectively:
+
+```html
+<script setup>
+  import { useSlots, useAttrs } from 'vue'
+
+  const slots = useSlots()
+  const attrs = useAttrs()
+</script>
+```
+
+`useSlots` and `useAttrs` are actual runtime functions that return the equivalent of `setupContext.slots` and `setupContext.attrs`. They can be used in normal composition API functions as well.
 
 ### Type-only props/emit declarations
 
@@ -424,11 +434,11 @@ If you need to delcare these options, use a separate normal `<script>` block wit
 
 ```html
 <script>
-export default {
-  name: 'CustomName',
-  inheritAttrs: false,
-  customOptions: {}
-}
+  export default {
+    name: 'CustomName',
+    inheritAttrs: false,
+    customOptions: {},
+  }
 </script>
 
 <script setup>
