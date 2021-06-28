@@ -463,15 +463,11 @@ Due to the difference in module execution semantics, code inside `<script setup>
 
 This new scoping model will require tooling adjustments in two aspects:
 
-1. ESLint rules like `no-unused-vars`. We will need a replacement rule in `eslint-plugin-vue` that takes both the `<script setup>` and `<template>` expressions into account.
+1. IDEs will need to provide dedicated handling for this new `<script setup>` model in order to provide template expression type checking / props validation, etc.
 
-2. Vetur and other IDEs will need to provide dedicated handling for this new `<script setup>` model in order to provide template expression type checking / props validation, etc.
+    As of now, [Volar](https://github.com/johnsoncodehk/volar) already provides full support for this RFC in VSCode, including all TypeScript related features. Its internals are also implemented as a landuage server that can theoretically be used in other IDEs.
 
-One thing to note is that `<script setup>` syntax should make it easier for tools to analyze available bindings to the template compared to current Options API inside `<script setup>` (especially with mixins). A potential approach is transforming the entire SFC into a TSX file (similar to [svelte2tsx](https://github.com/sveltejs/language-tools/tree/master/packages/svelte2tsx)) for type-checking and refactoring support only.
-
-# Alternatives
-
-https://github.com/vuejs/rfcs/pull/182 (current `<script setup>` implementation)
+2. ESLint rules like `no-unused-vars`. We will need a replacement rule in `eslint-plugin-vue` that takes both the `<script setup>` and `<template>` expressions into account.
 
 # Adoption strategy
 
