@@ -502,7 +502,11 @@ This feature is opt-in. Existing SFC usage is unaffected.
 
 # Unresolved questions
 
-N/A
+- Type-only props/emits declarations currently do not support using externally imported types. This is useful when reusing base props type definitions across multiple components.
+
+  The type inference already works as expected in Volar's IDE support, the limitation is purely in that `@vue/compiler-sfc` needs to know the props keys in order to generate the correct equivalent runtime declarations.
+
+  This is technically possible if we implement the logic to follow along type imports, read, and parse the import source. However, this is more of an implementation scope problem and does not fundamentally affect how the RFC design behaves.
 
 # Appendix
 
