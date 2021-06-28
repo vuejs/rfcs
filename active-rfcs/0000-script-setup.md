@@ -327,6 +327,22 @@ const emit = defineEmits<{
 
   Currently complex types and type imports from other files are not supported. It is theoretically possible to support type imports in the future.
 
+### Default props values when using type declaration
+
+One drawback of the type-only `defineProps` declaration is that it doesn't have a way to provide default values for the props. To resolve this problem, a `withDefaults` compiler macro is also provided:
+
+```ts
+interface Props {
+  msg?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  msg: 'hello'
+})
+```
+
+This will be compiled to equivalent runtime props `default` options. In addition, the `withDefaults` helper provides type checks for the default values, and ensures the returned `props` type has the optional flags removed for properties that do have default values declared.
+
 ### Top level await
 
 Top level `await` can be used inside `<script setup>`. The resulting `setup()` function will be made `async`:
@@ -489,7 +505,6 @@ This feature is opt-in. Existing SFC usage is unaffected.
 
 # Unresolved questions
 
-- Providing props default values when using type-only props declaration.
 - This RFC depends on https://github.com/vuejs/rfcs/pull/210.
 
 # Appendix
