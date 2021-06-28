@@ -484,6 +484,50 @@ This feature is opt-in. Existing SFC usage is unaffected.
 
 # Appendix
 
+
+## FAQs
+
+### How to tell which properties are exposed to the template?
+
+You don't. An important mental model shift when using `<script setup>` is to think of the `<template>` as **a function inside the setup scope** instead of "bound to a `this` context":
+
+```js
+function setup() {
+  const a = 1
+  const b = 2
+
+  return function template() {
+    // has access to `b` but doesn't necessarily uses it
+    return `<div>${a}</div>`
+  }
+}
+```
+
+A function inside another function naturally has access to everything declared within the parent function's scope. The parent scope is a closure and it doesn't leak the variables to anything but the inner function. This is also why `<script setup>` components are closed by default: it won't expose anything on its ref instance unless explicitly declared.
+
+### How to declare options like `name`?
+
+See [Declaring Additional Options](#declaring-additional-options) and [Automatic Name Inference](#automatic-name-inference).
+
+### How to use imported components as dynamic components?
+
+Within `<script setup>`, imported components are **variables** instead of a registered asset looked up using string keys. So when using imported components as dynamic components, instead of `<component is="Foo">`, it should be `<component :is="Foo"/>`. You can also use these variables in expressions, e.g. `<component :is="ok ? Foo : Bar"/>`
+
+### How to use render functions w/ script setup?
+
+You can't. But you don't need to use SFC if you are using render functions in the first place.
+
+```js
+const comp = defineComponent({
+  setup() {
+    const foo = ref(1)
+    // return render function w/ JSX
+    return () => <div>{foo.value}</div>
+  }
+})
+```
+
+
 ## Transform API
 
 The `@vue/compiler-sfc` package exposes the `compileScript` method for processing `<script setup>`:
