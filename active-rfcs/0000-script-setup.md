@@ -33,30 +33,25 @@ Introduce a new script type in Single File Components: `<script setup>`, which e
 <details>
 <summary>Compiled Output</summary>
 
-```html
-<script setup>
-  import Foo from './Foo.vue'
-  import { ref } from 'vue'
+```js
+import Foo from './Foo.vue'
+import { ref } from 'vue'
 
-  export default {
-    setup() {
-      const count = ref(1)
-      const inc = () => {
-        count.value++
-      }
+export default {
+  setup() {
+    const count = ref(1)
+    const inc = () => {
+      count.value++
+    }
 
-      return {
-        Foo, // see note below
+    return function render() {
+      return h(Foo, {
         count,
-        inc,
-      }
-    },
+        onClick: inc
+      })
+    }
   }
-</script>
-
-<template>
-  <Foo :count="count" @click="inc" />
-</template>
+}
 ```
 
 **Note:** the SFC compiler also extracts binding metadata from `<script setup>` and use it during template compilation. This is why the template can use `Foo` as a component here even though it's returned from `setup()` instead of registered via `components` option.
@@ -99,7 +94,7 @@ To opt-in to the syntax, add the `setup` attribute to the `<script>` block:
 
 ### Top level bindings are exposed to template
 
-Any top-level bindings (both variables and imports) declared inside `<script setup>` are directly exposed to the template render context:
+When using `<script setup>`, the template is compiled into a render function that is inlined inside the setup function scope. This means any top-level bindings (both variables and imports) declared inside `<script setup>` are directly usable in the template:
 
 ```html
 <script setup>
@@ -111,31 +106,26 @@ Any top-level bindings (both variables and imports) declared inside `<script set
 </template>
 ```
 
-<details>
-<summary>Compiled Output</summary>
+**Compiled Output:**
 
-```html
-<script>
-  export default {
-    setup() {
-      const msg = 'Hello!'
+```js
+export default {
+  setup() {
+    const msg = 'Hello!'
 
-      return {
-        msg,
-      }
-    },
+    return function render() {
+      // has access to everything inside setup() scope
+      return h('div', msg)
+    }
   }
-</script>
-
-<template>
-  <div>{{ msg }}</div>
-</template>
+}
 ```
 
-</details>
-<p></p>
+It is important to notice the different template scoping mental model vs. Options API: when using Options API, the `<script>` and the template are connected via a "render context object". When we write code, we are always thinking about "what properties are exposed on the context". This naturally leads to concerns of "leaking too much private logic onto the context".
 
-### Exposing Components and Directives
+When using `<script setup>`, however, the mental model is simply that of a function inside another function: the inner function has access to everything in the parent scope, and because the parent scope is closure, there is no "leak" to be concerned with.
+
+### Using Components
 
 Values in the scope of `<script setup>` can also be used directly as custom component tag names, similar to how it works in JSX:
 
@@ -155,25 +145,20 @@ Values in the scope of `<script setup>` can also be used directly as custom comp
 <details>
 <summary>Compiled Output</summary>
 
-```html
-<script>
-  import Foo from './Foo.vue'
-  import MyComponent from './MyComponent.vue'
+```js
+import Foo from './Foo.vue'
+import MyComponent from './MyComponent.vue'
 
-  export default {
-    setup() {
-      return {
-        Foo,
-        MyComponent,
-      }
-    },
+export default {
+  setup() {
+    return function render() {
+      return [
+        h(Foo),
+        h(MyComponent)
+      ]
+    }
   }
-</script>
-
-<template>
-  <Foo />
-  <my-component />
-</template>
+}
 ```
 
 **Note**: in this case the template compiler has the binding information to generate code that directly use `Foo` from setup bindings instead of dynamically resolving it.
@@ -181,11 +166,50 @@ Values in the scope of `<script setup>` can also be used directly as custom comp
 </details>
 <p></p>
 
-Directives work in a similar fashion - a directive named `v-my-dir` will map to a setup scope variable named `myDir`:
+### Using Dynamic Components
+
+Since components are referenced as variables instead of registered under string keys, we should use dynamic `:is` binding when using dynamic components inside `<script setup>`:
 
 ```html
 <script setup>
-  import { directive as clickOutside } from 'v-click-outside'
+  import Foo from './Foo.vue'
+  import Bar from './Bar.vue'
+</script>
+
+<template>
+  <component :is="Foo" />
+  <component :is="someCondition ? Foo : Bar" />
+</template>
+```
+
+<details>
+<summary>Compiled Output</summary>
+
+```js
+import Foo from './Foo.vue'
+import Bar from './Bar.vue'
+
+export default {
+  setup() {
+    return function render() {
+      return [
+        h(Foo),
+        h(someCondition ? Foo : Bar)
+      ]
+    }
+  }
+}
+```
+
+</details>
+
+### Using Directives
+
+Directives work in a similar fashion - except that a directive named `v-my-dir` will map to a setup scope variable named `vMyDir`:
+
+```html
+<script setup>
+  import { directive as vClickOutside } from 'v-click-outside'
 </script>
 
 <template>
@@ -196,48 +220,23 @@ Directives work in a similar fashion - a directive named `v-my-dir` will map to 
 <details>
 <summary>Compiled Output</summary>
 
-```html
-<script>
-  import { directive as clickOutside } from 'v-click-outside'
-
-  export default {
-    setup() {
-      return {
-        clickOutside,
-      }
-    },
-  }
-</script>
-
-<template>
-  <div v-click-outside />
-</template>
-```
-
-</details>
-
-### Scoping mental model
-
-Some users may be concerned that it is no longer clear what variables are exposed to the template vs. those that are not. However, it can be argued that there is no practical benefits in being able to tell this.
-
-In the past we have always considered the `<script>` and `<template>` parts of an SFC to be separate parts that need an explicit `this` context to be "connected". It does feel different to have this separation blurred. However, if we switch the scoping mental model to view an SFC as returning a render function from the `setup()` closure instead:
-
 ```js
-function setup() {
-  let a = 1
-  let b = a + 1
+import { directive as vClickOutside } from 'v-click-outside'
 
-  // the returned function has access to everything inside setup()
-  // however it may or may not use all of them.
-  return () => {
-    return h('div', b)
+export default {
+  setup() {
+    return function render() {
+      return withDirectives(h('div'), [
+        [vClickOutside]
+      ])
+    }
   }
 }
 ```
 
-In fact, we have also introduced an [inline template](#inline-template-mode) option that will compile SFCs into this format. By inlining the generated render function inside `setup()` scope, we can directly access in scope variables without having to go through the render proxy. This can lead to decent performance gains.
+</details>
 
-This does require different handling when linting for unused variables, but SFCs already require the usage of `eslint-plugin-vue` which can be made to adapt to this new scoping model.
+The reason for requiring the `v` prefix is because it is quite likely for a globally registered directive (e.g. `v-focus`) to clash with a locally declared variable of the same name. The `v` prefix makes the intention of using a variable as a directive more explicit and reduces unintended "shadowing".
 
 ### Declaring `props` and `emits`
 
@@ -257,18 +256,16 @@ To declare options like `props` and `emits` with full type inference support, we
 <details>
 <summary>Compiled output</summary>
 
-```html
-<script>
-  export default {
-    props: {
-      foo: String,
-    },
-    emits: ['change', 'delete'],
-    setup(props, { emit }) {
-      // setup code
-    },
+```js
+export default {
+  props: {
+    foo: String,
+  },
+  emits: ['change', 'delete'],
+  setup(props, { emit }) {
+    // setup code
   }
-</script>
+}
 ```
 
 </details>
@@ -509,48 +506,7 @@ N/A
 
 # Appendix
 
-## FAQs
-
-### How to tell which properties are exposed to the template?
-
-You don't. An important mental model shift when using `<script setup>` is to think of the `<template>` as **a function inside the setup scope** instead of "bound to a `this` context":
-
-```js
-function setup() {
-  const a = 1
-  const b = 2
-
-  return function template() {
-    // has access to `b` but doesn't necessarily uses it
-    return `<div>${a}</div>`
-  }
-}
-```
-
-A function inside another function naturally has access to everything declared within the parent function's scope. The parent scope is a closure and it doesn't leak the variables to anything but the inner function. This is also why `<script setup>` components are closed by default: it won't expose anything on its ref instance unless explicitly declared.
-
-### How to declare options like `name`?
-
-See [Declaring Additional Options](#declaring-additional-options) and [Automatic Name Inference](#automatic-name-inference).
-
-### How to use imported components as dynamic components?
-
-Within `<script setup>`, imported components are **variables** instead of a registered asset looked up using string keys. So when using imported components as dynamic components, instead of `<component is="Foo">`, it should be `<component :is="Foo"/>`. You can also use these variables in expressions, e.g. `<component :is="ok ? Foo : Bar"/>`
-
-### How to use render functions w/ script setup?
-
-You can't. But you don't need to use SFC if you are using render functions in the first place.
-
-```js
-const comp = defineComponent({
-  setup() {
-    const foo = ref(1)
-    // return render function w/ JSX
-    return () => <div>{foo.value}</div>
-  }
-})
-```
-
+> The following sections are only for tooling authors that needs to support `<script setup>` in respective SFC tooling integrations.
 
 ## Transform API
 
@@ -570,64 +526,40 @@ if (descriptor.script || descriptor.scriptSetup) {
 
 The compilation requires the entire descriptor to be provided, and the resulting code will include sources from both `<script setup>` and normal `<script>` (if present). It is the higher level tools' (e.g. `vite` or `vue-loader`) responsibility to properly assemble the compiled output.
 
-## Inline Template Mode
+## Inline vs. Non-Inline Mode
 
-Inline template mode can be enabled via the `inlineTemplate` option:
+During development, `<script setup>` still compiles to returned object instead of inlined render function for two reasons:
+
+1. Devtools inspection
+2. Template hot-reloading (HMR)
+
+Inline template mode is only used in production and can be enabled via the `inlineTemplate` option:
 
 ```js
 compileScript(descriptor, { inlineTemplate: true })
 ```
 
-This will compile the SFC template as well and inline it inside the `setup()` function generated from `<script setup>`. Example:
-
-```html
-<script setup>
-  import { ref } from 'vue'
-
-  const count = ref(0)
-
-  function inc() {
-    count.value++
-  }
-</script>
-<template>
-  <button @click="inc">{{ count }}</button>
-</template>
-```
-
-**Compiled to:**
+In inline mode, some bindings (e.g. return values from `ref()` calls) need to be wrapped with `unref`:
 
 ```js
-import { ref, unref, createVNode, toDisplayString } from 'vue'
-
 export default {
   setup() {
-    const count = ref(0)
+    const msg = ref('hello')
 
-    function inc() {
-      count.value++
+    return function render() {
+      return h('div', unref(msg))
     }
-
-    return () => {
-      createVNode(
-        'div',
-        {
-          onClick: inc,
-        },
-        toDisplayString(unref(count))
-      )
-    }
-  },
+  }
 }
 ```
 
-Note some bindings need to be wrapped with `unref` - the compiler performs some heuristics to avoid this when possible. For example, function declarations and const declarations with literal initial values will not be wrapped with `unref`.
+The compiler performs some heuristics to avoid this when possible. For example, function declarations and const declarations with literal initial values will not be wrapped with `unref`.
 
 ## Template binding optimization
 
 The `SFCScriptBlock` returned by `compiledScript` also exposes a `bindings` object, which is the exported binding metadata gathered during the compilation. For example, given the following `<script setup>`:
 
-```vue
+```html
 <script setup="props">
 export const foo = 1
 
