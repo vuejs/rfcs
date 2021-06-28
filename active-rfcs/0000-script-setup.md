@@ -309,13 +309,15 @@ Usage of `slots` and `attrs` inside `<script setup>` should be relatively rare, 
 Props and emits can also be declared using pure-type syntax by passing a literal type argument to `defineProps` or `defineEmits`:
 
 ```ts
-const props =
-  defineProps<{
-    foo: string
-    bar?: number
-  }>()
+const props = defineProps<{
+  foo: string
+  bar?: number
+}>()
 
-const emit = defineEmits<(e: 'update' | 'delete', id: number) => void>()
+const emit = defineEmits<{
+  (e: 'change', id: number): void
+  (e: 'update', value: string): void
+}>()
 ```
 
 - `defineProps` or `defineEmits` can only use either runtime declaration OR type declaration. Using both at the same time will result in a compile error.
@@ -328,7 +330,12 @@ const emit = defineEmits<(e: 'update' | 'delete', id: number) => void>()
 
   - The emitted code is still TypeScript with valid typing, which can be further processed by other tools.
 
-- As of now, the type declaration argument must be a literal type to ensure correct static analysis. This can be improved in the future.
+- As of now, the type declaration argument must be one of the following to ensure correct static analysis:
+
+  - A type literal
+  - A reference to a an interface or a type literal in the same file
+
+  Currently complex types and type imports from other files are not supported. It is theoretically possible to support type imports in the future.
 
 ### Top level await
 
