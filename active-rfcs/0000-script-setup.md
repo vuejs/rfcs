@@ -505,10 +505,9 @@ This feature is opt-in. Existing SFC usage is unaffected.
 
 # Unresolved questions
 
-- This RFC depends on https://github.com/vuejs/rfcs/pull/210.
+N/A
 
 # Appendix
-
 
 ## FAQs
 
