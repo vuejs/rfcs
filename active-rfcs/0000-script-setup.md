@@ -68,8 +68,6 @@ Introduce a new script type in Single File Components: `<script setup>`, which e
 
 ```html
 <script setup>
-  import { defineProps, defineEmits } from 'vue'
-
   // expects props options
   const props = defineProps({
     foo: String,
@@ -222,7 +220,7 @@ Directives work in a similar fashion - a directive named `v-my-dir` will map to 
 
 Some users may be concerned that it is no longer clear what variables are exposed to the template vs. those that are not. However, it can be argued that there is no practical benefits in being able to tell this.
 
-In the past we have always considered the `<script>` and `<template>` parts of an SFC to be separate parts that need an explicit protocol to be "connected". It does feel different to have this separation blurred. However, if we switch the scoping mental model to view an SFC as returning a render function from the `setup()` closure instead:
+In the past we have always considered the `<script>` and `<template>` parts of an SFC to be separate parts that need an explicit `this` context to be "connected". It does feel different to have this separation blurred. However, if we switch the scoping mental model to view an SFC as returning a render function from the `setup()` closure instead:
 
 ```js
 function setup() {
@@ -241,20 +239,12 @@ In fact, we have also introduced an [inline template](#inline-template-mode) opt
 
 This does require different handling when linting for unused variables, but SFCs already require the usage of `eslint-plugin-vue` which can be made to adapt to this new scoping model.
 
-### Closed by default
-
-In a Vue component, everything exposed to the template is implicitly exposed on the component instance, which can be retrieved by a parent component via template refs. That is to say, up to this point the **template render context** and the **imperative public interface** of a component is one and the same. We have found this to be problematic because the two use cases do not always align perfectly. In fact, most of the time we are over-exposing on the public interface front. This is why we are discussing an explicit way to define a component's imperative public interface in https://github.com/vuejs/rfcs/pull/210.
-
-`<script setup>` as proposed in this RFC, if following current behavior, will be vastly over-exposing on the imperative public interface, therefore a component using `<script setup>` will be **closed by default**. That is to say, its public imperative interface will be an empty object unless bindings are explicitly exposed. How to explicitly expose imperative public interface will be finalized in https://github.com/vuejs/rfcs/pull/210.
-
 ### Declaring `props` and `emits`
 
-To declare options like `props` and `emits` with full type inference support, we can use the `defineProps` and `defineEmits` APIs:
+To declare options like `props` and `emits` with full type inference support, we can use the `defineProps` and `defineEmits` APIs, which are automatically avaialbe inside `<script setup>`:
 
 ```html
 <script setup>
-  import { defineProps, defineEmits } from 'vue'
-
   const props = defineProps({
     foo: String,
   })
@@ -285,7 +275,7 @@ To declare options like `props` and `emits` with full type inference support, we
 
 - `defineProps` and `defineEmits` provides proper type inference based on the options passed.
 
-- `defineProps` and `defineEmits` are **compiler hints**. They are compiled away when `<script setup>` is processed. The actual runtime implementations are no-ops and should never be called. Doing so will result in a runtime warning.
+- `defineProps` and `defineEmits` are **compiler macros** only usable inside `<script setup>`. They do not need to be imported, and are compiled away when `<script setup>` is processed.
 
 - The options passed to `defineProps` and `defineEmits` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
 
@@ -367,6 +357,30 @@ Top level `await` can be used inside `<script setup>`. The resulting `setup()` f
 <p></p>
 
 Relevant: https://github.com/vuejs/rfcs/issues/234
+
+### Exposing component's public interface
+
+In a traditional Vue component, everything exposed to the template is implicitly exposed on the component instance, which can be retrieved by a parent component via template refs. That is to say, up to this point the **template render context** and the **imperative public interface** of a component is one and the same. We have found this to be problematic because the two use cases do not always align perfectly. In fact, most of the time we are over-exposing on the public interface front. This is why we are discussing an explicit way to define a component's imperative public interface in the [Expose RFC](https://github.com/vuejs/rfcs/pull/210).
+
+With `<script setup>` the template has access to the declared variables because it is compiled into a function that is returned from the `setup()` function scope. This means all the variables declared are in fact never returned: they are contained inside the `setup()` closure. As a result, a component using `<script setup>` will be **closed by default**. That is to say, its public imperative interface will be an empty object unless bindings are explicitly exposed.
+
+To explicitly expose properties in a `<script setup>` component, use the `defineExpose` compiler macro:
+
+```html
+<script setup>
+const a = 1
+const b = ref(2)
+
+defineExpose({
+  a,
+  b
+})
+</script>
+```
+
+When a parent gets an instance of this component via template refs, the retrieved instance will be of the shape `{ a: number, b: number }` (refs are automatically unwrapped just like on normal instances).
+
+This will be compiled into the runtime equivalent as proposed in the [Expose RFC](https://github.com/vuejs/rfcs/pull/210).
 
 ## Usage alongside normal `<script>`
 
