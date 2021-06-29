@@ -350,24 +350,24 @@ Top level `await` can be used inside `<script setup>`. The resulting `setup()` f
 </script>
 ```
 
-<details>
-<summary>Compiled Output</summary>
+In addition, the awaited expression will be automatically wrapped with a `withAsyncContext` helper. The helper saves and restores the current instance context so that the current instance context is preserved even after the `await` statement:
 
-```html
-<script>
-  export default {
-    async setup() {
-      const post = await fetch(`/api/post/1`).then((r) => r.json())
+```js
+import { withAsyncContext } from 'vue'
 
-      return { post }
-    },
+export default {
+  async setup() {
+    const post = await withAsyncContext(
+      fetch(`/api/post/1`).then((r) => r.json())
+    )
+
+    // current instance context preserved
+    // e.g. onMounted() will still work.
+
+    return { post }
   }
-</script>
+}
 ```
-
-</details>
-
-<p></p>
 
 Relevant: https://github.com/vuejs/rfcs/issues/234
 
