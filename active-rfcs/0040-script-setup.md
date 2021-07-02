@@ -238,7 +238,7 @@ The reason for requiring the `v` prefix is because it is quite likely for a glob
 
 ### Declaring `props` and `emits`
 
-To declare options like `props` and `emits` with full type inference support, we can use the `defineProps` and `defineEmits` APIs, which are automatically avaialbe inside `<script setup>`:
+To declare options like `props` and `emits` with full type inference support, we can use the `defineProps` and `defineEmits` APIs, which are automatically available inside `<script setup>`:
 
 ```html
 <script setup>
