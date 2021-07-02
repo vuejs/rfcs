@@ -7,8 +7,6 @@
 
 Introduce a new script type in Single File Components: `<script setup>`, which exposes all its top level bindings to the template.
 
-**Note:** this is intended to replace the current `<script setup>` as proposed in [#182](https://github.com/vuejs/rfcs/pull/182).
-
 # Basic example
 
 ```html
