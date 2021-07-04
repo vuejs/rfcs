@@ -462,7 +462,7 @@ The `<script setup>` syntax provides the ability to express equivalent functiona
 - `inheritAttrs`
 - Custom options needed by plugins or libraries
 
-If you need to delcare these options, use a separate normal `<script>` block with `export default`:
+If you need to declare these options, use a separate normal `<script>` block with `export default`:
 
 ```html
 <script>
