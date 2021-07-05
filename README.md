@@ -75,29 +75,30 @@ RFC merged into the RFC repo as a markdown file. At that point the RFC
 is 'active' and may be implemented with the goal of eventual inclusion
 into Vue.
 
-* Fork the RFC repo http://github.com/vuejs/rfcs
+1.  Work on your proposal in a Markdown file based on the template (`0000-template.md`) found in this repo.
 
-* Copy `0000-template.md` to `active-rfcs/0000-my-feature.md` (where
-'my-feature' is descriptive. don't assign an RFC number yet).
+    - Put care into the details: **RFCs that do not present convincing motivation, demonstrate understanding of the impact of the design, or are disingenuous about the drawbacks or alternatives tend to be poorly-received**.
 
-* Fill in the RFC. Put care into the details: **RFCs that do not
-present convincing motivation, demonstrate understanding of the
-impact of the design, or are disingenuous about the drawbacks or
-alternatives tend to be poorly-received**.
+2.  Open a new thread in [Discussions](https://github.com/vuejs/rfcs/discussions) and make sure to set category to "RFC Discussions".
 
-* Submit a pull request. Make sure to follow the pull request template and open a corresponding discussion thread.
+    - Build consensus and integrate feedback in the discussion thread. RFCs that have broad support are much more likely to make progress than those that don't receive any comments.
 
-* Build consensus and integrate feedback in the discussion thread. RFCs that have broad support are much more likely to make progress than those that don't receive any comments.
+3.  If the proposal receives non-trivial interest from community members and generally positive feedback, you can prepare a Pull Request:
 
-* Eventually, the [core team] will decide whether the RFC is a candidate
-for inclusion in Vue.
+    - Fork this repo.
 
-* An RFC can be modified based upon feedback from the [core team] and community. Significant modifications may trigger a new final comment period.
+    - Create your proposal as `active-rfcs/0000-my-feature.md` (where "my-feature" is descriptive. don't assign an RFC number yet).
 
-* An RFC may be rejected after public discussion has settled
-and comments have been made summarizing the rationale for rejection. A member of the [core team] should then close the RFC's associated pull request.
+    - Submit a pull request. Make sure to link to the discussion thread.
 
-* An RFC may be accepted at the close of its final comment period. A [core team] member will merge the RFC's associated pull request, at which point the RFC will become 'active'.
+4.  Eventually, the [core team] will decide whether the RFC is a candidate
+    for inclusion in Vue.
+
+    - An RFC can be modified based upon feedback from the [core team] and community. Significant modifications may trigger a new final comment period.
+
+    - An RFC may be rejected after public discussion has settled and comments have been made summarizing the rationale for rejection. A member of the [core team] should then close the RFC's associated pull request.
+
+    - An RFC may be accepted at the close of its final comment period. A [core team] member will merge the RFC's associated pull request, at which point the RFC will become 'active'.
 
 ## Details on Active RFCs
 
@@ -138,7 +139,7 @@ pull requests on a regular basis. If a core team member believes an RFC PR is re
 
 **Vue's RFC process owes its inspiration to the [React RFC process], [Rust RFC process] and [Ember RFC process]**
 
-[React RFC process]: https://github.com/reactjs/rfcs
-[Rust RFC process]: https://github.com/rust-lang/rfcs
-[Ember RFC process]: https://github.com/emberjs/rfcs
+[react rfc process]: https://github.com/reactjs/rfcs
+[rust rfc process]: https://github.com/rust-lang/rfcs
+[ember rfc process]: https://github.com/emberjs/rfcs
 [core team]: https://vuejs.org/v2/guide/team.html
