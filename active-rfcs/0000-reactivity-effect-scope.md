@@ -240,6 +240,8 @@ We can achieve this using detached scope, and `onScopeDispose`. First, we need t
 })
 ```
 
+This still works because a Vue component now also runs its `setup()` inside a scope, which will be disposed when the component is unmounted.
+
 Then, we can create a utility function that manages parent scope subscriptions:
 
 ```ts
