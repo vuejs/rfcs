@@ -12,7 +12,7 @@ Introducing a new `EffectScope` API for `@vue/reactivity`. An `EffectScope` inst
 ```ts
 // effect, computed, watch, watchEffect created inside the scope will be collected
 
-const scope = new EffectScope()
+const scope = effectScope()
 
 scope.run(() => {
   const doubled = computed(() => counter.value * 2)
@@ -70,11 +70,10 @@ It also provides the functionality to create "detached" effects from the compone
 
 ### New API Summary
 
-- `EffectScope` (class)
+- `effectScope(detached = false): EffectScope`
 
   ```ts
-  class EffectScope {
-    constructor(detached?: boolean)
+  interface EffectScope {
     run<T>(fn: () => T): T | undefined // undefined if scope is inactive
     stop(): void
   }
@@ -88,7 +87,7 @@ It also provides the functionality to create "detached" effects from the compone
 Creating a scope:
 
 ```ts
-const scope = new EffectScope()
+const scope = effectScope()
 ```
 
 A scope can run a function and will capture all effects created during the function's synchronous execution, including any API that creates effects internally, e.g. `computed`, `watch` and `watchEffect`:
@@ -127,13 +126,13 @@ scope.stop()
 Nested scopes should also be collected by their parent scope. And when the parent scope gets disposed, all its descendant scopes will also be stopped.
 
 ```ts
-const scope = new EffectScope()
+const scope = effectScope()
 
 scope.run(() => {
   const doubled = computed(() => counter.value * 2)
 
   // not need to get the stop handler, it will be collected by the outer scope
-  new EffectScope.run(() => {
+  effectScope.run(() => {
     watch(doubled, () => console.log(double.value))
   })
 
@@ -153,14 +152,14 @@ This also makes usages like ["lazy initialization"](https://github.com/vuejs/vue
 ```ts
 let childScope
 
-const parentScope = new EffectScope()
+const parentScope = effectScope()
 
 parentScope.run(() => {
   const doubled = computed(() => counter.value * 2)
 
   // with the detected flag,
   // the scope will not be collected and disposed by the outer scope
-  childScope = new EffectScope(true /* detached */)
+  childScope = effectScope(true /* detached */)
   childScope.run(() => {
     watch(doubled, () => console.log(double.value))
   })
@@ -182,7 +181,7 @@ The global hook `onScopeDispose()` serves a similar functionality to `onUnmounte
 ```ts
 import { onScopeDispose } from 'vue'
 
-const scope = new EffectScope()
+const scope = effectScope()
 
 scope.run(() => {
   onScopeDispose(() => {
@@ -259,7 +258,7 @@ function createSharedComposable(composable) {
   return (...args) => {
     subscribers++
     if (!state) {
-      scope = new EffectScope(true)
+      scope = effectScope(true)
       state = scope.run(() => composable(...args))
     }
     onScopeDispose(dispose)
@@ -293,7 +292,7 @@ export default {
       enabled,
       () => {
         if (enabled.value) {
-          mouseScope = new EffectScope()
+          mouseScope = effectScope()
           mouseState = mouseScope.run(() => useMouse())
         } else {
           dispose()
