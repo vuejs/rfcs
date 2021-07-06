@@ -124,7 +124,7 @@ scope.stop()
 
 ### Nested Scopes
 
-Nested scopes should also be collected by its parent scope. And when the parent scope get disposed, all its descendant scopes will also be stopped.
+Nested scopes should also be collected by their parent scope. And when the parent scope gets disposed, all its descendant scopes will also be stopped.
 
 ```ts
 const scope = new EffectScope()
@@ -146,7 +146,7 @@ scope.stop()
 
 ### Detached Nested Scopes
 
-`EffectScope` accepts a constructor arugment to be created in "deteched" mode. A detached scope will not to be collected by its parent scope.
+`EffectScope` accepts a constructor argument to be created in "detached" mode. A detached scope will not be collected by its parent scope.
 
 This also makes usages like ["lazy initialization"](https://github.com/vuejs/vue-next/issues/1532) possible.
 
@@ -158,7 +158,7 @@ const parentScope = new EffectScope()
 parentScope.run(() => {
   const doubled = computed(() => counter.value * 2)
 
-  // with the deteched flag,
+  // with the detected flag,
   // the scope will not be collected and disposed by the outer scope
   childScope = new EffectScope(true /* detached */)
   childScope.run(() => {
@@ -177,7 +177,7 @@ nestedScope.stop()
 
 ### `onScopeDispose`
 
-The global hook `onScopeDispose()` serves a similar functionality to `onUnmounted()`, but works for the current scope instead of the component instance. This could benefit composable functions to cleanup their side effects along with its scope. Since `setup()` also creates a scope for the component, it will be equivalent to `onUnmounted()` when there is no explicit effect scope created.
+The global hook `onScopeDispose()` serves a similar functionality to `onUnmounted()`, but works for the current scope instead of the component instance. This could benefit composable functions to clean up their side effects along with its scope. Since `setup()` also creates a scope for the component, it will be equivalent to `onUnmounted()` when there is no explicit effect scope created.
 
 ```ts
 import { onScopeDispose } from 'vue'
@@ -274,7 +274,7 @@ Now we can create a shared version of `useMouse`:
 const useSharedMouse = createSharedComposable(useMouse)
 ```
 
-The new `useSharedMouse` composable will setup the listner only once no matter how many components are using it, and removes the listener when no component is using it anymore. In fact, the `useMouse` function should probably be a shared composable in the first place!
+The new `useSharedMouse` composable will set up the listener only once no matter how many components are using it, and removes the listener when no component is using it anymore. In fact, the `useMouse` function should probably be a shared composable in the first place!
 
 ### Example B: Ephemeral Scopes
 
@@ -324,7 +324,7 @@ This should not be an issue for most of the users, but for some libraries that w
 With this RFC, `@vue/runtime-dom` can use the `effectScope` to collect the effects directly and computed rewrapping will not be necessary anymore.
 
 ```ts
-// with the PRC, `vue` simply redirect `computed` from `@vue/reactivity`
+// with the RFC, `vue` simply redirect `computed` from `@vue/reactivity`
 import { computed } from '@vue/reactivity'
 import { computed } from 'vue'
 ```
