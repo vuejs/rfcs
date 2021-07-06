@@ -145,7 +145,7 @@ scope.stop()
 
 ### Detached Nested Scopes
 
-`EffectScope` accepts a constructor argument to be created in "detached" mode. A detached scope will not be collected by its parent scope.
+`effectScope` accepts an argument to be created in "detached" mode. A detached scope will not be collected by its parent scope.
 
 This also makes usages like ["lazy initialization"](https://github.com/vuejs/vue-next/issues/1532) possible.
 
