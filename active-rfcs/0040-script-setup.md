@@ -63,7 +63,7 @@ export default {
 <script setup>
   // expects props options
   const props = defineProps({
-    foo: String,
+    foo: String
   })
   // expects emits options
   const emit = defineEmits(['update', 'delete'])
@@ -150,10 +150,7 @@ import MyComponent from './MyComponent.vue'
 export default {
   setup() {
     return function render() {
-      return [
-        h(Foo),
-        h(MyComponent)
-      ]
+      return [h(Foo), h(MyComponent)]
     }
   }
 }
@@ -190,10 +187,7 @@ import Bar from './Bar.vue'
 export default {
   setup() {
     return function render() {
-      return [
-        h(Foo),
-        h(someCondition ? Foo : Bar)
-      ]
+      return [h(Foo), h(someCondition ? Foo : Bar)]
     }
   }
 }
@@ -224,9 +218,7 @@ import { directive as vClickOutside } from 'v-click-outside'
 export default {
   setup() {
     return function render() {
-      return withDirectives(h('div'), [
-        [vClickOutside]
-      ])
+      return withDirectives(h('div'), [[vClickOutside]])
     }
   }
 }
@@ -243,7 +235,7 @@ To declare options like `props` and `emits` with full type inference support, we
 ```html
 <script setup>
   const props = defineProps({
-    foo: String,
+    foo: String
   })
 
   const emit = defineEmits(['change', 'delete'])
@@ -257,7 +249,7 @@ To declare options like `props` and `emits` with full type inference support, we
 ```js
 export default {
   props: {
-    foo: String,
+    foo: String
   },
   emits: ['change', 'delete'],
   setup(props, { emit }) {
@@ -348,16 +340,22 @@ Top level `await` can be used inside `<script setup>`. The resulting `setup()` f
 </script>
 ```
 
-In addition, the awaited expression will be automatically wrapped with a `withAsyncContext` helper. The helper saves and restores the current instance context so that the current instance context is preserved even after the `await` statement:
+In addition, the awaited expression will be automatically compiled in a format that preserves the current component instance context after the `await`:
 
 ```js
 import { withAsyncContext } from 'vue'
 
 export default {
   async setup() {
-    const post = await withAsyncContext(
-      fetch(`/api/post/1`).then((r) => r.json())
-    )
+    let __temp, __restore
+
+    const post =
+      (([__temp, __restore] = withAsyncContext(() =>
+        fetch(`/api/post/1`).then((r) => r.json())
+      )),
+      (__temp = await __temp),
+      __restore(),
+      __temp)
 
     // current instance context preserved
     // e.g. onMounted() will still work.
@@ -379,13 +377,13 @@ To explicitly expose properties in a `<script setup>` component, use the `define
 
 ```html
 <script setup>
-const a = 1
-const b = ref(2)
+  const a = 1
+  const b = ref(2)
 
-defineExpose({
-  a,
-  b
-})
+  defineExpose({
+    a,
+    b
+  })
 </script>
 ```
 
@@ -430,9 +428,9 @@ export default {
   setup() {
     const count = ref(0)
     return {
-      count,
+      count
     }
-  },
+  }
 }
 ```
 
@@ -469,7 +467,7 @@ If you need to declare these options, use a separate normal `<script>` block wit
   export default {
     name: 'CustomName',
     inheritAttrs: false,
-    customOptions: {},
+    customOptions: {}
   }
 </script>
 
@@ -490,7 +488,7 @@ This new scoping model will require tooling adjustments in two aspects:
 
 1. IDEs will need to provide dedicated handling for this new `<script setup>` model in order to provide template expression type checking / props validation, etc.
 
-    As of now, [Volar](https://github.com/johnsoncodehk/volar) already provides full support for this RFC in VSCode, including all TypeScript related features. Its internals are also implemented as a landuage server that can theoretically be used in other IDEs.
+   As of now, [Volar](https://github.com/johnsoncodehk/volar) already provides full support for this RFC in VSCode, including all TypeScript related features. Its internals are also implemented as a landuage server that can theoretically be used in other IDEs.
 
 2. ESLint rules like `no-unused-vars`. We will need a replacement rule in `eslint-plugin-vue` that takes both the `<script setup>` and `<template>` expressions into account.
 
@@ -563,11 +561,11 @@ The `SFCScriptBlock` returned by `compiledScript` also exposes a `bindings` obje
 
 ```html
 <script setup="props">
-export const foo = 1
+  export const foo = 1
 
-export default {
-  props: ['bar'],
-}
+  export default {
+    props: ['bar']
+  }
 </script>
 ```
 
@@ -586,7 +584,7 @@ This object can then be passed to the template compiler:
 import { compile } from '@vue/compiler-dom'
 
 compile(template, {
-  bindingMetadata: bindings,
+  bindingMetadata: bindings
 })
 ```
 
