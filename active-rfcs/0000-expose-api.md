@@ -11,7 +11,7 @@ Provide the ability for components to control what is publicly exposed on its co
 ## Options API
 
 ```js
-export defualt {
+export default {
   expose: ['increment'],
 
   data() {
@@ -60,9 +60,9 @@ In Vue, we have a few ways to retrieve the "public instance" of a component:
 - Via template refs
 - Via the `$parent` or `$root` properties
 
-Up until now, the concept of the "public instance" equivalent to the `this` context inside a component. However, this creates a number of issues:
+Up until now, the concept of the "public instance" is equivalent to the `this` context inside a component. However, this creates a number of issues:
 
-1. A component's public and internal interface isn't always the same. A component may have internal properties that it doesn't want to expose to other components, or a component may want to expose methods that are specifically meant to be used by other components.
+1. A component's public and internal interface isn't always the same. A component may have internal properties that it doesn't want to expose to other components. In other cases a component may want to expose methods that are specifically meant to be used by other components.
 
 2. A component returning render function from `setup()` encloses all its state inside the `setup()` closure, so nothing is exposed on the public instance, and there's currently no way to selectively expose properties while using this pattern.
 
@@ -78,7 +78,7 @@ A new option, `expose` is introduced. It expects an array of property keys to be
 
 ```js
 // Child.vue
-export defualt {
+export default {
   expose: ['increment'],
 
   data() {
