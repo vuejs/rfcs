@@ -73,11 +73,13 @@ In addition to public APIs, many of the internal components / helpers can be exp
 Can be compiled into the following (for explanation purposes, not exact output):
 
 ``` js
-import { h, Transition, applyDirectives, vShow } from 'vue'
+import { h, Transition, withDirectives, vShow } from 'vue'
 
 export function render() {
   return h(Transition, [
-    applyDirectives(h('div', 'hello'), this, [vShow, this.ok])
+    withDirectives(h('div', 'hello'), [
+      [vShow, this.ok]
+    ])
   ])
 }
 ```
