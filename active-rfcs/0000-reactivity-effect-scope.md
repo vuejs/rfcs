@@ -285,7 +285,7 @@ export default {
 
     const dispose = () => {
       mouseScope && mouseScope.stop()
-      moustState = null
+      mouseState = null
     }
 
     watch(
