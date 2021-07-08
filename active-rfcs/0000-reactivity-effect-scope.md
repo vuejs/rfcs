@@ -5,7 +5,7 @@
 
 # Summary
 
-Introducing a new `EffectScope` API for `@vue/reactivity`. An `EffectScope` instance can automatically collect effects run within a synchronous function so that these effects can be disposed together at a later time.
+Introducing a new `effectScope()` API for `@vue/reactivity`. An `EffectScope` instance can automatically collect effects run within a synchronous function so that these effects can be disposed together at a later time.
 
 # Basic example
 
@@ -132,7 +132,7 @@ scope.run(() => {
   const doubled = computed(() => counter.value * 2)
 
   // not need to get the stop handler, it will be collected by the outer scope
-  effectScope.run(() => {
+  effectScope().run(() => {
     watch(doubled, () => console.log(double.value))
   })
 
