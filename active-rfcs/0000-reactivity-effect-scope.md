@@ -230,7 +230,7 @@ function useMouse() {
 
 If `useMouse()` is called in multiple components, each component will attach a `mousemove` listener and create its own copy of `x` and `y` refs. We should be able to make this more efficient by sharing the same set of listeners and refs across multiple components, but we can't because each `onUnmounted` call is coupled to a single component instance.
 
-We can achieve this using detached scope, and `onScopeDispose`. First, we need to replace `onMounted` with `onScopeDispose`:
+We can achieve this using detached scope, and `onScopeDispose`. First, we need to replace `onUnmounted` with `onScopeDispose`:
 
 ```diff
 - onUnmounted(() => {
