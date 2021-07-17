@@ -17,9 +17,9 @@ const scope = effectScope()
 scope.run(() => {
   const doubled = computed(() => counter.value * 2)
 
-  watch(doubled, () => console.log(double.value))
+  watch(doubled, () => console.log(doubled.value))
 
-  watchEffect(() => console.log('Count: ', double.value))
+  watchEffect(() => console.log('Count: ', doubled.value))
 })
 
 // to dispose all effects in the scope
@@ -47,7 +47,7 @@ const stopWatch1 = watchEffect(() => {
 disposables.push(stopWatch1)
 
 const stopWatch2 = watch(doubled, () => {
-  console.log(double.value)
+  console.log(doubled.value)
 })
 
 disposables.push(stopWatch2)
@@ -96,9 +96,9 @@ A scope can run a function and will capture all effects created during the funct
 scope.run(() => {
   const doubled = computed(() => counter.value * 2)
 
-  watch(doubled, () => console.log(double.value))
+  watch(doubled, () => console.log(doubled.value))
 
-  watchEffect(() => console.log('Count: ', double.value))
+  watchEffect(() => console.log('Count: ', doubled.value))
 })
 
 // the same scope can run multiple times
@@ -133,10 +133,10 @@ scope.run(() => {
 
   // not need to get the stop handler, it will be collected by the outer scope
   effectScope().run(() => {
-    watch(doubled, () => console.log(double.value))
+    watch(doubled, () => console.log(doubled.value))
   })
 
-  watchEffect(() => console.log('Count: ', double.value))
+  watchEffect(() => console.log('Count: ', doubled.value))
 })
 
 // dispose all effects, including those in the nested scopes
@@ -161,17 +161,17 @@ parentScope.run(() => {
   // the scope will not be collected and disposed by the outer scope
   childScope = effectScope(true /* detached */)
   childScope.run(() => {
-    watch(doubled, () => console.log(double.value))
+    watch(doubled, () => console.log(doubled.value))
   })
 
-  watchEffect(() => console.log('Count: ', double.value))
+  watchEffect(() => console.log('Count: ', doubled.value))
 })
 
 // disposes all effects, but not `childScope`
 parentScope.stop()
 
-// stop the nested scope only when appropriate
-nestedScope.stop()
+// stop the child scope only when appropriate
+childScope.stop()
 ```
 
 ### `onScopeDispose`
