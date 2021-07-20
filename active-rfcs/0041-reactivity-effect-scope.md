@@ -150,7 +150,7 @@ scope.stop()
 This also makes usages like ["lazy initialization"](https://github.com/vuejs/vue-next/issues/1532) possible.
 
 ```ts
-let childScope
+let nestedScope
 
 const parentScope = effectScope()
 
@@ -159,19 +159,19 @@ parentScope.run(() => {
 
   // with the detected flag,
   // the scope will not be collected and disposed by the outer scope
-  childScope = effectScope(true /* detached */)
-  childScope.run(() => {
+  nestedScope = effectScope(true /* detached */)
+  nestedScope.run(() => {
     watch(doubled, () => console.log(doubled.value))
   })
 
   watchEffect(() => console.log('Count: ', doubled.value))
 })
 
-// disposes all effects, but not `childScope`
+// disposes all effects, but not `nestedScope`
 parentScope.stop()
 
-// stop the child scope only when appropriate
-childScope.stop()
+// stop the nested scope only when appropriate
+nestedScope.stop()
 ```
 
 ### `onScopeDispose`
