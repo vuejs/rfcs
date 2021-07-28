@@ -488,7 +488,7 @@ This new scoping model will require tooling adjustments in two aspects:
 
 1. IDEs will need to provide dedicated handling for this new `<script setup>` model in order to provide template expression type checking / props validation, etc.
 
-   As of now, [Volar](https://github.com/johnsoncodehk/volar) already provides full support for this RFC in VSCode, including all TypeScript related features. Its internals are also implemented as a landuage server that can theoretically be used in other IDEs.
+   As of now, [Volar](https://github.com/johnsoncodehk/volar) already provides full support for this RFC in VSCode, including all TypeScript related features. Its internals are also implemented as a language server that can theoretically be used in other IDEs.
 
 2. ESLint rules like `no-unused-vars`. We will need a replacement rule in `eslint-plugin-vue` that takes both the `<script setup>` and `<template>` expressions into account.
 
