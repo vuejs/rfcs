@@ -410,7 +410,9 @@ In such cases, a normal `<script>` block can be used alongside `<script setup>`:
 </script>
 
 <script setup>
-  let count = 0
+  import { ref } from 'vue'
+
+  const count = ref(0)
 </script>
 ```
 
