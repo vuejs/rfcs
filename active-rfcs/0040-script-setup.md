@@ -444,11 +444,11 @@ Vue 3 SFCs automatically infers the component's name from the component's **file
 - DevTools inspection
 - Recursive self-reference. E.g. a file named `FooBar.vue` can refer to itself as `<FooBar/>` in its template.
 
-  This has lower priority than explicity registered/imported components. If you have a named import that conflicts with the component's inferred name, you can alias it:
+This has lower priority than explicity registered/imported components. If you have a named import that conflicts with the component's inferred name, you can alias it:
 
-  ```js
-  import { FooBar as FooBarChild } from './components'
-  ```
+```js
+import { FooBar as FooBarChild } from './components'
+```
 
 In most cases, explicit `name` declaration is not needed. The only cases where you do need it is when you need the `name` for `<keep-alive>` inclusion / exclusion or direct inspection of the component's options.
 
