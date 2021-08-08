@@ -417,7 +417,7 @@ In such cases, a normal `<script>` block can be used alongside `<script setup>`:
 ```
 
 <details>
-<summary>Compile Output</summary>
+<summary>Compiled Output</summary>
 
 ```js
 import { ref } from 'vue'
