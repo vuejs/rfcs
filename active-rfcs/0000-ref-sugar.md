@@ -11,7 +11,7 @@ Introduce a compiler-based syntax sugar for using refs without `.value`.
 ```html
 <script setup>
   // declaring a variable that compiles to a ref
-  let count = $ref(1)
+  let count = $(1)
 
   console.log(count) // 1
 
@@ -61,15 +61,14 @@ This proposal aims to improve the ergonomics of refs with a set of compile-time 
 
 ## Overview
 
-- Declare reactive variables with `$ref`
+- Declare reactive variables with `$`
 - Declare reactively-derived variables with `$computed`
-- Destructure reactive variables from an object with `$fromRefs`
-- Get the raw ref object of a `$ref`-declared variable with `$raw`
+- Get the raw ref object of a `$`-declared variable with `$ref`
 
-## `$ref`
+## `$`
 
 ```js
-let count = $ref(0)
+let count = $(0)
 
 function inc() {
   count++
@@ -86,37 +85,52 @@ function inc() {
 }
 ```
 
-Variables declared with `$ref` can be accessed or mutated just like normal variables - but it enables reactivity for these operations. The `$ref` serves as a hint for the compiler to append `.value` to all references to the variable.
+Variables declared with `$` can be accessed or mutated just like normal variables - but it enables reactivity for these operations. `$` serves as a hint for the compiler to append `.value` to all references to the variable.
 
-**Notes**
+Note that:
 
-- `$ref` is a compile-time macro and does not need to be imported.
-- `$ref` can only be used with `let` because it would be pointless to declare a constant ref.
-- `$ref` can also be used to create a variable-like binding for other ref types, e.g. `computed`, `shallowRef` or even `customRef`:
+- `$` is a compile-time macro and does not need to be imported.
+- `$` can only be used with `let` because it would be pointless to declare a constant ref.
 
-  ```js
-  let count = $ref(0)
+## Dereferencing Existing Refs
 
-  const plusOne = $ref(computed(() => count + 1))
-  console.log(plusOne)
-  ```
+`$` can also be used to create reactive variables from existing refs, including refs returned from `computed`, `shallowRef`, or `customRef`. This is a bit similar to the concept of "dereferencing" in languages like C++, where the value is retrived from a memory pointer (in our case, a Vue ref object).
+
+```js
+let c = $(computed(() => count + 1))
+console.log(c)
+```
+
+Compiled output:
+
+```js
+let c = ref(computed(() => count.value + 1))
+console.log(c.value)
+```
+
+This works becuase `ref()` will return its argument as-is if it is already a ref:
+
+```js
+const foo = ref(0)
+const bar = ref(foo)
+console.log(foo === bar) // true
+```
 
 ## `$computed`
 
 Because `computed` is so commonly used, it also has its dedicated macro:
 
 ```diff
-- const plusOne = $ref(computed(() => count + 1))
-+ const plusOne = $computed(() => count + 1)
+- let plusOne = $ref(computed(() => count + 1))
++ let plusOne = $computed(() => count + 1)
 ```
 
-## Destructuring with `$fromRefs`
+## Dereferencing + Destructuring
 
-It is common for a composition function to return an object of refs. To declare multiple ref bindings with destructuring, we can use the `$fromRefs` macro:
+It is common for a composition function to return an object of refs, and use destructuring to retrive these refs. `$` can be used in such cases as well:
 
 ```js
-const { x, y, method } = $fromRefs(useFoo())
-
+let { x, y, method } = $(useFoo())
 console.log(x, y)
 method()
 ```
@@ -124,27 +138,33 @@ method()
 Compiled Output:
 
 ```js
-import { shallowRef } from 'vue'
+import { ref } from 'vue'
 
-const { x: __x, y: __y, method: __method } = useFoo()
-const x = shallowRef(__x)
-const y = shallowRef(__y)
-const method = shallowRef(__method)
+let { x: __x, y: __y, method: __method } = useFoo()
+const x = ref(__x)
+const y = ref(__y)
+const method = ref(__method)
 
 console.log(x.value, y.value)
 method.value()
 ```
 
-Note this works even if a property is not a ref: for example the `method` property is a plain function here - `shallowRef` will wrap it as an actual ref so that the rest of the code could work as expected.
+Here if `__x` is already a ref, `ref(__x)` will simply return it as-is. Again, this works becuase `ref()` will return any existing ref as-is.
 
-## Accessing Raw Refs with `$raw`
+If the value is not a ref (e.g. `__method` which is a function), it will be normalized into an actual ref so the rest of the code work as expected. This is because we do not have the information to determine whether a destructured property is a ref at compile time.
 
-In some cases we may need to access the underlying raw ref object of a `$ref`-declared variable. We can do that with the `$raw` macro:
+## Accessing Raw Refs with `$ref`
+
+In some cases we may need to access the underlying raw ref object of a reactive varaible. This typically happens when we have an external composable function that expects an actual ref as its argument. We can do this with the `$ref` macro:
 
 ```js
-let count = $ref(0)
+let count = $(0)
 
-const countRef = $raw(count)
+//`countRef` is the underlying ref object that syncs with `count`
+const countRef = $ref(count)
+
+countRef.value++
+console.log(count) // 1
 
 fnThatExpectsRef(countRef)
 ```
@@ -156,34 +176,28 @@ let count = ref(0)
 
 const countRef = count
 
+countRef.value++
+console.log(count.value) // 1
+
 fnThatExpectsRef(countRef)
 ```
 
-Think of `$raw` as "do not append `.value` to anything passed to me, and return it". This means it can also be used on an object containing `$ref` variables:
-
-```js
-let x = $ref(0)
-let y = $ref(0)
-
-const coords = $raw({ x, y })
-
-console.log(coords.x.value)
-```
+If you are familiar with languages like C++, this is also a bit similar to the "address-of" operator (`&`). However instead of the underlying memory address, we are getting a raw ref object instead.
 
 ## TypeScript & Tooling Integration
 
 Vue will provide typings for these macros (available globally) and all types will work as expected. There are no incompatibilities with standard TypeScript semantics so the syntax would work with all existing tooling.
 
-## Ref Usage in Nested Function Scopes
+## Usage in Nested Function Scopes
 
 > This section isn't implemented as of now
 
-Technically, `$ref` doesn't have to be limited to root level scope and can be used anywhere `let` declarations can be used, including nested function scope:
+Technically, ref sugar doesn't have to be limited to root level scope and can be used anywhere `let` declarations can be used, including nested function scope:
 
 ```js
 function useMouse() {
-  let x = $ref(0)
-  let y = $ref(0)
+  let x = $(0)
+  let y = $(0)
 
   function update(e) {
     x = e.pageX
@@ -193,10 +207,10 @@ function useMouse() {
   onMounted(() => window.addEventListener('mousemove', update))
   onUnmounted(() => window.removeEventListener('mousemove', update))
 
-  return $raw({
-    x,
-    y
-  })
+  return {
+    x: $ref(x),
+    y: $ref(y)
+  }
 }
 ```
 
@@ -228,11 +242,13 @@ function useMouse() {
 
 ## Implementation Status
 
-This proposal is currently implemented in 3.2.0-beta as an experimental feature.
+This proposal is currently implemented in 3.2.0 as an experimental feature.
 
 - It is currently only usable in `<script setup>`
 - It currently only processes root-level variable declarations and **does not work in nested function scopes**
 - It is disabled by default and must be explicitly enabled by passing the `refSugar: true` option to `@vue/compiler-sfc`. See [Appendix](#appendix) for how to enable it in specific tools.
+
+**Experimental features are unstable and may change between any release types (including patch releases). By explicitly enabling an experimental feature, you are taking on the risk of potentially having to refactor into updated syntax, or even refactor away from the usage if the feature ends up being removed.**
 
 # Unresolved Questions
 
