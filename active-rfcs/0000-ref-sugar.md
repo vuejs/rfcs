@@ -125,17 +125,17 @@ console.log(x, y)
 <summary>Compiled Output</summary>
 
 ```js
-import { ref } from 'vue'
+import { shallowRef } from 'vue'
 import { useMouse } from '@vueuse/core'
 
 let { x: __x, y: __y } = useMouse()
-const x = ref(__x)
-const y = ref(__y)
+const x = shallowRef(__x)
+const y = shallowRef(__y)
 
 console.log(x.value, y.value)
 ```
 
-Note that if `x` is already a ref, `ref(__x)` will simply return it as-is. This works becuase `ref()` will return its argument as-is if it's already a ref.
+Note that if `x` is already a ref, `shallowRef(__x)` will simply return it as-is. This works becuase `shallowRef()` will return its argument as-is if it's already a ref.
 
 If a destructured value is not a ref (e.g. a function), it will still work - the value will be wrapped into a ref so the rest of the code work as expected.
 
