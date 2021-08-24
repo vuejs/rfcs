@@ -126,6 +126,7 @@ console.log(x, y)
 
 ```js
 import { ref } from 'vue'
+import { useMouse } from '@vueuse/core'
 
 let { x: __x, y: __y } = useMouse()
 const x = ref(__x)
