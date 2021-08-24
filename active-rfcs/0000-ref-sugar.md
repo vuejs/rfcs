@@ -4,26 +4,21 @@
 
 # Summary
 
-Introduce a compiler-based syntax sugar for using refs without `.value`.
+Introduce a set of compiler macros for using refs without `.value`.
 
 # Basic example
 
-```html
-<script setup>
-  // declaring a variable that compiles to a ref
-  let count = $ref(1)
+```ts
+// declaring a reactive variable backed by an underlying ref
+let count = $ref(1)
 
-  console.log(count) // 1
+// no need for .value anymore!
+console.log(count) // 1
 
-  function inc() {
-    // the variable can be used like a plain value
-    count++
-  }
-</script>
-
-<template>
-  <button @click="inc">{{ count }}</button>
-</template>
+function inc() {
+  // assignments are reactive
+  count++
+}
 ```
 
 <details>
@@ -32,20 +27,12 @@ Introduce a compiler-based syntax sugar for using refs without `.value`.
 ```js
 import { ref } from 'vue'
 
-export default {
-  setup() {
-    const count = ref(1)
+const count = ref(1)
 
-    console.log(count.value)
+console.log(count.value)
 
-    function inc() {
-      count.value++
-    }
-
-    return () => {
-      return h('button', { onClick: inc }, count.value)
-    }
-  }
+function inc() {
+  count.value++
 }
 ```
 
@@ -61,142 +48,21 @@ This proposal aims to improve the ergonomics of refs with a set of compile-time 
 
 ## Overview
 
-- Declare reactive variables with `$ref`
-- Declare reactively-derived variables with `$computed`
-- Destructure reactive variables from an object with `$fromRefs`
-- Get the raw ref object of a `$ref`-declared variable with `$raw`
+- Declare reactive variables from refs using `$()` (`refs -> vars`)
+- Get the underlying refs from reactive variables with `$$()` (`vars -> refs`)
+- Most commonly used APIs have convenience aliases (`$ref`, `$computed` & `$shallowRef`)
 
-## `$ref`
+## Bind refs as reactive variables with `$()`
+
+The `$ref(0)` usage seen in the basic example is in fact a shorthand for `$(ref(0))`. The example is equivalent to:
 
 ```js
-let count = $ref(0)
+import { ref } from 'vue'
+
+let count = $(ref(0))
 
 function inc() {
   count++
-}
-```
-
-Compiled Output:
-
-```js
-let count = ref(0)
-
-function inc() {
-  count.value++
-}
-```
-
-Variables declared with `$ref` can be accessed or mutated just like normal variables - but it enables reactivity for these operations. The `$ref` serves as a hint for the compiler to append `.value` to all references to the variable.
-
-**Notes**
-
-- `$ref` is a compile-time macro and does not need to be imported.
-- `$ref` can only be used with `let` because it would be pointless to declare a constant ref.
-- `$ref` can also be used to create a variable-like binding for other ref types, e.g. `computed`, `shallowRef` or even `customRef`:
-
-  ```js
-  let count = $ref(0)
-
-  const plusOne = $ref(computed(() => count + 1))
-  console.log(plusOne)
-  ```
-
-## `$computed`
-
-Because `computed` is so commonly used, it also has its dedicated macro:
-
-```diff
-- const plusOne = $ref(computed(() => count + 1))
-+ const plusOne = $computed(() => count + 1)
-```
-
-## Destructuring with `$fromRefs`
-
-It is common for a composition function to return an object of refs. To declare multiple ref bindings with destructuring, we can use the `$fromRefs` macro:
-
-```js
-const { x, y, method } = $fromRefs(useFoo())
-
-console.log(x, y)
-method()
-```
-
-Compiled Output:
-
-```js
-import { shallowRef } from 'vue'
-
-const { x: __x, y: __y, method: __method } = useFoo()
-const x = shallowRef(__x)
-const y = shallowRef(__y)
-const method = shallowRef(__method)
-
-console.log(x.value, y.value)
-method.value()
-```
-
-Note this works even if a property is not a ref: for example the `method` property is a plain function here - `shallowRef` will wrap it as an actual ref so that the rest of the code could work as expected.
-
-## Accessing Raw Refs with `$raw`
-
-In some cases we may need to access the underlying raw ref object of a `$ref`-declared variable. We can do that with the `$raw` macro:
-
-```js
-let count = $ref(0)
-
-const countRef = $raw(count)
-
-fnThatExpectsRef(countRef)
-```
-
-Compiled Output:
-
-```js
-let count = ref(0)
-
-const countRef = count
-
-fnThatExpectsRef(countRef)
-```
-
-Think of `$raw` as "do not append `.value` to anything passed to me, and return it". This means it can also be used on an object containing `$ref` variables:
-
-```js
-let x = $ref(0)
-let y = $ref(0)
-
-const coords = $raw({ x, y })
-
-console.log(coords.x.value)
-```
-
-## TypeScript & Tooling Integration
-
-Vue will provide typings for these macros (available globally) and all types will work as expected. There are no incompatibilities with standard TypeScript semantics so the syntax would work with all existing tooling.
-
-## Ref Usage in Nested Function Scopes
-
-> This section isn't implemented as of now
-
-Technically, `$ref` doesn't have to be limited to root level scope and can be used anywhere `let` declarations can be used, including nested function scope:
-
-```js
-function useMouse() {
-  let x = $ref(0)
-  let y = $ref(0)
-
-  function update(e) {
-    x = e.pageX
-    y = e.pageY
-  }
-
-  onMounted(() => window.addEventListener('mousemove', update))
-  onUnmounted(() => window.removeEventListener('mousemove', update))
-
-  return $raw({
-    x,
-    y
-  })
 }
 ```
 
@@ -204,70 +70,180 @@ function useMouse() {
 <summary>Compiled Output</summary>
 
 ```js
-function useMouse() {
-  let x = ref(0)
-  let y = ref(0)
+import { ref } from 'vue'
 
-  function update(e) {
-    x.value = e.pageX
-    y.value = e.pageY
-  }
+let count = ref(0)
 
-  onMounted(() => window.addEventListener('mousemove', update))
-  onUnmounted(() => window.removeEventListener('mousemove', update))
-
-  return {
-    x,
-    y
-  }
+function inc() {
+  count.value++
 }
 ```
 
 </details>
-<p></p>
+
+By wrapping a ref with `$()`, the resulting varaible is what we call a **reactive variable**. It can be accessed or mutated just like normal variables - except the access and mutations are reactive.
+
+In the above example, accessing `count` will access `.value` on the underlying ref, and assigning a new value to `count` will mutate `.value` of the underlying ref.
+
+From the implementation perspecitve, `$()` is a marker that instructs the compiler to auto-append `.value` to all references to the declared variables.
+
+- `$()` is a compile-time macro and does not need to be imported.
+- `$()` can only be used with `let` because it would be pointless to declare a constant ref.
+- `$()` can be used with any Vue Reactivity APIs that return refs:
+
+```js
+import { ref, computed, shallowRef, customRef, toRef } from 'vue'
+
+let count = $(ref(0))
+let plusOne = $(computed(() => count + 1))
+let shallowValue = $(shallowRef({ ... }))
+let custom = $(customRef({ ... }))
+let pick = $(toRef(someObject, 'foo'))
+```
+
+## Frequent API Shorthands
+
+Because some APIs are so frequently used, they have dedicated aliases to make the code more succinct (which also save the need for imports):
+
+- `$ref` is alias for `$(ref())`
+- `$computed` is alias for `$(computed())`
+- `$shallowRef` is alias for `$(shallowRef())`
+
+## Destructuring objects of refs
+
+It is common for a composition function to return an object of refs, and use destructuring to retrive these refs. `$()` can be used in this case as well:
+
+```js
+import { useMouse } from '@vueuse/core'
+
+let { x, y } = $(useMouse())
+
+console.log(x, y)
+```
+
+<details>
+<summary>Compiled Output</summary>
+
+```js
+import { ref } from 'vue'
+
+let { x: __x, y: __y } = useFoo()
+const x = ref(__x)
+const y = ref(__y)
+
+console.log(x.value, y.value)
+```
+
+Note that if `x` is already a ref, `ref(__x)` will simply return it as-is. This works becuase `ref()` will return its argument as-is if it's already a ref.
+
+If a destructured value is not a ref (e.g. a function), it will still work - the value will be wrapped into a ref so the rest of the code work as expected.
+
+</details>
+
+## Retrieving refs from reactive variables with `$$()`
+
+While reactive variables relieve us from having to use `.value` everywhere, it creates an issue of "reactivity loss" when we pass reactive varaibles across function boundaries. This can happen in two cases:
+
+1. A function that expects a ref object as argument, e.g.:
+
+   ```ts
+   function trackChange(x: Ref<number>) {
+     watch(x, (x) => {
+       console.log('x changed!')
+     })
+   }
+
+   let count = $ref(0)
+   trackChange(count) // doesn't work!
+   ```
+
+   The above case will not work as expected because it compiles to:
+
+   ```ts
+   let count = ref(0)
+   trackChange(count.value)
+   ```
+
+   Here `count.value` is passed as a number where `trackChange` expects an actual ref. This can be fixed by wrapping `count` with `$$()` before passing it:
+
+   ```diff
+   let count = $ref(0)
+   - trackChange(count)
+   + trackChange($$(count))
+   ```
+
+2. When returning an object of refs from a composable function. Example:
+
+   ```ts
+   function useMouse() {
+     let x = $ref(0)
+     let y = $ref(0)
+
+     // listen to mousemove...
+
+     // doesn't work!
+     return {
+       x,
+       y
+     }
+   }
+   ```
+
+   > Note: support for usage inside nested function scopes is not yet implemented as of now.
+
+   The above return statement compiles to:
+
+   ```ts
+   return {
+     x: x.value,
+     y: y.value
+   }
+   ```
+
+   In order to retain reactivity, we should be returning the actual refs, not the current value at return time.
+
+   Again, we can use `$$()` to fix this. In this case, `$$()` can be used directly on the returned object - any reference to reactive variables inside the `$$()` call will be retained as reference to their underlying refs:
+
+   ```ts
+   function useMouse() {
+     let x = $ref(0)
+     let y = $ref(0)
+
+     // listen to mousemove...
+
+     // fixed
+     return $$({
+       x,
+       y
+     })
+   }
+   ```
+
+## TypeScript & Tooling Integration
+
+Vue will provide typings for these macros (available globally) and all types will work as expected. There are no incompatibilities with standard TypeScript semantics so the syntax would work with all existing tooling.
+
+This also means the macros can work in any files where valid JS/TS are allowed - not just inside Vue SFCs.
+
+Since the macros are available globally, their types need to be explicitly referenced (e.g. in a `evn.d.ts` file):
+
+```ts
+/// <reference types="vue/ref-macros" />
+```
 
 ## Implementation Status
 
-This proposal is currently implemented in 3.2.0-beta as an experimental feature.
+You can try the transform in the [Vue SFC Playground](https://sfc.vuejs.org/) (works in both `.vue` and `.(js|ts)` files).
 
-- It is currently only usable in `<script setup>`
-- It currently only processes root-level variable declarations and **does not work in nested function scopes**
-- It is disabled by default and must be explicitly enabled by passing the `refSugar: true` option to `@vue/compiler-sfc`. See [Appendix](#appendix) for how to enable it in specific tools.
+Vue 3.2.5+ ships an implementation of this RFC as an experimental feature under the package [`@vue/ref-transform`](https://github.com/vuejs/vue-next/tree/master/packages/ref-transform). The package can be used standalone as a low-level library. It is also integrated (with its APIs re-exported) in `@vue/compiler-sfc` so most userland projects won't need to explicitly install it.
+
+Higher-level tools like `@vitejs/plugin-vue` and `vue-loader` can be configured to apply the transform to vue, js(x) and ts(x) files. See [Appendix](#appendix) for how to enable the transform in specific tools.
+
+> **Experimental features are unstable and may change between any release types (including patch releases). By explicitly enabling an experimental feature, you are taking on the risk of potentially having to refactor into updated syntax, or even refactor away from the usage if the feature ends up being removed.**
 
 # Unresolved Questions
 
-## Should the macros be supported outside of SFCs?
-
-The transforms proposed in this RFC can technically be applied to any JS/TS code via Babel or other AST transforms. It is currently implemented with support only inside `<script setup>` as part of `<script setup>` compilation because:
-
-- Despite being syntactically valid JS/TS, "reactive variable assignment" is not standard JS semantics. `<script setup>` serves as an indication that the code is being pre-processed for special behavior.
-- Since it is implemented as part of `@vue/compiler-sfc`, it allows existing Vue users to start using the syntax without any additional configuration.
-- `<script setup>` compilation already performs full AST parsing, so the ref sugar transform can reuse the same AST and avoid incurring additional parsing overhead.
-- The transform also integrates with the binding analysis (which is used by the template compiler for for optimized output).
-
-### If Limited to SFCs
-
-The primary drawback of limiting the syntax to SFCs is the mental model shift cost when writing code in/out of components. [A previous study](https://github.com/vuejs/rfcs/pull/222#issuecomment-723560606) shows that this mental cost may actually reduce efficiency compared to usage without the macros.
-
-Differnet syntax also creates friction when it comes to extracting and reusing logic across components.
-
-Luckily, since the transformation rules are relatively straightforward, code written with the sguar can be automatically de-sugared via tooling (e.g. via IDE extensions like Volar).
-
-The workflow of extracting sguar code into an external composition function could be:
-
-1. Select code range for the code to be extracted
-2. In VSCode command input: `>volar de-sugar as composable' -> enter function name
-3. Code gets de-sugared into a composable function (with return statements auto generated)
-4. Cut-paste code into external file
-5. Import the function in original file and replace original code.
-
-### If Supported in All Files
-
-There are some downsides in supporting them in all files:
-
-- Transpile cost: we already parse and transform `<script setup>`, so ref macros do not add noticeable additional cost. However if applied to all JS/TS files, the cost can be much more significant.
-
-- "Assignment-based reactivity" isn't standard JavaScript semantics and it may be a bad idea to let it leak outside of a Vue-specific context.
+N/A
 
 # Alternatives
 
@@ -286,24 +262,28 @@ This feature is opt-in. Existing code is unaffected.
 
 ## Enabling the Macros
 
-> Requires Vue >= 3.2.0-beta.1
+- All setups require `@vue/compiler-sfc@^3.2.5`
 
 ### Vite
+
+- Requires `@vitejs/plugin-vue@^1.6.0`
+- Applies to SFCs and js(x)/ts(x) files. A fast usage check is performed on files before applying the transform so there should be no performance cost for files not using the macros.
+- Note `refTransform` is now a plugin root-level option instead of nested as `script.refSugar`, since it affects not just SFCs.
 
 ```js
 // vite.config.js
 export default {
   plugins: [
     vue({
-      script: {
-        refSugar: true
-      }
+      refTransform: true
     })
   ]
 }
 ```
 
 ### `vue-cli`
+
+- Currently only affects SFCs
 
 ```js
 // vue.config.js
@@ -323,6 +303,8 @@ module.exports = {
 ```
 
 ### Plain `webpack` + `vue-loader`
+
+- Currently only affects SFCs
 
 ```js
 // webpack.config.js
