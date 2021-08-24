@@ -127,7 +127,7 @@ console.log(x, y)
 ```js
 import { ref } from 'vue'
 
-let { x: __x, y: __y } = useFoo()
+let { x: __x, y: __y } = useMouse()
 const x = ref(__x)
 const y = ref(__y)
 
