@@ -50,7 +50,7 @@ This proposal aims to improve the ergonomics of refs with a set of compile-time 
 
 - Declare reactive variables from refs using `$()` (`refs -> vars`)
 - Get the underlying refs from reactive variables with `$$()` (`vars -> refs`)
-- Most commonly used APIs have convenience aliases (`$ref`, `$computed` & `$shallowRef`)
+- Most commonly used APIs have convenience shorthands (`$ref`, `$computed` & `$shallowRef`)
 
 ## Bind refs as reactive variables with `$()`
 
@@ -189,8 +189,6 @@ While reactive variables relieve us from having to use `.value` everywhere, it c
      }
    }
    ```
-
-   > Note: support for usage inside nested function scopes is not yet implemented as of now.
 
    The above return statement compiles to:
 
