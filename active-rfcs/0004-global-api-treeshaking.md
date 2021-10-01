@@ -9,7 +9,7 @@ Make Vue runtime tree-shakable by exposing as much APIs through named exports as
 
 # Basic example
 
-``` js
+```js
 import { nextTick, observable } from 'vue'
 
 nextTick(() => {})
@@ -29,7 +29,7 @@ In addition, knowing that optional features won't increase the bundle size for u
 
 Currently in 2.x, all global APIs are exposed on the single Vue object:
 
-``` js
+```js
 import Vue from 'vue'
 
 Vue.nextTick(() => {})
@@ -39,7 +39,7 @@ const obj = Vue.observable({})
 
 In 3.x, they can **only** be accessed as named imports:
 
-``` js
+```js
 import Vue, { nextTick, observable } from 'vue'
 
 Vue.nextTick // undefined
@@ -64,7 +64,7 @@ By not attaching all APIs on the `Vue` default export, any unused APIs can be dr
 
 In addition to public APIs, many of the internal components / helpers can be exported as named exports as well. This allows the compiler to output code that only imports features when they are used. For example the following template:
 
-``` html
+```html
 <transition>
   <div v-show="ok">hello</div>
 </transition>
@@ -86,7 +86,7 @@ This means the `Transition` component only gets imported when the application ac
 
 **Note the above only applies to the ES Modules builds for use with tree-shaking capable bundlers - the UMD build still includes all features and exposes everything on the `Vue` global variable (and the compiler will produce appropriate output to use APIs off the global instead of importing).**
 
-# Drawbacks 
+# Drawbacks
 
 Users can no longer import a single `Vue` variable and then use APIs off of it. However this should be a worthwhile tradeoff for minimal bundle sizes.
 
@@ -94,7 +94,7 @@ Users can no longer import a single `Vue` variable and then use APIs off of it. 
 
 Some plugins may rely on global APIs originally exposed on `Vue`:
 
-``` js
+```js
 const plugin = {
   install: Vue => {
     Vue.nextTick(() => {
@@ -106,7 +106,7 @@ const plugin = {
 
 In 3.0 they will need to import these explicitly:
 
-``` js
+```js
 import { nextTick } from 'vue'
 
 const plugin = {
