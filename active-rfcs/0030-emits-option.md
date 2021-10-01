@@ -86,7 +86,7 @@ The new [Attribute Fallthrough Behavior](https://github.com/vuejs/rfcs/blob/mast
 <Foo @click="onClick" />
 ```
 
-We are not making `emits` required for `click` to be trigger-able by component emitted events for backwards compatibility. Therefore in the above exampe, without the `emits` option, the listener can be triggered by both a native click event on `Foo`'s root element, or a custom `click` event emitted by `Foo`.
+We are not making `emits` required for `click` to be trigger-able by component emitted events for backwards compatibility. Therefore in the above example, without the `emits` option, the listener can be triggered by both a native click event on `Foo`'s root element, or a custom `click` event emitted by `Foo`.
 
 If, however, `click` is declared as a custom event by using the `emits` option, it will then only be triggered by custom events and will no longer fallthrough as a native listener.
 

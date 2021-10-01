@@ -94,7 +94,7 @@ None of these are great options, but I'm probably most in favor of option 2. I'd
 
 ## Drawbacks
 
-Beyond the inevitable pains with any breaking change, I think the pain for this syntax would be relatively minimal - partly because the `.sync` modifier is not as widely used a feature and also due to the potential easy of migrating users (see addoption strategy below).
+Beyond the inevitable pains with any breaking change, I think the pain for this syntax would be relatively minimal - partly because the `.sync` modifier is not as widely used a feature and also due to the potential easy of migrating users (see adoption strategy below).
 
 ## Adoption strategy
 
