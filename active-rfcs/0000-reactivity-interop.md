@@ -47,7 +47,11 @@ class Timer {
   }
 }
 
-export const timer = new Timer()
+export const timer = new Timer();
+
+setInterval(() => {
+    timer.increase();
+}, 1000);
 ```
 
 In vue component:
@@ -113,8 +117,11 @@ Object.defineProperty(ReactiveEffect.prototype, 'fn', {
       } else {
         this._signal = ref(undefined)
       }
-      this._interopSource = currentInteropSourceFactory(originalFn,()=>triggerRef(this._singal));
-      this._fn = () => this._interopSource.track();
+      this._interopSource = currentInteropSourceFactory(originalFn,()=>triggerRef(this._signal));
+      this._fn = () => {
+        this._signal.value; // track in vue
+        return this._interopSource.track();
+      } 
     } else {
       this._fn = originalFn;
     }
