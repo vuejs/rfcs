@@ -82,13 +82,11 @@ type InteropSourceFactory = <T>(fn: ()=>T, trigger: ()=> void) => InteropSource<
 function addReactivityInterop(factory: InteropSourceFactory): void;
 ```
 
-Currently `addReactivityInterop` will perform __irreversible__ side effect.
-
 ## Implementation
 
-This feature requires a hook into `ReactiveEffect`. 
+Currently `addReactivityInterop` will perform __irreversible__ side effect: setting the current `InteropSourceFactory` (which should be a global variable).
 
-A possible implementation: whenever a `ReactiveEffect` is constructed, the current `InteropSourceFactory` should be called with the original `fn` passed in `ReactiveEffect.constructor` and a `trigger` function which trigger the `ReactiveEffect` (to be scheduled/re-run). The return value is a `InteropSource`, whose `.track` should replace `.fn` of current `ReactiveEffect` and `.dispose()` should be called whenever current `ReactiveEffect` will be cleaned up. Essentially there are two steps:
+Whenever a `ReactiveEffect` is constructed, the current `InteropSourceFactory` should be called with the original `fn` passed in `ReactiveEffect.constructor` and a `trigger` function which trigger the `ReactiveEffect` (to be scheduled/re-run). The return value is a `InteropSource`, whose `.track` should replace `.fn` of current `ReactiveEffect` and `.dispose()` should be called whenever current `ReactiveEffect` will be cleaned up. Essentially there are two steps:
 * Hook `ReactiveEffect.fn`, so third party libraries get the control to perform their own dependency tracking logic. 
 * Cleanup whenever appropriate, to avoid memory leak.
 
@@ -143,20 +141,7 @@ interface PatchedReactiveEffect {
 ## Composed `InteropSourceFactory`
 
 If `addReactivityInterop` is called multiple times, the current `InteropSourceFactory` should be composed.
-```ts
-const currentFactory = currentInteropSourceFactory; // store in closure
-currentInteropSourceFactory = (fn,trigger) => {
-  const currentSource = currentFactory(fn, trigger);
-  const newSource = newFactory(()=>currentSource.track(), trigger);
-  return {
-    track: () => newSource.track(),
-    dispose: () => {
-      currentSource.dispose();
-      newSource.dispose();
-    }
-  }
-}
-```
+
 # Drawbacks
 
 - A bit of magic (but acceptable in the context of vue)
