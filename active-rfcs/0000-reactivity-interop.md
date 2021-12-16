@@ -5,7 +5,7 @@
 
 # Summary
 
-Introducing a new `addReactivityInterop()` API for `@vue/reactivity`. This feature adds support for (one-way) reactivity interoperabilty with third party libraries.
+Introducing a new `addReactivityInterop()` API for `@vue/reactivity`. This feature adds support for (one-way) reactivity interoperability with third party libraries.
 
 # Basic example
 
@@ -58,9 +58,11 @@ In vue component:
 
   const doubled = computed(() => timer.secondPassed * 2) //even this is possible!
 </script>
-<button @click="timer.reset()">
-  Second passed: {{ timer.secondsPassed }}, doubled: {{ doubled }}
-</button>
+<template>
+  <button @click="timer.reset()">
+    Second passed: {{ timer.secondsPassed }}, doubled: {{ doubled }}
+  </button>
+</template>
 ```
 
 # Motivation
@@ -80,6 +82,8 @@ type InteropSourceFactory = <T>(fn: ()=>T, trigger: ()=> void) => InteropSource<
 function addReactivityInterop(factory: InteropSourceFactory): void;
 ```
 
+Currently `addReactivityInterop` will perform __irreversible__ side effect.
+
 ## Implementation
 
 This feature requires a hook into `ReactiveEffect`. 
@@ -94,7 +98,7 @@ Note this feature implies the (external) dependencies should be transparently co
 
 ### Workaround
 
-In vue 3.2+ there is a work-around by monkey-patching
+In vue 3.2+ there is a work-around by patching `ReactiveEffect`
 
 ```ts
 
