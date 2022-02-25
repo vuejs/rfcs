@@ -88,6 +88,7 @@ The behavior of `defineOptions` is basically the same as `defineProps`.
 - `defineOptions` is only enabled in `<script setup>` and without normal script tag.
 - `defineOptions` is **compiler macros** only usable inside `<script setup>`. They do not need to be imported, and are compiled away when `<script setup>` is processed.
 - The options passed to `defineOptions` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
+- The options passed to `defineOptions` cannot contain `props`, `emits` and `expose` options.
 
 # Drawbacks
 
