@@ -365,6 +365,8 @@ This brings quite a lot of work and DX is not amazing, this will require the use
 
 `defineComponent` changes can be already be done on the `userLand`, but it would be good to provide guidance on how to do this, I expect libraries to take advantage of this to provide better type for their components
 
+https://github.com/vuejs/rfcs/pull/310 - Class alternative
+
 # Adoption strategy
 
 This functionality is additive, we should only update the components that are actually generic.
