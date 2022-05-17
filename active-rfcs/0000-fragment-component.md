@@ -34,6 +34,16 @@ Add `fragment` built-in component that acts as a `<template>` empty wrapper tag.
 
 There are cases when some markup should be conditionally wrapped within a tag\component or not wrapped at all. Right now you have 2 options on how to deal with that: either duplicate the markup or extract that code into a separate component. Both are not ideal: duplicate code is invisibly coupled (changes in one copy should be reflected in all other copies), extracting into component is cumbersome. It gets more tedious when you have multiple of those cases in a single component.
 
+You might also want to create your own kind of `fragment` component. But it will recieve all the custom directives from the parent, which will result in errors.
+
+Example:
+
+```html
+<component :is="shouldWrap ? 'div' : 'MyFragmentComponent'" v-custom-directive>
+  <img src="cat.jpg" alt="Cat">
+</component>
+```
+
 # Detailed design
 
 `<component is="fragment">` should be compiled into `h('fragment')`. Vue renderer should be updated accordingly to support rendering fragments that way.
