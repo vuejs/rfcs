@@ -38,6 +38,8 @@ There are cases when some markup should be conditionally wrapped within a tag\co
 
 `<component is="fragment">` should be compiled into `h('fragment')`. Vue renderer should be updated accordingly to support rendering fragments that way.
 
+`<component is="fragment">foo</component>` should produce only `foo` as a render result.
+
 # Drawbacks
 
 Possibly a duplicate of `<template>` tag functionality. See **Unresolved questions** section.
