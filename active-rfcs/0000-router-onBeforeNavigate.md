@@ -7,12 +7,37 @@
 
 Better integrating Data Fetching logic with the router navigation:
 
-- Automatically include `await` calls within an ongoing navigation
+- Automatically include `await` calls within an ongoing navigation for components that are mounted as a result of the navigation
 - Navigation guards declared **within** `setup()`
 - Loading and Error Boundaries thanks to Suspense
 - Single Fetching on Hydration (avoid fetching on server and client when doing SSR)
 
 # Basic example
+
+- Fetching data once
+
+Data fetching when entering the router. This is simpler than the `onBeforeNavigate` example and is what most users would expect to work. It also integrates with the navigation:
+
+```vue
+<script setup lang="ts">
+import { useUserStore } from '~/stores/user' // store with pinia
+
+const userStore = useUserStore()
+await userStore.fetchUser(to.params.id)
+</script>
+
+<template>
+  <h2>{{ userStore.userInfo.name }}</h2>
+  <ul>
+    <li>Email: {{ userStore.userInfo.email }}</li>
+    ...
+  </ul>
+</template>
+```
+
+- Fetching data with each navigation
+
+Data fetching integrates with the router navigation within any component.
 
 ```vue
 <script setup lang="ts">
@@ -25,7 +50,7 @@ const userStore = useUserStore()
 // / -> /users/2 ✅
 // /users/2 -> /users/3 ✅
 // /users/2 -> / ❌
-await onBeforeNavigate(async (to, from) => {
+onBeforeNavigate(async (to, from) => {
   // could also be return userStore.fetchUser(...)
   await userStore.fetchUser(to.params.id)
 })
@@ -39,6 +64,12 @@ await onBeforeNavigate(async (to, from) => {
   </ul>
 </template>
 ```
+
+# Motivation
+
+Today's data fetching with Vue Router is simple when the data fetching is simple enough but it gets complicated to implement in advanced use cases that involve SSR. It also doesn't work with `async setup()` + Suspense.
+
+# Detailed design
 
 ## Fetching data once
 
@@ -54,28 +85,50 @@ const userList = reactive(await getUserList())
 </script>
 ```
 
-- The router navigation won't be considered settled until all `await` (or returned promises) are
-- This creates a redundant fetch with SSR because `userList` is never serialized into the page for hydration. In other words: **don't do this if you need SSR**, use a store or `useDataFetching()`.
+- The router navigation won't be considered settled until all `await` (or returned promises inside `setup()`) are resolved
+- This creates a redundant fetch with SSR because `userList` is never serialized into the page for hydration. In other words: **don't do this if you are doing SSR**.
+- Simplest data fetching pattern, some people are probably already using this pattern.
+- Rejected promises are caught by `router.onError()` and cancel the navigation. Note that differently from `onErrorCaptured()`, it's not possible to return `false` to stop propagating the error.
 
 ## Fetching with each navigation
 
-Use this when the fetching depends on the route (params, query, ...) like a route `/users/:id` that allows navigating through users.
+Use this when the fetching depends on the route (params, query, ...) like a route `/users/:id` that allows navigating through users. All the rules above apply:
+
+```vue
+<script setup lang="ts">
+import { onBeforeNavigate } from 'vue-router'
+import { getUser } from '~/apis/user'
+
+const user = ref<User>()
+onBeforeNavigate(async (to) => {
+  user.value = await getUser(to.params.id)
+})
+</script>
+```
 
 - Any component that is rendered by RouterView or one of its children can call `onBeforeNavigate()`
-- `onBeforeNavigate()` triggers on entering, updating, and leaving, so it would make sense to expose other variations like enter + update (TODO: find a proper name for `onBeforeRouteEnterOrUpdate()`, maybe `onBeforeNavigateIn()`)
+- `onBeforeNavigate()` triggers on entering and, updating. It **doesn't trigger when leaving**. This is because it's mostly used to do data fetching and you don't want to fetch when leaving. You can still use `onBeforeRouteLeave()`.
+- Can be called multiple times
+- It returns a promise that resolves when the fetching is done. This allows to await it to use any value that is updated within the navigation guard:
+
+  ```ts
+  const user = ref<User>()
+  await onBeforeNavigate(async (to) => {
+    user.value = await getUser(to.params.id)
+  })
+  user.value // populated because we awaited
+  ```
+
+- Awaiting or not `onBeforeNavigate()` doesn't change the fact that the navigation is settled only when all `await` are resolved.
 
 ## SSR support
 
 To properly handle SSR we need to:
 
-- Serialize the fetched data to hydrate
+- Serialize the fetched data to hydrate: **which is not handled by the router**
 - Avoid the double fetching issue by only fetching on the server
 
-To avoid the double fetching issue, we can detect the hydration during the initial navigation and skip navigation guards altogether as they were already executed on the server.
-
-### Using a store like Pinia
-
-Using a store allows to solve the serialization issue
+Serializing the state is out of scope for the router. Nuxt defines a `useState()` composable. A pinia store can also be used to store the data:
 
 ```vue
 <script setup lang="ts">
@@ -106,6 +159,17 @@ await onBeforeNavigate(async (to, from) => {
 </template>
 ```
 
+To avoid the double fetching issue, we can detect the hydration during the initial navigation and skip navigation guards altogether as they were already executed on the server. **This is however a breaking change**, so it would require a new option to `createRouter()` that disables the feature by default:
+
+```ts
+createRouter({
+  // ...
+  skipInitialNavigationGuards: true
+})
+```
+
+Another solution is to only skip `onBeforeNavigate()` guards during the initial navigation on the client if it was hydrated. This is not a breaking change since the API is new but it does make things inconsistent.
+
 ### Using a new custom `useDataFetching()`
 
 Maybe we could expose a utility to handle SSR **without a store** but I think [serialize-revive](https://github.com/kiaking/vue-serialize-revive) should come first. Maybe internally they could use some kind of `onSerialization(key, fn)`/`onHydration(key, fn)`.
@@ -135,29 +199,19 @@ await onBeforeNavigate(async (to, from) => {
 
 `useDataFetching()` is about being able to hydrate the information but `onBeforeNavigate()` only needs to return a promise:
 
-# Motivation
+## Canceled Navigations
 
-Today's data fetching with Vue Router is flawed
-
-Why are we doing this? What use cases does it support? What is the expected
-outcome?
-
-Please focus on explaining the motivation so that if this RFC is not accepted,
-the motivation could be used to develop alternative solutions. In other words,
-enumerate the constraints you are trying to solve without coupling them too
-closely to the solution you have in mind.
-
-# Detailed design
+A canceled navigation is a navigation that is canceled by the code (e.g. unauthorized access to an admin page) and results in the route **not changing**. It triggers `router.afterEach()`. Note this doesn't include redirecting (e.g. `return "/login"` but not `redirect: '/login'` (which is a _"rewrite"_ of the ongoing navigation)) as they trigger a whole new navigation that gets _"appended"_ to the ongoing navigation.
 
 ## Failed Navigations
 
-A failed navigation is a navigation that is canceled by the code (e.g. unauthorized access to an admin page) and results in the route **not changing**. It triggers `router.afterEach()`. Note this doesn't include redirecting (e.g. `return "/login"` but not `redirect: '/login'` (which is a "rewrite")) as they trigger a whole new navigation that gets "appended" to the ongoing navigation.
-
-## Errored Navigations
-
-An errored navigation is different from a failed navigation because it comes from an unexpected uncaught thrown error. It triggers `router.onError()`.
+An failed navigation is different from a canceled navigation because it comes from an unexpected uncaught thrown error. It also triggers `router.onError()`.
 
 # Drawbacks
+
+## Larger CPU/Memory usage
+
+In order to execute any `await` statement, we have to mount the pending routes within a Suspense boundary while still displaying the current view which means two entire views are rendered during the navigation. This can be slow for big applications but no real testing has been done to prove this could have an impact on UX.
 
 ## Using Suspense
 
@@ -188,7 +242,7 @@ await onBeforeNavigate(async (to, from) => {
 </template>
 ```
 
-And an App.vue as follows
+And an `App.vue` as follows
 
 ```vue
 <template>
@@ -222,10 +276,16 @@ There could maybe also be a way to programmatically change the state of the clos
 ```js
 const { appendJob } = useSuspense()
 // add a promise, enters the loading state if Suspense is not loading
-appendJob((async () => {
-  // some async operation
-})())
+appendJob(
+  (async () => {
+    // some async operation
+  })()
+)
 ```
+
+## Suspense Limitations
+
+- Any provided/computed value is updated even in the non active branches of Suspense. Would there be a way to ensure `computed` do not update (BTW keep alive also do this) or to freeze provided reactive values?
 
 # Adoption strategy
 
