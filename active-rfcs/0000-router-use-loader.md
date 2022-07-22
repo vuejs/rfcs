@@ -91,7 +91,7 @@ export const useUserFriends = defineLoader(async (route) => {
 
 Note that two loaders cannot use each other as that would create a _dead lock_.
 
-### Alternatives
+Alternatives:
 
 - Allowing `await getUserById()` could make people think they should also await inside `<script setup>` and that would be a problem because it would force them to use `<Suspense>` when they don't need to.
 
@@ -249,6 +249,21 @@ const { data, pending, error } = useUserData()
 
 Note that lazy loaders can only control their own blocking mechanism. They can't control the blocking of other loaders. If multiple loaders are being used and one of them is blocking, the navigation will be blocked until all of them are resolved.
 
+Or a function to decide upon navigation / refresh:
+
+```ts
+export const useUserData = defineLoader(
+  loader,
+  // ...
+  {
+    lazy: (route) => {
+      // ...
+      return true // or a number
+    }
+  }
+)
+```
+
 ## Refreshing the data
 
 ### With navigation
@@ -340,3 +355,5 @@ Introduce this as part of [unplugin-vue-router](https://github.com/posva/unplugi
 # Unresolved questions
 
 - Should there be a way to handle server only loaders?
+- Is `useNuxtApp()` usable within loaders?
+- Is there anything needed besides the `route` inside loaders?
