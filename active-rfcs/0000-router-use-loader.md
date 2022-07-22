@@ -3,6 +3,13 @@
 - Reference Issues:
 - Implementation PR:
 
+# Todo List
+
+List of things that haven't been added to the document yet:
+
+- Show how to use the data loader without `@vue-router`
+- Explain what `@vue-router` brings
+
 # Summary
 
 Standarize and improve data fetching by adding helpers to be called within page components:
@@ -60,6 +67,12 @@ There are currently too many ways of handling data fetching with vue-router and 
 
 The goal of this proposal is to provide a simple yet configurable way of defining data loading in your application that is easy to understand and use. It should also be compatible with SSR and allow extensibility.
 
+There are features that are out of scope for this proposal but should be implementable in user land thanks to an _extendable API_:
+
+- Implement a full-fledged cahed API like vue-query
+- Implement pagination
+- Automatically refetch data when **outside of navigations** (e.g. no `refetchInterval`)
+
 # Detailed design
 
 This design is possible though [unplugin-vue-router](https://github.com/posva/unplugin-vue-router):
@@ -94,6 +107,22 @@ Note that two loaders cannot use each other as that would create a _dead lock_.
 Alternatives:
 
 - Allowing `await getUserById()` could make people think they should also await inside `<script setup>` and that would be a problem because it would force them to use `<Suspense>` when they don't need to.
+
+- Pass an array of loaders to the loader that needs them and use let it retrieve them through an argument:
+
+  ```ts
+  import { useUserData } from '~/pages/users/[id].vue'
+
+  export const useUserFriends = defineLoader(
+    async (route, [userData]) => {
+      const friends = await getFriends(user.value.id)
+      return { user, friends }
+    },
+    {
+      waitFor: [useUserData]
+    }
+  )
+  ```
 
 ## Combining loaders
 
@@ -200,6 +229,10 @@ const {
 </script>
 ```
 
+### Good practice for loader organization
+
+Data loaders can be imported in any component but this could also affect the way your code is code split. It's worth explaining the benefits of moving a data loader to a different file and import it in other components.
+
 ## Non blocking data fetching
 
 Also known as [lazy async data in Nuxt](https://v3.nuxtjs.org/api/composables/use-async-data), loaders can be marked as lazy to **not block the navigation**.
@@ -223,6 +256,8 @@ const { data, pending, error } = useUserData()
 //      ^ Ref<{ user: User } | undefined>
 </script>
 ```
+
+A lazy loader **always reset the data fields** to `null` when the navigation starts before fetching the data. This is to avoid blocking for a moment (giving the impression data is loading), then showing the old data while the new data is still being fetched and eventually replaces the one being shown to make it even more confusing for the end user.
 
 Alternatively, you can pass a _number_ to `lazy` to block the navigation for that number of milliseconds:
 
@@ -303,6 +338,18 @@ When changing the `<script>` the old cache is transferred and refreshed.
 
 It's possible to extend the `defineLoader()` function to add new features such as a more complex cache system. TODO:
 
+ideas:
+
+- Export an interface that must be implemented by a composable so external libraries can implement custom strategies (e.g. vue-query)
+- allow global and local config (+ types)
+
+## Global API
+
+It's possible to access a global state of when data loaders are fetching (navigation + calling `refresh()`) as well as when the data fetching navigation guard is running (only when navigating).
+
+- `isFetchingData`
+- `isNavigationFetching`
+
 ## Limitations
 
 - Injections (`inject`/`provide`) cannot be used within a loader
@@ -318,6 +365,7 @@ This solution is not a silver bullet but I don't think one exists because of the
 
 # Alternatives
 
+- Allowing a `before` and `after` hook to allow changing data after each loader call. e.g. By default the data is preserved while a new one is being fetched
 - Adding a new `<script loader>` similar to `<script setup>`:
 
   ```vue
@@ -346,7 +394,7 @@ This solution is not a silver bullet but I don't think one exists because of the
 Variables could be named differently and proposals are welcome:
 
 - `pending` (same as Nuxt) -> `isPending`, `isLoading`
-- `export const loader` (not a verb because it's not meant to be called like a function) -> `export const load`
+- Rename `defineLoader()` to `defineDataFetching()` (or others)
 
 # Adoption strategy
 
@@ -357,3 +405,4 @@ Introduce this as part of [unplugin-vue-router](https://github.com/posva/unplugi
 - Should there be a way to handle server only loaders?
 - Is `useNuxtApp()` usable within loaders?
 - Is there anything needed besides the `route` inside loaders?
+- Add option for placeholder data?
