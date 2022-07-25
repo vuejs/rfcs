@@ -16,17 +16,20 @@ Standarize and improve data fetching by adding helpers to be called within page 
 
 - Automatically integrate fetching to the navigation cycle (or not by making it non-blocking)
 - Automatically rerun when used params changes (avoid unnecessary fetches)
+- Basic client-side caching with time-based expiration to only fetch once per navigation while using it anywhere
 - Provide control over loading/error states
 - Allow parallel or sequential data fetching (loaders that use each other)
 
-This proposal concerns the Vue Router 4 with [unplugin-vue-router](https://github.com/posva/unplugin-vue-router)
+This proposal concerns the Vue Router 4 but some examples concern [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) usage for improved DX. Especially the typed routes usage.
 
 # Basic example
+
+We can define any amount of loaders by **exporting them** in **page components**. They return a **composable that can be used anywhere in the app**.
 
 ```vue
 <script lang="ts">
 import { getUserById } from '../api'
-import { defineLoader } from '@vue-router'
+import { defineLoader } from 'vue-router'
 
 // name the loader however you want **and export it**
 export const useUserData = defineLoader(async (route) => {
@@ -69,19 +72,98 @@ The goal of this proposal is to provide a simple yet configurable way of definin
 
 There are features that are out of scope for this proposal but should be implementable in user land thanks to an _extendable API_:
 
-- Implement a full-fledged cahed API like vue-query
+- Implement a full-fledged cached API like vue-query
 - Implement pagination
-- Automatically refetch data when **outside of navigations** (e.g. no `refetchInterval`)
+- Automatically refetch data when **outside of navigations** (e.g. no `refetchInterval`, no refetch on focus, etc)
 
 # Detailed design
 
-This design is possible though [unplugin-vue-router](https://github.com/posva/unplugin-vue-router):
+Ideally, this should be used alongside [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) to provide a better DX by automatically adding the loaders where they should **but it's not necessary**. By default, it:
 
-- Check named exports in page components to set a meta property in the generated routes
+- Checks named exports in page components to set a meta property in the generated routes
 - Adds a navigation guard that resolve loaders
-- Implement a `defineLoader()` composable
+- Implements a `defineLoader()` composable (should be moved to vue-router later)
 
-`defineLoader()` takes a function that returns a promise and returns a composable that **can be used in any component**, not only in the one that defines it. We call these _loaders_. Loaders **must be exported by page components** in order for them to get picked up and executed during the navigation. They receive the target `route` as an argument and must return a Promise of an object of properties that will then be directly accessible **as refs** when accessing
+`defineLoader()` takes a function that returns a promise (of data) and returns a composable that **can be used in any component**, not only in the one that defines it. We call these _loaders_. Loaders **must be exported by page components** in order for them to get picked up and executed during the navigation. They receive the target `route` as an argument and must return a Promise of an object of properties that will then be directly accessible **as refs** when accessing
+
+Limiting the loader access to only the target route, ensures that the data can be fetched when the user refresh the page. In enforces a good practice of correctly storing the necessary information in the route as params or query params. Within loaders there is no current instance and no access to `inject`/`provide` APIs.
+
+Loaders also have the advantage of behaving as singleton requests. This means that they are only fetched once per navigation no matter how many page components export the loader or how many regular components use it.
+
+## Setup
+
+To setup the loaders, we first need to setup the navigation guards:
+
+```ts
+import { setupDataFetchingGuard, createRouter } from 'vue-router'
+
+const router = createRouter({
+  // ...
+})
+
+setupDataFetchingGuard(router)
+```
+
+Then, for each page exporting a loader, we need to add a meta property to the route:
+
+```ts
+import { LoaderSymbol } from 'vue-router'
+
+const routes = [
+  {
+    path: '/users/:id',
+    component: () => import('@/pages/UserDetails.vue'),
+    meta: {
+      // 👇            v array of all the necessary loaders
+      [LoaderSymbol]: [() => import('@/pages/UserDetails.vue')]
+    },
+  },
+  // named views
+  {
+    path: '/users/:id',
+    components: {
+     default () => import('@/pages/UserDetails.vue'),
+     aux () => import('@/pages/UserDetailsAux.vue'),
+    },
+    meta: {
+      [LoaderSymbol]: [() => import('@/pages/UserDetails.vue'), () => import('@/pages/UserDetailsAux.vue')],
+    },
+  },
+  // Nested routes follow the same pattern, declare an array of lazy imports relevant to each routing level
+  {
+    path: '/users/:id',
+    component: () => import('@/pages/UserDetails.vue'),
+    meta: {
+      [LoaderSymbol]: [() => import('@/pages/UserDetails.vue')],
+    },
+    children: [
+      {
+        path: 'edit',
+        component: () => import('@/pages/UserEdit.vue'),
+        meta: {
+          [LoaderSymbol]: [() => import('@/pages/UserEdit.vue')],
+        },
+      }
+    ]
+  },
+]
+```
+
+This is **pretty verbose** and that's why it is recommended to use [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) to make this **completely automatic**: it will automatically generate the routes with the symbols and loaders. It will also setup the navigation guard when creating the router instance.
+When using the plugin, any page component with **named exports will be marked** with a symbol to pick up any possible loader in a navigation guard.
+
+When using vue router named views, each named view can have their own loader but note any navigation to the route will trigger **all loaders from all page components**.
+
+Note: with unplugin-vue-router, a named view can be declared by appending `@name` at the end of the file name:
+
+```
+src/pages/
+└── users/
+    ├── index.vue
+    └── index@aux.vue
+```
+
+This creates a `components: { default: ..., aux: ... }` entry in the route config.
 
 ## Parallel Fetching
 
@@ -95,7 +177,7 @@ Call the loader inside the one that needs it, it will only be fetched once
 
 ```ts
 export const useUserFriends = defineLoader(async (route) => {
-  const { user, isLoaded() } = useUserData()
+  const { user, isLoaded } = useUserData()
   await isLoaded()
   const friends = await getFriends(user.value.id)
   return { user, friends }
@@ -124,86 +206,45 @@ Alternatives:
   )
   ```
 
-## Combining loaders
+## Cache and loader reuse
 
-```js
-export const useLoader = combineLoaders(useUserLoader, usePostLoader)
-```
+Each loader has its own cache and it's **not shared** across multiple application instances **as long as they use a different `router` instance**. This aligns with the recommendation of using one router instance per
 
-## Loader reusing
+TODO: expiration time of cache
 
-Each loader has its own cache attached to the application
+## Refreshing the data
+
+The data is refreshed automatically based on what params and query params are used within
+
+### With navigation
+
+TODO: maybe an option `refresh`:
 
 ```ts
-// the map key is the function passed to defineLoader
-app.provide('loaderMap', new WeakMap<Function>())
-
-// then the dataLoader
-
-export const useLoader = (loader: Function) => {
-  const loaderMap = inject('loaderMap')
-  if (!loaderMap.has(loader)) {
-    // create it and set it
+export const useUserData = defineLoader(
+  async (route) => {
+    await isLoaded()
+    const friends = await getFriends(user.value.id)
+    return { user, friends }
+  },
+  {
+    // force refresh the data on navigation if /users/24?force=true
+    refresh: (route) => !!route.query.force
   }
-  // reuse the loader instance
-}
+)
 ```
 
-We could transform the `defineLoader()` calls to include an extra argument (and remove the first one if it's a route path) to be used as the `key` for the loader cache.
-NOTE: or we could just use the function name + id in dev, and just id number in prod
+### Manually
 
-## Usage outside of page components
+Manually call the `refresh()` function to force the loader to _invalidate_ its cache and _load_ again:
 
-Loaders can be **only exported from pages**. That's where the plugin picks it up, but the page doesn't even need to use it. It can be used in any component by importing the function, even outside of the scope of the page components.
-
-## TypeScript
-
-Types are automatically generated for the routes by [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) and can be referenced with the name of each route to hint `defineLoader()` the possible values of the current types:
-
-```vue
-<script lang="ts">
-import { getUserById } from '../api'
-import { defineLoader } from '@vue-router'
-
-export const useUserData = defineLoader('/users/[id]', async (route) => {
-  //                                ^ autocompleted
-  const user = await getUserById(route.params.id)
-  //                                          ^ typed!
-  // ...
-  return { user }
-})
-</script>
-
-<script lang="ts" setup>
-const { user, pending, error } = useUserData()
-</script>
+```ts
+const { user, refresh } = useUserData()
 ```
 
-The arguments can be removed during the compilation step in production mode since they are only used for types and are actually ignored at runtime.
+## Combining loaders
 
-## Testing pages
-
-Testing the pages is now easy
-
-## Named views
-
-When using vue router named views, each named view can have their own loader but note any navigation to the route will trigger **all loaders from all page components**.
-
-Note: a named view can be declared by appending `@name` at the end of the file name:
-
-```
-src/pages/
-└── users/
-    ├── index.vue
-    └── index@aux.vue
-```
-
-This creates a `components: { default: ..., aux: ... }` entry in the route config.
-
-## Reusing / Sharing loaders
-
-Loaders can be defined anywhere and imported and used (only in page components) when necessary. This allows to define loaders anywhere or even reuse loaders from a different page.
-Any page component with named exports will be marked with a symbol to pick up any possible loader in a navigation guard.
+TBD: is this necessary? At the end, this is achievable with similar composables like [logicAnd](https://vueuse.org/math/logicAnd/).
 
 It's possible to combine multiple loaders into one loader with `combineLoaders()` to not combine the results of multiple loaders into a single object but also merge `pending`, `error`, etc
 
@@ -229,9 +270,68 @@ const {
 </script>
 ```
 
-### Good practice for loader organization
+## Usage outside of page components
 
-Data loaders can be imported in any component but this could also affect the way your code is code split. It's worth explaining the benefits of moving a data loader to a different file and import it in other components.
+Loaders can be **only exported from pages**. That's where the navigation guard picks them up, but the page doesn't even need to use it. It can be used in any component by importing the function, even outside of the scope of the page components, by a parent.
+
+However, loaders can be **defined anywhere** and imported where the using the data makes most sense. This allows to define loaders anywhere or even reuse loaders from a different page:
+
+```ts
+// src/loaders/user.ts
+export const useUserData = defineLoader()
+// ...
+```
+
+Ensure it is **exported** by page components:
+
+```vue
+<!-- src/pages/users/[id].vue -->
+<script>
+export { useUserData } from '~/loaders/user.ts'
+</script>
+```
+
+You can still use it anywhere else
+
+```vue
+<!-- src/components/NavBar.vue -->
+<script setup>
+import { useUserData } from '~/loaders/user.ts'
+
+const { user } = useUserData()
+</script>
+```
+
+In such scenarios, it makes more sense to move the loader to a separate file to ensure a more concrete code splitting.
+
+## TypeScript
+
+Types are automatically generated for the routes by [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) and can be referenced with the name of each route to hint `defineLoader()` the possible values of the current types:
+
+```vue
+<script lang="ts">
+import { getUserById } from '../api'
+import { defineLoader } from 'vue-router'
+
+export const useUserData = defineLoader('/users/[id]', async (route) => {
+  //                                     ^ autocompleted
+  const user = await getUserById(route.params.id)
+  //                                          ^ typed!
+  // ...
+  return { user }
+})
+</script>
+
+<script lang="ts" setup>
+const { user, pending, error } = useUserData()
+</script>
+```
+
+The arguments can be removed during the compilation step in production mode since they are only used for types and are actually ignored at runtime.
+
+## Testing pages
+
+TODO: How this affects testing
 
 ## Non blocking data fetching
 
@@ -246,7 +346,7 @@ export const useUserData = defineLoader(
     const user = await getUserById(route.params.id)
     return { user }
   },
-  { lazy: true }
+  { lazy: true } // 👈  marked as lazy
 )
 </script>
 
@@ -257,7 +357,7 @@ const { data, pending, error } = useUserData()
 </script>
 ```
 
-A lazy loader **always reset the data fields** to `null` when the navigation starts before fetching the data. This is to avoid blocking for a moment (giving the impression data is loading), then showing the old data while the new data is still being fetched and eventually replaces the one being shown to make it even more confusing for the end user.
+A lazy loader **always reset the data fields** to `null` when the navigation starts before fetching the data. This is to avoid blocking for a moment (giving the impression data is loading), then showing the old data while the new data is still being fetched and eventually replacing the one being shown to make it even more confusing for the end user.
 
 Alternatively, you can pass a _number_ to `lazy` to block the navigation for that number of milliseconds:
 
@@ -282,9 +382,9 @@ const { data, pending, error } = useUserData()
 </script>
 ```
 
-Note that lazy loaders can only control their own blocking mechanism. They can't control the blocking of other loaders. If multiple loaders are being used and one of them is blocking, the navigation will be blocked until all of them are resolved.
+Note that lazy loaders can only control their own blocking mechanism. They can't control the blocking of other loaders. If multiple loaders are being used and one of them is blocking, the navigation will be blocked until all of the blocking loaders are resolved.
 
-Or a function to decide upon navigation / refresh:
+TBD: Conditionally block upon navigation / refresh:
 
 ```ts
 export const useUserData = defineLoader(
@@ -298,14 +398,6 @@ export const useUserData = defineLoader(
   }
 )
 ```
-
-## Refreshing the data
-
-### With navigation
-
-### Manually
-
-Manually call
 
 ## Error handling
 
@@ -328,7 +420,7 @@ export const useBookCatalog = defineLoader(async () => {
 
 [More in Vue docs](https://vuejs.org/api/reactivity-advanced.html#markraw)
 
-An alternative would be to use `shallowRef()` instead of `ref()` but that would prevent users from modifying the returned value and overall less convenient. Having to use `markRaw()` seems like a good trade off in terms of API and performance.
+An alternative would be to internally use `shallowRef()` instead of `ref()` inside `defineLoader()` but that would prevent users from modifying the returned value and overall less convenient. Having to use `markRaw()` seems like a good trade off in terms of API and performance.
 
 ## HMR
 
@@ -360,18 +452,34 @@ It's possible to access a global state of when data loaders are fetching (naviga
 This solution is not a silver bullet but I don't think one exists because of the different data fetching strategies and how they can define the architecture of the application.
 
 - Less intuitive than just awaiting something inside `setup()`
-- Can only be used in page components
 - Requires an extra `<script>` tag but only for views
 
 # Alternatives
 
 - Allowing a `before` and `after` hook to allow changing data after each loader call. e.g. By default the data is preserved while a new one is being fetched
+- Should we return directly the necessary data instead of wrapping it with an object and always name it `data`?:
+
+  ```vue
+  <script lang="ts">
+  import { getUserById } from '../api'
+
+  export const useUserData = defineLoader(async (route) => {
+    const user = await getUserById(route.params.id)
+    return user
+  })
+  </script>
+
+  <script setup>
+  const { data: user, pending, error } = useUserData()
+  </script>
+  ```
+
 - Adding a new `<script loader>` similar to `<script setup>`:
 
   ```vue
   <script lang="ts" loader="useUserData">
   import { getUserById } from '@/api/users'
-  import { useRoute } from '@vue-router' // could be automatically imported
+  import { useRoute } from 'vue-router' // could be automatically imported
 
   const route = useRoute()
   // any variable created here is available in useLoader()
@@ -379,8 +487,6 @@ This solution is not a silver bullet but I don't think one exists because of the
   </>
 
   <script lang="ts" setup>
-  import { useLoader } from '@vue-router'
-
   const { user, pending, error } = useUserData()
   </>
   ```
@@ -406,3 +512,4 @@ Introduce this as part of [unplugin-vue-router](https://github.com/posva/unplugi
 - Is `useNuxtApp()` usable within loaders?
 - Is there anything needed besides the `route` inside loaders?
 - Add option for placeholder data?
+- What other operations might be necessary for users?
