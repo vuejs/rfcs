@@ -7,8 +7,8 @@
 
 List of things that haven't been added to the document yet:
 
-- Show how to use the data loader without `@vue-router`
-- Explain what `@vue-router` brings
+- [x] Show how to use the data loader without ~~`@vue-router`~~ `vue-router/auto`
+- [ ] Explain what ~~`@vue-router`~~ `vue-router/auto` brings
 
 # Summary
 
@@ -57,6 +57,9 @@ const { user, pending, error, refresh } = useUserData()
 - `refresh` is a function that can be called to force a refresh of the data without a new navigation.
 - `useUserData()` can be used in **any component**, not only in the one that defines it.
 - **Only page components** can export loaders but loaders can be defined anywhere.
+- Loaders smartly know which params/query params they depend on to force a refresh when navigating:
+  - Going `/users/2` to `/users/3` will refresh the data no matter how recent the other fetch was
+  - Going from `/users?name=fab` to `/users?name=fab#filters` checks if the current client side cache is recent enough to not fetch again
 
 # Motivation
 
@@ -118,7 +121,7 @@ const routes = [
       [LoaderSymbol]: [() => import('@/pages/UserDetails.vue')]
     },
   },
-  // named views
+  // Named views must include all page component lazy imports
   {
     path: '/users/:id',
     components: {
@@ -149,8 +152,8 @@ const routes = [
 ]
 ```
 
-This is **pretty verbose** and that's why it is recommended to use [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) to make this **completely automatic**: it will automatically generate the routes with the symbols and loaders. It will also setup the navigation guard when creating the router instance.
-When using the plugin, any page component with **named exports will be marked** with a symbol to pick up any possible loader in a navigation guard.
+This is **pretty verbose** and that's why it is recommended to use [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) to make this **completely automatic**: the plugin generates the routes with the symbols and loaders. It will also setup the navigation guard when creating the router instance.
+When using the plugin, any page component with **named exports will be marked** with a symbol to pick up any possible loader in a navigation guard. The navigation guard checks every named export for loaders and _load_ them.
 
 When using vue router named views, each named view can have their own loader but note any navigation to the route will trigger **all loaders from all page components**.
 
@@ -403,9 +406,19 @@ export const useUserData = defineLoader(
 
 If a request fails, the user can catch the error in the loader and return it differently
 
+TODO: expand
+
+### AbortSignal
+
+The loader receives in a second argument access to an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) that can be passed on to `fetch` and other Web APIs. If the navigation is cancelled because of errors or a new navigation, the signal will abort, causing any request using it to be aborted.
+
 ## SSR
 
+TODO: probably need an API to allow using something else than a simple `ref()` so the data can be written anywhere and let user serialize it.
+
 ### Avoiding double fetch on the client
+
+TODO: an API to set the initial value of the cache before mounting the app.
 
 ## Performance
 
@@ -424,7 +437,9 @@ An alternative would be to internally use `shallowRef()` instead of `ref()` insi
 
 ## HMR
 
-When changing the `<script>` the old cache is transferred and refreshed.
+When changing the `<script>` the old cache is transferred and refreshed. Worst case, the page reloads for non lazy loaders.
+
+TODO: expand
 
 ## Extending `defineLoader()`
 
@@ -434,6 +449,8 @@ ideas:
 
 - Export an interface that must be implemented by a composable so external libraries can implement custom strategies (e.g. vue-query)
 - allow global and local config (+ types)
+
+TODO: investigate how integrating with vue-apollo would look like
 
 ## Global API
 
