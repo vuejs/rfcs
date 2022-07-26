@@ -412,6 +412,13 @@ TODO: expand
 
 The loader receives in a second argument access to an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) that can be passed on to `fetch` and other Web APIs. If the navigation is cancelled because of errors or a new navigation, the signal will abort, causing any request using it to be aborted.
 
+```ts
+export const useBookCatalog = defineLoader(async (_route, { signal }) => {
+  const books = markRaw(await getBookCatalog({ signal }))
+  return { books }
+})
+```
+
 ## SSR
 
 TODO: probably need an API to allow using something else than a simple `ref()` so the data can be written anywhere and let user serialize it.
