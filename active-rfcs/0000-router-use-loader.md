@@ -168,6 +168,74 @@ src/pages/
 
 This creates a `components: { default: ..., aux: ... }` entry in the route config.
 
+## `defineLoader()`
+
+`defineLoader()` returns a composable with the following properties:
+
+```ts
+const useLoader = defineLoader(...)
+const {
+  pending, // Ref<boolean>
+  error, // Ref<any>
+  refresh, // () => Promise<void>
+  invalidate, // () => void
+  pendingLoad, // () => Promise<void> | null | undefined
+} = useLoader()
+```
+
+- `refresh()` calls `invalidate()` and then invokes the loader (an internal version that sets the `pending` flag and others)
+- `invalidate()` sets the cache entry time to 0 to force a reload next time it has to
+- `pendingLoad()` returns a promise that resolves when the loader is done or null if it no load is pending
+
+Blocking loaders (the default) also return an objects of refs of whatever is returned by the loader.
+
+```ts
+const useLoader = defineLoader(async ({ params }) => {
+  const user = await getUser(params.id)
+  return { user }
+})
+
+const {
+  // ... same as above
+  user // Ref<UserData>
+} = useLoader()
+```
+
+On the other hand, [Lazy Loaders](#non-blocking-data-fetching) return a `data` property instead:
+
+```ts
+const useLoader = defineLoader(
+  async ({ params }) => {
+    const user = await getUser(params.id)
+    return { user }
+  },
+  // 👇 this is the only difference
+  { lazy: true }
+)
+
+const {
+  // ... same as above
+  data // Ref<{ user: UserData }>
+} = useLoader()
+```
+
+Note you can also just return the user directly:
+
+```ts
+const useLoader = defineLoader(
+  async ({ params }) => {
+    const user = await getUser(params.id)
+    return user
+  },
+  { lazy: true }
+)
+
+const {
+  // ... same as above
+  data: user // Ref<UserData>
+} = useLoader()
+```
+
 ## Parallel Fetching
 
 By default, loaders are executed as soon as possible, in parallel. This scenario works well for most use cases where data fetching only requires params or nothing at all.
@@ -360,47 +428,7 @@ const { data, pending, error } = useUserData()
 </script>
 ```
 
-A lazy loader **always reset the data fields** to `null` when the navigation starts before fetching the data. This is to avoid blocking for a moment (giving the impression data is loading), then showing the old data while the new data is still being fetched and eventually replacing the one being shown to make it even more confusing for the end user.
-
-Alternatively, you can pass a _number_ to `lazy` to block the navigation for that number of milliseconds:
-
-```vue
-<script lang="ts">
-import { getUserById } from '../api'
-
-export const useUserData = defineLoader(
-  async (route) => {
-    const user = await getUserById(route.params.id)
-    return { user }
-  },
-  // block the navigation for 1 second and then let the navigation go through
-  { lazy: 1000 }
-)
-</script>
-
-<script setup>
-// in this scenario, we no longer have a `user` property since `useUserData()` returns synchronously before the loader is resolved
-const { data, pending, error } = useUserData()
-//      ^ Ref<{ user: User } | undefined>
-</script>
-```
-
-Note that lazy loaders can only control their own blocking mechanism. They can't control the blocking of other loaders. If multiple loaders are being used and one of them is blocking, the navigation will be blocked until all of the blocking loaders are resolved.
-
-TBD: Conditionally block upon navigation / refresh:
-
-```ts
-export const useUserData = defineLoader(
-  loader,
-  // ...
-  {
-    lazy: (route) => {
-      // ...
-      return true // or a number
-    }
-  }
-)
-```
+See alternatives for a version of `lazy` that accepts a number/function.
 
 ## Error handling
 
@@ -525,6 +553,52 @@ Variables could be named differently and proposals are welcome:
 
 - `pending` (same as Nuxt) -> `isPending`, `isLoading`
 - Rename `defineLoader()` to `defineDataFetching()` (or others)
+
+## Advanced `lazy`
+
+The `lazy` flag could be extended to also accept a number or a function. I think this is too much and should therefore not be included.
+
+A lazy loader **always reset the data fields** to `null` when the navigation starts before fetching the data. This is to avoid blocking for a moment (giving the impression data is loading), then showing the old data while the new data is still being fetched and eventually replacing the one being shown to make it even more confusing for the end user.
+
+Alternatively, you can pass a _number_ to `lazy` to block the navigation for that number of milliseconds:
+
+```vue
+<script lang="ts">
+import { getUserById } from '../api'
+
+export const useUserData = defineLoader(
+  async (route) => {
+    const user = await getUserById(route.params.id)
+    return { user }
+  },
+  // block the navigation for 1 second and then let the navigation go through
+  { lazy: 1000 }
+)
+</script>
+
+<script setup>
+// in this scenario, we no longer have a `user` property since `useUserData()` returns synchronously before the loader is resolved
+const { data, pending, error } = useUserData()
+//      ^ Ref<{ user: User } | undefined>
+</script>
+```
+
+Note that lazy loaders can only control their own blocking mechanism. They can't control the blocking of other loaders. If multiple loaders are being used and one of them is blocking, the navigation will be blocked until all of the blocking loaders are resolved.
+
+TBD: Conditionally block upon navigation / refresh:
+
+```ts
+export const useUserData = defineLoader(
+  loader,
+  // ...
+  {
+    lazy: (route) => {
+      // ...
+      return true // or a number
+    }
+  }
+)
+```
 
 # Adoption strategy
 
