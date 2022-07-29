@@ -71,13 +71,21 @@ There are currently too many ways of handling data fetching with vue-router and 
   - `beforeRouteEnter()`: non typed and non-ergonomic API with `next()`, requires a data store (pinia, vuex, apollo, etc)
   - using a watcher on `route.params...`: component renders without the data (doesn't work with SSR)
 
-The goal of this proposal is to provide a simple yet configurable way of defining data loading in your application that is easy to understand and use. It should also be compatible with SSR and allow extensibility.
+The goal of this proposal is to provide a simple yet configurable way of defining data loading in your application that is easy to understand and use. It should also be compatible with SSR and allow extensibility. It should be adoptable by frameworks like Nuxt.js to provide an augmented data fetching layer.
 
 There are features that are out of scope for this proposal but should be implementable in user land thanks to an _extendable API_:
 
 - Implement a full-fledged cached API like vue-query
 - Implement pagination
 - Automatically refetch data when **outside of navigations** (e.g. no `refetchInterval`, no refetch on focus, etc)
+
+Integrating data fetching within navigations is useful for multiple reasons:
+
+- Ensure data is present before mounting the component
+- Enables the UX pattern of letting the browser handle loading state
+- Makes scrolling work out of the box when navigating between pages
+- Ensure fetching happens only once
+- Extremely lightweight compared to more complex fetching solutions like vue-query/tastack-query, apollo/graphql, etc
 
 # Detailed design
 
@@ -238,7 +246,7 @@ const {
 
 ## Parallel Fetching
 
-By default, loaders are executed as soon as possible, in parallel. This scenario works well for most use cases where data fetching only requires params or nothing at all.
+By default, loaders are executed as soon as possible, in parallel. This scenario works well for most use cases where data fetching only requires route params/query params or nothing at all.
 
 ## Sequential fetching
 
@@ -246,10 +254,15 @@ Sometimes, requests depend on other fetched data (e.g. fetching additional user 
 
 Call the loader inside the one that needs it, it will only be fetched once
 
+When calling a loader we set a global flag
+
+or just using `T & Promise<T>` as the type. problem is that for blocking loaders, not awaiting it returns an incomplete object (no data)
+
 ```ts
 export const useUserFriends = defineLoader(async (route) => {
-  const { user, isLoaded } = useUserData()
-  await isLoaded()
+  const { user } = await useUserData() // magically works
+  const { user } = await useNestedLoader(useUserData)
+
   const friends = await getFriends(user.value.id)
   return { user, friends }
 })
@@ -285,7 +298,18 @@ TODO: expiration time of cache
 
 ## Refreshing the data
 
-The data is refreshed automatically based on what params and query params are used within
+The data is refreshed automatically based on what params and query params are used within the loader.
+
+Given this loader in page `/users/:id`:
+
+```ts
+export const useUserData = defineLoader(async (route) => {
+  const user = await getUser(route.params.id)
+  return { user }
+})
+```
+
+Going from `/users/1` to `/users/2` will refresh the data but going from `/users/2` to `/users/2#projects` will not.
 
 ### With navigation
 
@@ -436,6 +460,14 @@ If a request fails, the user can catch the error in the loader and return it dif
 
 TODO: expand
 
+### Controlling the navigation
+
+Since the data fetching happens within a navigation guard, it's possible to control the navigation like in regular navigation guards:
+
+- Thrown errors (or rejected Promises) will cancel the navigation (same behavior as in a regular navigation guard)
+- Redirection: TODO:
+- Cancelling the navigation: TODO:
+
 ### AbortSignal
 
 The loader receives in a second argument access to an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) that can be passed on to `fetch` and other Web APIs. If the navigation is cancelled because of errors or a new navigation, the signal will abort, causing any request using it to be aborted.
@@ -489,15 +521,15 @@ TODO: investigate how integrating with vue-apollo would look like
 
 ## Global API
 
-It's possible to access a global state of when data loaders are fetching (navigation + calling `refresh()`) as well as when the data fetching navigation guard is running (only when navigating).
+TBD: It's possible to access a global state of when data loaders are fetching (navigation or calling `refresh()`) as well as when the data fetching navigation guard is running (only when navigating).
 
-- `isFetchingData`
-- `isNavigationFetching`
+- `isFetchingData`: is any loader currently fetching data?
+- `isNavigationFetching`: is navigation being hold by a loader? (implies `isFetchingData.value === true`)
 
 ## Limitations
 
 - Injections (`inject`/`provide`) cannot be used within a loader
-- Watchers and other composables can be used but **will be created in a detached effectScope** and therefore never be released. **This is why, using composables should be avoided**.
+- Watchers and other composables can be used but **will be created in a detached effectScope** and therefore never be released. **This is why, using composables within loaders should be avoided**. Global composables like stores or other loaders can be used inside loaders as they do not rely on a local (component-bound) scope.
 
 # Drawbacks
 
@@ -546,6 +578,30 @@ This solution is not a silver bullet but I don't think one exists because of the
   Is exposing every variable a good idea?
 
 - Using Suspense to natively handle `await` within `setup()`. [See other RFC](#TODO).
+- Pass route properties instead of the whole `route` object:
+
+  ```ts
+  import { getUserById } from '../api'
+
+  export const useUserData = defineLoader(async ({ params, query, hash }) => {
+    const user = await getUserById(params.id)
+    return { user }
+  })
+  ```
+
+  This has the problem of not being able to use the `route.name` to determine the correct typed params:
+
+  ```ts
+  import { getUserById } from '../api'
+
+  export const useUserData = defineLoader(async (route) => {
+    if (route.name === 'user-details') {
+      const user = await getUserById(params.id)
+      //                                    ^ Typed!
+      return { user }
+    }
+  })
+  ```
 
 ## Naming
 
@@ -611,3 +667,4 @@ Introduce this as part of [unplugin-vue-router](https://github.com/posva/unplugi
 - Is there anything needed besides the `route` inside loaders?
 - Add option for placeholder data?
 - What other operations might be necessary for users?
+- Is there a way to efficiently parse the exported properties in pages to filter out pages that have named exports but no loaders?
