@@ -142,4 +142,4 @@ pull requests on a regular basis. If a core team member believes an RFC PR is re
 [react rfc process]: https://github.com/reactjs/rfcs
 [rust rfc process]: https://github.com/rust-lang/rfcs
 [ember rfc process]: https://github.com/emberjs/rfcs
-[core team]: https://vuejs.org/v2/guide/team.html
+[core team]: https://vuejs.org/about/team.html
