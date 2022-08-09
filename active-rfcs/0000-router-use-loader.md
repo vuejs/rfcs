@@ -197,54 +197,15 @@ const {
 - `invalidate()` updates the cache entry time in order to force a reload next time it is triggered
 - `pendingLoad()` returns a promise that resolves when the loader is done or `null` if it no load is pending
 
-Blocking loaders (the default) also return a ref of each property returned by the loader.
+Blocking loaders (the default) also return a ref of the returned data by the loader.
 
 ```ts
 import { getUserById } from '@/api/users'
 
 const useLoader = defineLoader(async ({ params }) => {
   const user = await getUserById(params.id)
-  return { user } // must be an object of properties
+  return user // can be anything
 })
-
-const {
-  // ... same as above
-  user // Ref<UserData>
-} = useLoader()
-```
-
-On the other hand, [Lazy Loaders](#non-blocking-data-fetching) return a `data` property instead:
-
-```ts
-import { getUserById } from '@/api/users'
-
-const useLoader = defineLoader(
-  async ({ params }) => {
-    const user = await getUserById(params.id)
-    return { user }
-  },
-  // 👇 this is the only difference
-  { lazy: true }
-)
-
-const {
-  // ... same as above
-  data // Ref<{ user: UserData }>
-} = useLoader()
-```
-
-Note you can also just return the user directly in _lazy loaders_:
-
-```ts
-import { getUserById } from '@/api/users'
-
-const useLoader = defineLoader(
-  async ({ params }) => {
-    const user = await getUserById(params.id)
-    return user
-  },
-  { lazy: true }
-)
 
 const {
   // ... same as above
@@ -264,11 +225,11 @@ Call **and `await`** the loader inside the one that needs it, it will only be fe
 
 ```ts
 export const useUserCommonFriends = defineLoader(async (route) => {
-  const { user } = await useUserData() // magically works
+  const { data: user } = await useUserData() // magically works
 
   // fetch other data
   const commonFriends = await getCommonFriends(user.value.id)
-  return { user, commonFriends }
+  return { ...user.value, commonFriends }
 })
 ```
 
@@ -287,10 +248,10 @@ Note that two loaders cannot use each other as that would create a _dead lock_.
   ```ts
   import { useUserData } from '~/pages/users/[id].vue'
 
-  export const useUserCommonFriends = defineLoader(
+  export const useUserFriends = defineLoader(
     async (route, [userData]) => {
       const friends = await getFriends(user.value.id)
-      return { user, friends }
+      return { ...userData.value, friends }
     },
     {
       waitFor: [useUserData]
@@ -305,7 +266,7 @@ import { getFriends, getUserById } from '@/api/users'
 
 export const useUserData = defineLoader(async (route) => {
   const user = await getUserById(route.params.id)
-  return { user }
+  return user
 })
 
 export const useCurrentUserData(async route => {
@@ -313,21 +274,31 @@ export const useCurrentUserData(async route => {
   // imagine legacy APIs that cannot be grouped into one single fetch
   const friends = await getFriends(user.value.id)
 
-  return { me, friends }
+  return { ...me, friends }
 })
 
-export const useUserAndFriends = defineLoader(async (route) => {
-  const { user } = await useUserData()
-  const { friends } = await useCurrentUserData()
+export const useUserCommonFriends = defineLoader(async (route) => {
+  const { data: user } = await useUserData()
+  const { data: me } = await useCurrentUserData()
 
-  const friends = await getFriends(user.value.id)
-  return { user, friends }
+  const friends = await getCommonFriends(user.value.id, me.value.id)
+  return { ...me.value, commonFriends: { with: user.value, friends } }
 })
 ```
 
 In the example above we are exporting multiple loaders but we don't need to care about the order in which they are called or optimizing them because they are only called once and share the data.
 
-**Caveat**: must call **and await** all loaders `useUserData()` at the top of the function. You cannot put a different await in between.
+**Caveat**: must call **and await** all loaders `useUserData()` at the top of the function. You cannot put a different regular `await` in between, it has to be wrapped with a `withDataContext()`:
+
+```ts
+export const useUserCommonFriends = defineLoader(async (route) => {
+  const { data: user } = await useUserData()
+  await withContext(functionThatReturnsAPromise())
+  const { data: me } = await useCurrentUserData()
+
+  // ...
+})
+```
 
 ## Cache and loader reuse
 
@@ -344,7 +315,7 @@ Given this loader in page `/users/:id`:
 ```ts
 export const useUserData = defineLoader(async (route) => {
   const user = await getUserById(route.params.id)
-  return { user }
+  return user
 })
 ```
 
@@ -357,7 +328,6 @@ TODO: maybe an option `refresh`:
 ```ts
 export const useUserData = defineLoader(
   async (route) => {
-    await isLoaded()
     const friends = await getFriends(user.value.id)
     return { user, friends }
   },
@@ -377,7 +347,7 @@ Manually call the `refresh()` function to force the loader to _invalidate_ its c
 import { useInterval } from '@vueuse/core'
 import { useUserData } from '~/pages/users/[id].vue'
 
-const { user, refresh } = useUserData()
+const { data: user, refresh } = useUserData()
 
 // refresh the data each 10s
 useInterval(refresh, 10000)
@@ -406,8 +376,7 @@ export const useCombinedLoader = combineLoaders(useUserData, usePostData)
 
 <script setup>
 const {
-  user,
-  post,
+  data,
   // both pending
   pending,
   // any error that happens
@@ -415,6 +384,7 @@ const {
   // refresh both
   refresh
 } = useCombinedLoader()
+const { user, post } = toRefs(data.value)
 </script>
 ```
 
@@ -446,7 +416,7 @@ You can still use it anywhere else:
 <script setup>
 import { useUserData } from '~/loaders/user.ts'
 
-const { user } = useUserData()
+const { data: user } = useUserData()
 </script>
 ```
 
@@ -466,12 +436,12 @@ export const useUserData = defineLoader('/users/[id]', async (route) => {
   const user = await getUserById(route.params.id)
   //                                          ^ typed!
   // ...
-  return { user }
+  return user
 })
 </script>
 
 <script lang="ts" setup>
-const { user, pending, error } = useUserData()
+const { data: user, pending, error } = useUserData()
 </script>
 ```
 
@@ -492,7 +462,7 @@ import { getUserById } from '../api'
 export const useUserData = defineLoader(
   async (route) => {
     const user = await getUserById(route.params.id)
-    return { user }
+    return user
   },
   { lazy: true } // 👈  marked as lazy
 )
@@ -500,7 +470,7 @@ export const useUserData = defineLoader(
 
 <script setup>
 // in this scenario, we no longer have a `user` property since `useUserData()` returns synchronously before the loader is resolved
-const { data, pending, error } = useUserData()
+const { data: user, pending, error } = useUserData()
 //      ^ Ref<{ user: User } | undefined>
 </script>
 ```
@@ -534,7 +504,7 @@ export const useUserData = defineLoader(
     try {
       const user = await getUserById(params.id)
 
-      return { user }
+      return user
     } catch (error) {
       if (error.status === 404) {
         navigateTo({ name: 'not-found', params: { pathMatch:  } })
@@ -542,7 +512,7 @@ export const useUserData = defineLoader(
         throw error // same as abortNavigation(error)
       }
     }
-    abortNavigation()
+    throw abortNavigation()
   }
 )
 ```
@@ -554,7 +524,7 @@ The loader receives in a second argument access to an [`AbortSignal`](https://de
 ```ts
 export const useBookCatalog = defineLoader(async (_route, { signal }) => {
   const books = markRaw(await getBookCatalog({ signal }))
-  return { books }
+  return books
 })
 ```
 
@@ -573,7 +543,7 @@ When fetching large data sets, it's convenient to mark the fetched data as _raw_
 ```ts
 export const useBookCatalog = defineLoader(async () => {
   const books = markRaw(await getBookCatalog())
-  return { books }
+  return books
 })
 ```
 
@@ -598,6 +568,29 @@ ideas:
 
 TODO: investigate how integrating with vue-apollo would look like
 
+### Nuxt.js
+
+```ts
+const useUserData = defineLoader(
+  async (route) => {
+    const user = await getUserById(route.params.id)
+    return user
+  },
+  {
+    createDataEntry() {
+      return {
+        data: useState('user', ref()),
+        pending: ref(false),
+        error: ref(),
+        isReady: false,
+        when: Date.now()
+      }
+    },
+    updateDataEntry(entry, data) {}
+  }
+)
+```
+
 ## Global API
 
 TBD: It's possible to access a global state of when data loaders are fetching (navigation or calling `refresh()`) as well as when the data fetching navigation guard is running (only when navigating).
@@ -620,6 +613,19 @@ This solution is not a silver bullet but I don't think one exists because of the
 # Alternatives
 
 - Allowing a `before` and `after` hook to allow changing data after each loader call. e.g. By default the data is preserved while a new one is being fetched
+- Allowing blocking data loaders to return objects of properties:
+
+  ```ts
+  export const useUserData = defineLoader(async (route) => {
+    const user = await getUserById(route.params.id)
+    return user
+  })
+  // instead of const { data: user } = useUserData()
+  const { user } = useUserData()
+  ```
+
+  This was the initial proposal but since this is not possible with lazy loaders it was more complex and less intuitive. Having one single version is overall easier to handle.
+
 - Should we return directly the necessary data instead of wrapping it with an object and always name it `data`?:
 
   ```vue
