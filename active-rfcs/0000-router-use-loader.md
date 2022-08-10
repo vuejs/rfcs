@@ -38,7 +38,7 @@ export const useUserData = defineLoader(async (route) => {
   const user = await getUserById(route.params.id)
   // ...
   // return anything you want to expose
-  return { user }
+  return user
 })
 
 // Optional: define other component options
@@ -49,9 +49,9 @@ export default defineComponent({
 </script>
 
 <script lang="ts" setup>
-// find `user` and some other properties
-const { user, pending, error, refresh } = useUserData()
-// user is always present, pending changes when going from '/users/2' to '/users/3'
+// find the user as `data` and some other properties
+const { data: user, pending, error, refresh } = useUserData()
+// data is always present, pending changes when going from '/users/2' to '/users/3'
 </script>
 ```
 
@@ -62,6 +62,15 @@ const { user, pending, error, refresh } = useUserData()
 - Loaders smartly know which params/query params/hash they depend on to force a refresh when navigating:
   - Going `/users/2` to `/users/3` will refresh the data no matter how recent the other fetch was
   - Going from `/users?name=fab` to `/users?name=fab#filters` checks if the current client side cache is recent enough to not fetch again
+
+The simplest loaders are also one-liners:
+
+```ts
+export const useBookCollection = defineLoader(fetchBookCollection)
+// function fetchBookCollection(): Promise<Books[]>
+```
+
+During the RFC, we will often use a bit longer examples to make things easier to follow by anyone.
 
 # Motivation
 
@@ -169,7 +178,7 @@ When using vue router named views, each named view can have their own loaders bu
 
 Note: with unplugin-vue-router, a named view can be declared by appending `@name` at the end of the file name:
 
-```
+```text
 src/pages/
 └── users/
     ├── index.vue
@@ -185,6 +194,7 @@ This creates a `components: { default: ..., aux: ... }` entry in the route confi
 ```ts
 const useLoader = defineLoader(...)
 const {
+  data, // Ref<T> T being the return type of the function passed to `defineLoader()`
   pending, // Ref<boolean>
   error, // Ref<any>
   refresh, // () => Promise<void>
@@ -197,12 +207,12 @@ const {
 - `invalidate()` updates the cache entry time in order to force a reload next time it is triggered
 - `pendingLoad()` returns a promise that resolves when the loader is done or `null` if it no load is pending
 
-Blocking loaders (the default) also return a ref of the returned data by the loader.
+Blocking loaders (the default) also return a ref of the returned data by the loader. Usually, it makes sense to rename this `data` property:
 
 ```ts
 import { getUserById } from '@/api/users'
 
-const useLoader = defineLoader(async ({ params }) => {
+const useUserData = defineLoader(async ({ params }) => {
   const user = await getUserById(params.id)
   return user // can be anything
 })
@@ -210,7 +220,7 @@ const useLoader = defineLoader(async ({ params }) => {
 const {
   // ... same as above
   data: user // Ref<UserData>
-} = useLoader()
+} = useUserData()
 ```
 
 ## Parallel Fetching
@@ -221,9 +231,12 @@ By default, loaders are executed as soon as possible, in parallel. This scenario
 
 Sometimes, requests depend on other fetched data (e.g. fetching additional user information). For these scenarios, we can simply import the other loaders and use them **within a different loader**:
 
-Call **and `await`** the loader inside the one that needs it, it will only be fetched once:
+Call **and `await`** the loader inside the one that needs it, it will only be fetched once no matter how many times it is called used:
 
 ```ts
+// import the loader for user information
+import { useUserData } from '@/loaders/users'
+
 export const useUserCommonFriends = defineLoader(async (route) => {
   const { data: user } = await useUserData() // magically works
 
@@ -243,7 +256,7 @@ Note that two loaders cannot use each other as that would create a _dead lock_.
 
 - Allowing `await getUserById()` could make people think they should also await inside `<script setup>` and that would be a problem because it would force them to use `<Suspense>` when they don't need to.
 
-- Pass an array of loaders to the loader that needs them and use let it retrieve them through an argument:
+- Another alternative is to pass an array of loaders to the loader that needs them and use let it retrieve them through an argument, but it feels less ergonomic:
 
   ```ts
   import { useUserData } from '~/pages/users/[id].vue'
@@ -254,6 +267,7 @@ Note that two loaders cannot use each other as that would create a _dead lock_.
       return { ...userData.value, friends }
     },
     {
+      // explicit dependencies
       waitFor: [useUserData]
     }
   )
@@ -300,11 +314,17 @@ export const useUserCommonFriends = defineLoader(async (route) => {
 })
 ```
 
+This is necessary to ensure nested loaders are aware of their _parent loader_. This could probably be linted with a plugin.
+
 ## Cache and loader reuse
 
-Each loader has its own cache and it's **not shared** across multiple application instances **as long as they use a different `router` instance**. This aligns with the recommendation of using one router instance per request.
+Each loader has its own cache and it's **not shared** across multiple application instances **as long as they use a different `router` instance**. This aligns with the recommendation of using one router instance per request. It's a very simple time based expiration cache that defaults to 5s. When a loader is called, it will wait 5s before calling the loader function again. This can be changed with the `cacheTime` option:
 
-TODO: expiration time of cache
+```ts
+defineLoader(..., { cacheTime: 1000 * 60 * 5 }) // 5 minutes
+defineLoader(..., { cacheTime: 0 }) // No cache (still avoids calling the loader twice in parallel)
+defineLoader(..., { cacheTime: Infinity }) // Cache forever
+```
 
 ## Refreshing the data
 
@@ -321,7 +341,7 @@ export const useUserData = defineLoader(async (route) => {
 
 Going from `/users/1` to `/users/2` will refresh the data but going from `/users/2` to `/users/2#projects` will not unless the [cache expires](#cache-and-loader-reuse).
 
-### With navigation
+<!-- ### With navigation
 
 TODO: maybe an option `refresh`:
 
@@ -336,7 +356,7 @@ export const useUserData = defineLoader(
     refresh: (route) => !!route.query.force
   }
 )
-```
+``` -->
 
 ### Manually
 
@@ -349,7 +369,7 @@ import { useUserData } from '~/pages/users/[id].vue'
 
 const { data: user, refresh } = useUserData()
 
-// refresh the data each 10s
+// refresh the data every 10s
 useInterval(refresh, 10000)
 </script>
 
@@ -392,7 +412,7 @@ const { user, post } = toRefs(data.value)
 
 Loaders can be **only exported from pages**. That's where the navigation guard picks them up, but the page doesn't even need to use it. It can be used in any component by importing the _returned composable_, even outside of the scope of the page components, by a parent.
 
-However, loaders can be **defined anywhere** and imported where using the data makes sense. This allows to define loaders in a separate `/loaders` folder and reuse them across pages:
+On top of that, loaders can be **defined anywhere** and imported where using the data makes sense. This allows to define loaders in a separate `src/loaders` folder and reuse them across pages:
 
 ```ts
 // src/loaders/user.ts
@@ -432,7 +452,7 @@ import { getUserById } from '../api'
 import { defineLoader } from 'vue-router'
 
 export const useUserData = defineLoader('/users/[id]', async (route) => {
-  //                                     ^ autocompleted
+  //                                     ^ autocompleted by unplugin-vue-router ✨
   const user = await getUserById(route.params.id)
   //                                          ^ typed!
   // ...
@@ -469,17 +489,16 @@ export const useUserData = defineLoader(
 </script>
 
 <script setup>
-// in this scenario, we no longer have a `user` property since `useUserData()` returns synchronously before the loader is resolved
+// `user.value` can be `undefined`
 const { data: user, pending, error } = useUserData()
-//      ^ Ref<{ user: User } | undefined>
+//      ^ Ref<User | undefined>
 </script>
 ```
 
-This patterns is useful to avoid blocking the navigation while _less important data_ is being fetched. It will display the page earlier while some of the parts of it are still loading.
+This patterns is useful to avoid blocking the navigation while _less important data_ is being fetched. It will display the page earlier while some of the parts of it are still loading and you are able to display loader indicators thanks to the `pending` property.
 
-TODO: it's possible to await all pending loaders with `await allPendingLoaders()`. Useful for SSR.
-
-TODO: transform a loader into a lazy version of it
+TODO: it's possible to await all pending loaders with `await allPendingLoaders()`. Useful for SSR. Otherwise we could always ignore lazy loaders in SSSR. Do we need both?
+TODO: transform a loader into a lazy version of it.
 
 See alternatives for a version of `lazy` that accepts a number/function.
 
@@ -530,11 +549,50 @@ export const useBookCatalog = defineLoader(async (_route, { signal }) => {
 
 ## SSR
 
-TODO: probably need an API to allow using something else than a simple `ref()` so the data can be written anywhere and let user serialize it.
+To support SSR we need to do two things:
+
+- Pass a `key` to each loader so that it can be serialized into an object later. Would an array work? I don't think the order of execution is guaranteed.
+- On the client side, pass the initial state to `setupDataFetchingGuard()`. The initial state is used once and discarded afterwards.
+
+```ts
+export const useBookCollection = defineLoader(
+  async () => {
+    const books = await fetchBookCollection()
+    return books
+  },
+  { key: 'bookCollection' }
+)
+```
+
+The configuration of `setupDataFetchingGuard()` depends on the SSR configuration:
+
+```ts
+import { ViteSSG } from 'vite-ssg'
+import { setupDataFetchingGuard } from 'vue-router'
+import App from './App.vue'
+
+export const createApp = ViteSSG(
+  App,
+  { routes },
+  async ({ router, isClient, initialState }) => {
+    // fetchedData will be populated during navigation
+    const fetchedData = setupDataFetchingGuard(
+      router,
+      isClient ? initialState.vueRouter : undefined
+    )
+
+    if (!isClient) {
+      initialState.vueRouter = fetchedData
+    }
+  }
+)
+```
+
+Note that `setupDataFetchingGuard()` **must be called before `app.use(router)`**.
 
 ### Avoiding double fetch on the client
 
-TODO: an API to set the initial value of the cache before mounting the app.
+One of the advantages of having an initial state is that we can avoid fetching on the client, in fact, loaders are **completely skipped** on the client if the initial state is provided. This means nested nested loaders **aren't executed either**. This could be confusing if we need to put side effects in data loaders. TBD: do we need to support this use case? We could allow it by having a `force` option on the loader and passing the initial state in the second argument of the loader.
 
 ## Performance
 
