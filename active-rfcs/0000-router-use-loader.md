@@ -8,7 +8,7 @@
 List of things that haven't been added to the document yet:
 
 - [x] Show how to use the data loader without ~~`@vue-router`~~ `vue-router/auto`
-- [ ] Explain what ~~`@vue-router`~~ `vue-router/auto` brings
+- [x] Explain what ~~`@vue-router`~~ `vue-router/auto` brings
 
 # Summary
 
@@ -58,19 +58,19 @@ const { data: user, pending, error, refresh } = useUserData()
 - `user`, `pending`, and `error` are refs and therefore reactive.
 - `refresh` is a function that can be called to force a refresh of the data without a new navigation.
 - `useUserData()` can be used in **any component**, not only in the one that defines it.
-- **Only page components** can export loaders but loaders can be defined anywhere.
+- **Only page components** can export loaders but **loaders can be defined anywhere**.
 - Loaders smartly know which params/query params/hash they depend on to force a refresh when navigating:
-  - Going `/users/2` to `/users/3` will refresh the data no matter how recent the other fetch was
+  - Going from `/users/2` to `/users/3` will refresh the data no matter how recent the other fetch was
   - Going from `/users?name=fab` to `/users?name=fab#filters` checks if the current client side cache is recent enough to not fetch again
 
-The simplest loaders are also one-liners:
+The simplest of loaders can be defined in just one line and types will be automatically inferred:
 
 ```ts
 export const useBookCollection = defineLoader(fetchBookCollection)
 // function fetchBookCollection(): Promise<Books[]>
 ```
 
-During the RFC, we will often use a bit longer examples to make things easier to follow by anyone.
+Note that this syntax will intentionally be avoided in the RFC. Instead, we will often use slightly longer examples to make things easier to follow by anyone.
 
 # Motivation
 
@@ -88,9 +88,9 @@ There are features that are out of scope for this proposal but should be impleme
 
 - Implement a full-fledged cached API like vue-query
 - Implement pagination
-- Automatically refetch data when **outside of navigations** (e.g. no `refetchInterval`, no refetch on focus, etc)
+- Automatically refetch data when **outside of navigations** (e.g. there is no intention to implement advanced APIs such as `refetchInterval`, refetch on focus, etc)
 
-This RFC also aims to integrate data fetching within navigations. This pattern is useful for multiple reasons:
+This RFC also aims to integrate data fetching within navigations while still allowing you to avoid it. This pattern is useful for multiple reasons:
 
 - Ensure data is present before mounting the component
 - Enables the UX pattern of letting the browser handle loading state (aligns better with [future browser APIs](https://github.com/WICG/navigation-api))
@@ -100,7 +100,7 @@ This RFC also aims to integrate data fetching within navigations. This pattern i
 
 # Detailed design
 
-Ideally, this should be used alongside [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) to provide a better DX by automatically adding the loaders where they should **but it's not necessary**. At the moment, this API is implemented there as an experiment. By default, it:
+Ideally, this should be used alongside [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) to provide a better DX by automatically adding the proper meta fields **but it's not necessary**. At the moment, this API is implemented in that plugin as an experiment. By default, it:
 
 - Checks named exports in page components to set a meta property in the generated routes
 - Adds a navigation guard that resolve loaders
@@ -194,7 +194,7 @@ This creates a `components: { default: ..., aux: ... }` entry in the route confi
 ```ts
 const useLoader = defineLoader(...)
 const {
-  data, // Ref<T> T being the return type of the function passed to `defineLoader()`
+  data, // Ref<T> T being the awaited return type of the function passed to `defineLoader()`
   pending, // Ref<boolean>
   error, // Ref<any>
   refresh, // () => Promise<void>
@@ -205,7 +205,7 @@ const {
 
 - `refresh()` calls `invalidate()` and then invokes the loader (an internal version that sets the `pending` and other flags)
 - `invalidate()` updates the cache entry time in order to force a reload next time it is triggered
-- `pendingLoad()` returns a promise that resolves when the loader is done or `null` if it no load is pending
+- `pendingLoad()` returns a promise that resolves when the loader is done or `null` if no load is currently pending
 
 Blocking loaders (the default) also return a ref of the returned data by the loader. Usually, it makes sense to rename this `data` property:
 
@@ -248,7 +248,7 @@ export const useUserCommonFriends = defineLoader(async (route) => {
 
 ### Nested invalidation
 
-If `useUserData()` cache expires or gets manually invalidated, it will also automatically makes `useUserCommonFriends()` invalidate.
+Since `useUserData()` loader calls `useUserCommonFriends()`, if `useUserData()`'s cache expires or gets manually invalidated, it will also automatically invalidate `useUserCommonFriends()`.
 
 Note that two loaders cannot use each other as that would create a _dead lock_.
 
@@ -256,7 +256,7 @@ Note that two loaders cannot use each other as that would create a _dead lock_.
 
 - Allowing `await getUserById()` could make people think they should also await inside `<script setup>` and that would be a problem because it would force them to use `<Suspense>` when they don't need to.
 
-- Another alternative is to pass an array of loaders to the loader that needs them and use let it retrieve them through an argument, but it feels less ergonomic:
+- Another alternative is to pass an array of loaders to the loader that needs them and let it retrieve them through an argument, but it feels less ergonomic:
 
   ```ts
   import { useUserData } from '~/pages/users/[id].vue'
@@ -273,7 +273,7 @@ Note that two loaders cannot use each other as that would create a _dead lock_.
   )
   ```
 
-This can get complex with multiple pages exposing the same loader and other pages using some of this _already exported_ loaders within other loaders. But it's not an issue, loaders are still only called once:
+This can get complex with multiple pages exposing the same loader and other pages using some of this _already exported_ loaders within other loaders. But it's not an issue, **the user shouldn't need to handle anything differently**, loaders are still only called once:
 
 ```ts
 import { getFriends, getUserById } from '@/api/users'
@@ -314,11 +314,13 @@ export const useUserCommonFriends = defineLoader(async (route) => {
 })
 ```
 
-This is necessary to ensure nested loaders are aware of their _parent loader_. This could probably be linted with a plugin.
+This is necessary to ensure nested loaders are aware of their _parent loader_. This could probably be linted with an eslint plugin.
 
 ## Cache and loader reuse
 
-Each loader has its own cache and it's **not shared** across multiple application instances **as long as they use a different `router` instance**. This aligns with the recommendation of using one router instance per request. It's a very simple time based expiration cache that defaults to 5s. When a loader is called, it will wait 5s before calling the loader function again. This can be changed with the `cacheTime` option:
+Each loader has its own cache and it's **not shared** across multiple application instances **as long as they use a different `router` instance** (the `router` is internally used as the key of a `WeakMap()`). This aligns with the recommendation of using one router instance per request in the ecosystem and usually one won't even need to know about this.
+
+The cache is a very simple time based expiration cache that defaults to 5 seconds. When a loader is called, it will wait 5s before calling the loader function again. This can be changed with the `cacheTime` option:
 
 ```ts
 defineLoader(..., { cacheTime: 1000 * 60 * 5 }) // 5 minutes
@@ -339,7 +341,7 @@ export const useUserData = defineLoader(async (route) => {
 })
 ```
 
-Going from `/users/1` to `/users/2` will refresh the data but going from `/users/2` to `/users/2#projects` will not unless the [cache expires](#cache-and-loader-reuse).
+Going from `/users/1` to `/users/2` will refresh the data but going from `/users/2` to `/users/2#projects` will not unless the cache expires or is manually invalidated.
 
 <!-- ### With navigation
 
@@ -358,7 +360,7 @@ export const useUserData = defineLoader(
 )
 ``` -->
 
-### Manually
+### Manually refreshing the data
 
 Manually call the `refresh()` function to force the loader to _invalidate_ its cache and _load_ again:
 
@@ -380,7 +382,9 @@ useInterval(refresh, 10000)
 </template>
 ```
 
-## Combining loaders
+<!--
+
+ ## Combining loaders
 
 TBD: is this necessary? At the end, this is achievable with similar composables like [logicAnd](https://vueuse.org/math/logicAnd/).
 
@@ -407,10 +411,11 @@ const {
 const { user, post } = toRefs(data.value)
 </script>
 ```
+ -->
 
 ## Usage outside of page components
 
-Loaders can be **only exported from pages**. That's where the navigation guard picks them up, but the page doesn't even need to use it. It can be used in any component by importing the _returned composable_, even outside of the scope of the page components, by a parent.
+Loaders can be **only exported from pages**. That's where the navigation guard picks them up, **but the page doesn't even need to use it**. It can be used in any component by importing the _returned composable_, even outside of the scope of the page components, by a parent.
 
 On top of that, loaders can be **defined anywhere** and imported where using the data makes sense. This allows to define loaders in a separate `src/loaders` folder and reuse them across pages:
 
@@ -465,11 +470,7 @@ const { data: user, pending, error } = useUserData()
 </script>
 ```
 
-The arguments can be removed during the compilation step in production mode since they are only used for types and are actually ignored at runtime.
-
-## Testing pages
-
-TODO: How this affects testing
+The arguments can be removed during the compilation step in production mode since they are only used for types and are ignored at runtime.
 
 ## Non blocking data fetching
 
@@ -497,46 +498,65 @@ const { data: user, pending, error } = useUserData()
 
 This patterns is useful to avoid blocking the navigation while _less important data_ is being fetched. It will display the page earlier while some of the parts of it are still loading and you are able to display loader indicators thanks to the `pending` property.
 
-TODO: it's possible to await all pending loaders with `await allPendingLoaders()`. Useful for SSR. Otherwise we could always ignore lazy loaders in SSSR. Do we need both?
-TODO: transform a loader into a lazy version of it.
+TODO: it's possible to await all pending loaders with `await allPendingLoaders()`. Useful for SSR. Otherwise we could always ignore lazy loaders in SSR. Do we need both? Do we need to selectively await some of them?
+TODO: transform a loader into a lazy version of it: `const useUserDataLazy = asLazyLoader(useUserData)`
 
-See alternatives for a version of `lazy` that accepts a number/function.
-
-## Error handling
-
-If a request fails, the user can catch the error in the loader and return it differently
-
-TODO: expand
-
-### Controlling the navigation
+## Controlling the navigation
 
 Since the data fetching happens within a navigation guard, it's possible to control the navigation like in regular navigation guards:
 
-- Thrown errors (or rejected Promises) will cancel the navigation (same behavior as in a regular navigation guard)
+- Thrown errors (or rejected Promises) will cancel the navigation (same behavior as in a regular navigation guard) and get intercepted by [Vue Router's error handling](https://router.vuejs.org/api/interfaces/router.html#onerror)
 - Redirection: TODO: use a helper? `return redirectTo(...)` / `navigateTo()`
 - Cancelling the navigation: TODO: use a helper? `return abortNavigation()`. Other names? `abort(err?: any)`
-- Other possibility: having one single `next()` function (or other name)
+- Other possibility: having one single `next()` function (or other name)： rather not because can be called multiple times
 
 ```ts
+import { NavigationResult } from 'vue-router'
+
 export const useUserData = defineLoader(
-  async ({ params, path ,query, hash }, { navigateTo, abortNavigation }) => {
+  async ({ params, path ,query, hash }) => {
     try {
       const user = await getUserById(params.id)
 
       return user
     } catch (error) {
       if (error.status === 404) {
-        navigateTo({ name: 'not-found', params: { pathMatch:  } })
+        return new NavigationResult({ name: 'not-found', params: { pathMatch:  } }
+        )
       } else {
-        throw error // same as abortNavigation(error)
+        throw error // same result as new NavigationResult(error)
       }
     }
-    throw abortNavigation()
   }
 )
 ```
 
-### AbortSignal
+`new NavigationResult()` accepts anything that [can be returned in a navigation guard](https://router.vuejs.org/guide/advanced/navigation-guards.html#global-before-guards).
+
+### Handling multiple navigation results
+
+Since navigation loaders can run in parallel, they can return different navigation results as well. In this case, you can decide which result should be used by providing a `selectNavigationResult()` method to `setupDataFetchingGuard()`:
+
+```ts
+setupDataFetchingGuard(router, {
+  selectNavigationResult(results) {
+    // results is an array of the unwrapped results passed to `new NavigationResult()`
+    return results.find((result) => result.name === 'not-found')
+  }
+})
+```
+
+This allows you to define any priority you want as well as select
+
+## Error handling
+
+Any error thrown within a loader will make the navigation fail.
+
+If a request fails, the user can catch the error in the loader and return it differently
+
+TODO: expand
+
+## AbortSignal
 
 The loader receives in a second argument access to an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) that can be passed on to `fetch` and other Web APIs. If the navigation is cancelled because of errors or a new navigation, the signal will abort, causing any request using it to be aborted as well.
 
