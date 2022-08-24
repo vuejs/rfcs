@@ -7,12 +7,14 @@
 
 List of things that haven't been added to the document yet:
 
-- [x] Show how to use the data loader without ~~`@vue-router`~~ `vue-router/auto`
-- [x] Explain what ~~`@vue-router`~~ `vue-router/auto` brings
+- [x] ~~Show how to use the data loader without `vue-router/auto`~~
+- [x] ~~Explain what `vue-router/auto` brings~~
+- [ ] Extendable API for data fetching libraries like vue-apollo, vuefire, vue-query, etc
 
 # Summary
 
-Standarize and improve data fetching by adding helpers to be called within page components:
+There is no silver bullet to data fetching because of the different data fetching strategies and how they can define the architecture of the application and its UX. However, I think it's possible to find a solution that is flexible enough to promote good practices and reduce the complexity of data fetching in applications.
+That is the goal of this RFC, to standardize and improve data fetching with vue-router:
 
 - Automatically integrate fetching to the navigation cycle (or not by making it non-blocking)
 - Automatically rerun when used params/query params/hash changes (avoid unnecessary fetches)
@@ -90,7 +92,7 @@ There are features that are out of scope for this proposal but should be impleme
 - Implement pagination
 - Automatically refetch data when **outside of navigations** (e.g. there is no intention to implement advanced APIs such as `refetchInterval`, refetch on focus, etc)
 
-This RFC also aims to integrate data fetching within navigations while still allowing you to avoid it. This pattern is useful for multiple reasons:
+This RFC also aims to integrate data fetching within navigations while still not forcing you to block navigation with data fetching. This pattern is useful for multiple reasons:
 
 - Ensure data is present before mounting the component
 - Enables the UX pattern of letting the browser handle loading state (aligns better with [future browser APIs](https://github.com/WICG/navigation-api))
@@ -100,10 +102,10 @@ This RFC also aims to integrate data fetching within navigations while still all
 
 # Detailed design
 
-Ideally, this should be used alongside [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) to provide a better DX by automatically adding the proper meta fields **but it's not necessary**. At the moment, this API is implemented in that plugin as an experiment. By default, it:
+Ideally, this should be used alongside [unplugin-vue-router](https://github.com/posva/unplugin-vue-router) to provide a better DX by automatically adding the proper meta fields **but it's not necessary**. At the moment, this API is implemented in that plugin as an experiment, check the [Experimental Data fetching](https://github.com/posva/unplugin-vue-router/tree/main/src/data-fetching). By default, it:
 
 - Checks named exports in page components to set a meta property in the generated routes
-- Adds a navigation guard that resolve loaders
+- Adds a navigation guard that resolve loaders (should be moved to vue-router later)
 - Implements a `defineLoader()` composable (should be moved to vue-router later)
 
 `defineLoader()` takes a function that returns a promise (of data) and returns a composable that **can be used in any component**, not only in the one that defines it. We call these _loaders_. Loaders **must be exported by page components** in order for them to get picked up and executed during the navigation. They receive the target `route` as an argument and must return a Promise of an object of properties that will then be directly accessible **as refs** when calling the composable.
@@ -253,7 +255,7 @@ const fetchedData = setupDataFetchingGuard(
     },
 
     // returns the result of the navigation that should be returned by the navigation guard
-    // see the section below for more details
+    // see the section below for more details about "Navigation Results"
     selectNavigationResult(results) {
       return results[0]
     }
@@ -276,6 +278,8 @@ Call **and `await`** the loader inside the one that needs it, it will only be fe
 import { useUserData } from '@/loaders/users'
 
 export const useUserCommonFriends = defineLoader(async (route) => {
+  // loaders must be awaited inside other loaders
+  // .                   ⤵
   const { data: user } = await useUserData() // magically works
 
   // fetch other data
@@ -289,27 +293,6 @@ export const useUserCommonFriends = defineLoader(async (route) => {
 Since `useUserData()` loader calls `useUserCommonFriends()`, if `useUserData()`'s cache expires or gets manually invalidated, it will also automatically invalidate `useUserCommonFriends()`.
 
 Note that two loaders cannot use each other as that would create a _dead lock_.
-
-### Drawbacks
-
-- Allowing `await getUserById()` could make people think they should also await inside `<script setup>` and that would be a problem because it would force them to use `<Suspense>` when they don't need to.
-
-- Another alternative is to pass an array of loaders to the loader that needs them and let it retrieve them through an argument, but it feels less ergonomic:
-
-  ```ts
-  import { useUserData } from '~/pages/users/[id].vue'
-
-  export const useUserFriends = defineLoader(
-    async (route, [userData]) => {
-      const friends = await getFriends(user.value.id)
-      return { ...userData.value, friends }
-    },
-    {
-      // explicit dependencies
-      waitFor: [useUserData]
-    }
-  )
-  ```
 
 This can get complex with multiple pages exposing the same loader and other pages using some of this _already exported_ loaders within other loaders. But it's not an issue, **the user shouldn't need to handle anything differently**, loaders are still only called once:
 
@@ -338,7 +321,7 @@ export const useUserCommonFriends = defineLoader(async (route) => {
 })
 ```
 
-In the example above we are exporting multiple loaders but we don't need to care about the order in which they are called or optimizing them because they are only called once and share the data.
+In the example above we are exporting multiple loaders but we don't need to care about the order in which they are called nor try optimizing them because they are only called once and share the data.
 
 **Caveat**: must call **and await** all loaders `useUserData()` at the top of the function. You cannot put a different regular `await` in between, it has to be wrapped with a `withDataContext()`:
 
@@ -352,7 +335,7 @@ export const useUserCommonFriends = defineLoader(async (route) => {
 })
 ```
 
-This is necessary to ensure nested loaders are aware of their _parent loader_. This could probably be linted with an eslint plugin.
+This is necessary to ensure nested loaders are aware of their _parent loader_. This could probably be linted with an eslint plugin. It is similar to the problem `<script setup>` had before introducing the automatic `withAsyncContext()`. The same feature could be introduced but will also have a performance cost.
 
 ## Cache and loader reuse
 
@@ -453,7 +436,7 @@ const { user, post } = toRefs(data.value)
 
 ## Usage outside of page components
 
-Loaders can be **only exported from pages**. That's where the navigation guard picks them up, **but the page doesn't even need to use it**. It can be used in any component by importing the _returned composable_, even outside of the scope of the page components, by a parent.
+Loaders can be **only exported from pages**. That's where the navigation guard picks them up, **but the page doesn't even need to use it** (invoke the composable returned by `defineLoader()`). It can be used in any component by importing the _returned composable_, even outside of the scope of the page components, by a parent.
 
 On top of that, loaders can be **defined anywhere** and imported where using the data makes sense. This allows to define loaders in a separate `src/loaders` folder and reuse them across pages:
 
@@ -528,7 +511,7 @@ export const useUserData = defineLoader(
 </script>
 
 <script setup>
-// `user.value` can be `undefined`
+// Differently from the example above, `user.value` can and will be initially `undefined`
 const { data: user, pending, error } = useUserData()
 //      ^ Ref<User | undefined>
 </script>
@@ -536,17 +519,18 @@ const { data: user, pending, error } = useUserData()
 
 This patterns is useful to avoid blocking the navigation while _less important data_ is being fetched. It will display the page earlier while some of the parts of it are still loading and you are able to display loader indicators thanks to the `pending` property.
 
-TODO: it's possible to await all pending loaders with `await allPendingLoaders()`. Useful for SSR. Otherwise we could always ignore lazy loaders in SSR. Do we need both? Do we need to selectively await some of them?
-TODO: transform a loader into a lazy version of it: `const useUserDataLazy = asLazyLoader(useUserData)`
+Existing questions:
+
+- Should it be possible to await all pending loaders with `await allPendingLoaders()`? Is it useful for SSR. Otherwise we could always ignore lazy loaders in SSR. Do we need both? Do we need to selectively await some of them?
+- Should we be able to transform a loader into a lazy version of it: `const useUserDataLazy = asLazyLoader(useUserData)`
 
 ## Controlling the navigation
 
 Since the data fetching happens within a navigation guard, it's possible to control the navigation like in regular navigation guards:
 
 - Thrown errors (or rejected Promises) will cancel the navigation (same behavior as in a regular navigation guard) and get intercepted by [Vue Router's error handling](https://router.vuejs.org/api/interfaces/router.html#onerror)
-- Redirection: TODO: use a helper? `return redirectTo(...)` / `navigateTo()`
-- Cancelling the navigation: TODO: use a helper? `return abortNavigation()`. Other names? `abort(err?: any)`
-- Other possibility: having one single `next()` function (or other name)： rather not because can be called multiple times
+- Redirection: `return new NavigationResult(targetLocation)` -> like `return targetLocation` in a regular navigation guard
+- Cancelling the navigation: `return new NavigationResult(false)` like `return false` in a regular navigation guard
 
 ```ts
 import { NavigationResult } from 'vue-router'
@@ -562,19 +546,21 @@ export const useUserData = defineLoader(
         return new NavigationResult({ name: 'not-found', params: { pathMatch:  } }
         )
       } else {
-        throw error // same result as new NavigationResult(error)
+        throw error // aborts the vue router navigation
       }
     }
   }
 )
 ```
 
-`new NavigationResult()` accepts anything that [can be returned in a navigation guard](https://router.vuejs.org/guide/advanced/navigation-guards.html#global-before-guards).
+`new NavigationResult()` accepts as its only constructor argument, anything that [can be returned in a navigation guard](https://router.vuejs.org/guide/advanced/navigation-guards.html#global-before-guards).
 
 Some alternatives:
 
 - `createNavigationResult()`: too verbose
 - `NavigationResult()` (no `new`): `NavigationResult` is not a primitive so it should use `new`
+
+The only difference between throwing an error and returning a `NavigationResult` of an error is that the latter will still trigger the [`selectNavigationResult()` mentioned right below](#handling-multiple-navigation-results) while a thrown error will always take the priority.
 
 ### Handling multiple navigation results
 
@@ -589,13 +575,7 @@ setupDataFetchingGuard(router, {
 })
 ```
 
-This allows you to define any priority you want as well as select
-
-## Error handling
-
-Any error thrown within a loader will make the navigation fail. Differently from returning a value, a throw value will immediately reject the Data fetching Promise and `selectNavigationResult()` isn't called.
-
-Errors are handled by the [Vue Router's error handling](https://router.vuejs.org/api/interfaces/router.html#onerror) and can be intercepted by the `onError` hook.
+`selectNavigationResult()` will be called with an array of the unwrapped results passed to `new NavigationResult()` **after all data loaders** have been resolved. **If any of them throws an error** or if none of them return a `NavigationResult`, `selectNavigationResult()` won't be called.
 
 ## AbortSignal
 
@@ -679,13 +659,7 @@ export const useBookCatalog = defineLoader(async () => {
 
 An alternative would be to internally use `shallowRef()` instead of `ref()` inside `defineLoader()` but that would prevent users from modifying the returned value and overall less convenient. Having to use `markRaw()` seems like a good trade off in terms of API and performance.
 
-## HMR
-
-When changing the `<script>` the old cache is transferred and refreshed. Worst case, the page reloads for non lazy loaders.
-
-TODO: expand
-
-## Extending `defineLoader()`
+<!-- ## Custom `defineLoader()` for libraries
 
 It's possible to extend the `defineLoader()` function to add new features such as a more complex cache system. TODO:
 
@@ -694,7 +668,7 @@ ideas:
 - Export an interface that must be implemented by a composable so external libraries can implement custom strategies (e.g. vue-query)
 - allow global and local config (+ types)
 
-TODO: investigate how integrating with vue-apollo would look like
+TODO: investigate how integrating with vue-apollo would look like -->
 
 ## Global API
 
@@ -708,50 +682,31 @@ TBD: is this worth it? Are any other functions needed?
 ## Limitations
 
 - Injections (`inject`/`provide`) cannot be used within a loader
-- Watchers and other composables can be used but **will be created in a detached effectScope** and therefore never be released
+- Watchers and other composables shouldn't be used within data loaders:
   - if `await` is used before calling a composable e.g. `watch()`, the scope **is not guaranteed**
   - In practice, **this shouldn't be a problem** because there is **no need** to create composables within a loader
-- Global composables like pinia might need special handling (e.g. calling `setActivePinia(pinia)` in a [`beforeLoad()` hook](#todo))
+- Global composables like pinia might need special handling (e.g. calling `setActivePinia(pinia)` in a [`beforeLoad()` hook](#setupdatafetchingguard))
 
 # Drawbacks
-
-This solution is not a silver bullet but I don't think one exists because of the different data fetching strategies and how they can define the architecture of the application and its UX. However, I think it's possible to find a solution that is flexible enough to promote good practices and reduce the complexity of data fetching in applications.
 
 - Less intuitive than just awaiting something inside `setup()`: but it's still possible to await inside `setup()`, it's just not connected to the navigation
 - Requires an extra `<script>` tag but only for views. A macro `definePageLoader()`/`defineLoader()` could be error-prone as it's very tempting to use reactive state declared within the component's `<script setup>` but that's not possible as the loader must be created outside of its `setup()` function
 
 # Alternatives
 
-- Allowing a `before` and `after` hook to allow changing data after each loader call. e.g. By default the data is preserved while a new one is being fetched
 - Allowing blocking data loaders to return objects of properties:
 
   ```ts
   export const useUserData = defineLoader(async (route) => {
     const user = await getUserById(route.params.id)
-    return user
+    // instead of return user
+    return { user }
   })
   // instead of const { data: user } = useUserData()
   const { user } = useUserData()
   ```
 
   This was the initial proposal but since this is not possible with lazy loaders it was more complex and less intuitive. Having one single version is overall easier to handle.
-
-- Should we return directly the necessary data instead of wrapping it with an object and always name it `data`?:
-
-  ```vue
-  <script lang="ts">
-  import { getUserById } from '../api'
-
-  export const useUserData = defineLoader(async (route) => {
-    const user = await getUserById(route.params.id)
-    return user
-  })
-  </script>
-
-  <script setup>
-  const { data: user, pending, error } = useUserData()
-  </script>
-  ```
 
 - Adding a new `<script loader>` similar to `<script setup>`:
 
@@ -772,7 +727,7 @@ This solution is not a silver bullet but I don't think one exists because of the
 
   Is exposing every variable a good idea?
 
-- Using Suspense to natively handle `await` within `setup()`. [See other RFC](#TODO).
+- Using Suspense to natively handle `await` within `setup()`. This forces the router to concurrently render two pages to trigger the `async setup()` function. I don't think this is necessary as **it's already possible to use async setup** in page components for data fetching, it's just not integrated into the navigation.
 - Pass route properties instead of the whole `route` object:
 
   ```ts
@@ -784,7 +739,7 @@ This solution is not a silver bullet but I don't think one exists because of the
   })
   ```
 
-  This has the problem of not being able to use the `route.name` to determine the correct typed params:
+  This has the problem of not being able to use the `route.name` to determine the correct typed params (with unplugin-vue-router):
 
   ```ts
   import { getUserById } from '../api'
@@ -805,6 +760,27 @@ Variables could be named differently and proposals are welcome:
 - `pending` (same as Nuxt) -> `isPending`, `isLoading`
 - Rename `defineLoader()` to `defineDataFetching()` (or others)
 
+## Nested Invalidation syntax drawbacks
+
+- Allowing `await getUserById()` could make people think they should also await inside `<script setup>` and that would be a problem because it would force them to use `<Suspense>` when they don't need to.
+
+- Another alternative is to pass an array of loaders to the loader that needs them and let it retrieve them through an argument, but it feels considerably less ergonomic:
+
+  ```ts
+  import { useUserData } from '~/pages/users/[id].vue'
+
+  export const useUserFriends = defineLoader(
+    async (route, { loaders: [userData] }) => {
+      const friends = await getFriends(user.value.id)
+      return { ...userData.value, friends }
+    },
+    {
+      // explicit dependencies
+      waitFor: [useUserData]
+    }
+  )
+  ```
+
 ## Advanced `lazy`
 
 The `lazy` flag could be extended to also accept a number or a function. I think this is too much and should therefore not be included.
@@ -820,7 +796,7 @@ import { getUserById } from '../api'
 export const useUserData = defineLoader(
   async (route) => {
     const user = await getUserById(route.params.id)
-    return { user }
+    return user
   },
   // block the navigation for 1 second and then let the navigation go through
   { lazy: 1000 }
@@ -828,9 +804,8 @@ export const useUserData = defineLoader(
 </script>
 
 <script setup>
-// in this scenario, we no longer have a `user` property since `useUserData()` returns synchronously before the loader is resolved
 const { data, pending, error } = useUserData()
-//      ^ Ref<{ user: User } | undefined>
+//      ^ Ref<User | undefined>
 </script>
 ```
 
@@ -857,7 +832,7 @@ Introduce this as part of [unplugin-vue-router](https://github.com/posva/unplugi
 
 # Unresolved questions
 
-- Should there be a way to handle server only loaders?
+- Should there by an `afterLoad()` hook, similar to `beforeLoad()`?
 - Is `useNuxtApp()` usable within loaders?
 - Is there anything needed besides the `route` inside loaders?
 - Add option for placeholder data?
