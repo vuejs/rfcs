@@ -1,3 +1,5 @@
+> This RFC is dropped in favor of the [data loaders RFC](./0000-router-use-loader.md).
+
 - Start Date: 2022-02-11
 - Target Major Version: Vue Router >=4
 - Reference Issues:

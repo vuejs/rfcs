@@ -16,7 +16,7 @@ List of things that haven't been added to the document yet:
 There is no silver bullet to data fetching because of the different data fetching strategies and how they can define the architecture of the application and its UX. However, I think it's possible to find a solution that is flexible enough to promote good practices and reduce the complexity of data fetching in applications.
 That is the goal of this RFC, to standardize and improve data fetching with vue-router:
 
-- Automatically integrate fetching to the navigation cycle (or not by making it non-blocking)
+- Automatically integrate fetching to the navigation cycle (or not by making it _lazy/non-blocking_)
 - Automatically rerun when used params/query params/hash changes (avoid unnecessary fetches)
 - Basic client-side caching with time-based expiration to only fetch once per navigation while using it anywhere
 - Provide control over loading/error states
@@ -689,7 +689,7 @@ TBD: is this worth it? Are any other functions needed?
 
 # Drawbacks
 
-- Less intuitive than just awaiting something inside `setup()`: but it's still possible to await inside `setup()`, it's just not connected to the navigation
+- Less intuitive than just awaiting something inside `setup()` with `<Suspense>` but does not suffer from cascade fetching (nested calls wait for parents in some scenarios). Note it's still possible to await inside `setup()`, it's just not connected to the navigation.
 - Requires an extra `<script>` tag but only for views. A macro `definePageLoader()`/`defineLoader()` could be error-prone as it's very tempting to use reactive state declared within the component's `<script setup>` but that's not possible as the loader must be created outside of its `setup()` function
 
 # Alternatives
