@@ -223,6 +223,44 @@ const {
 } = useUserData()
 ```
 
+## `setupDataFetchingGuard()`
+
+`setupDataFetchingGuard()` setups a navigation guard that handles all the loaders. In SPA, its usage is very simple:
+
+```ts
+setupDataFetchingGuard(router)
+```
+
+You can also pass a second argument for some global options. In [SSR](#ssr), you can also retrieve the fetchedData as its returned value:
+
+```ts
+const fetchedData = setupDataFetchingGuard(
+  router, // the router instance for the app
+  {
+    // hook triggered before each loader is ran
+    async beforeLoad(route) {
+      // route is the target route passed to a loader
+      // Ensures pinia stores are called with the right context
+      setActivePinia(pinia)
+
+      // all loaders will await for this to be run before executing
+      await someOperation
+    },
+
+    // initial data for SSR, see the section below
+    initialData: {
+      // ...
+    },
+
+    // returns the result of the navigation that should be returned by the navigation guard
+    // see the section below for more details
+    selectNavigationResult(results) {
+      return results[0]
+    }
+  }
+)
+```
+
 ## Parallel Fetching
 
 By default, loaders are executed as soon as possible, in parallel. This scenario works well for most use cases where data fetching only requires route params/query params or nothing at all.
@@ -533,6 +571,11 @@ export const useUserData = defineLoader(
 
 `new NavigationResult()` accepts anything that [can be returned in a navigation guard](https://router.vuejs.org/guide/advanced/navigation-guards.html#global-before-guards).
 
+Some alternatives:
+
+- `createNavigationResult()`: too verbose
+- `NavigationResult()` (no `new`): `NavigationResult` is not a primitive so it should use `new`
+
 ### Handling multiple navigation results
 
 Since navigation loaders can run in parallel, they can return different navigation results as well. In this case, you can decide which result should be used by providing a `selectNavigationResult()` method to `setupDataFetchingGuard()`:
@@ -550,11 +593,9 @@ This allows you to define any priority you want as well as select
 
 ## Error handling
 
-Any error thrown within a loader will make the navigation fail.
+Any error thrown within a loader will make the navigation fail. Differently from returning a value, a throw value will immediately reject the Data fetching Promise and `selectNavigationResult()` isn't called.
 
-If a request fails, the user can catch the error in the loader and return it differently
-
-TODO: expand
+Errors are handled by the [Vue Router's error handling](https://router.vuejs.org/api/interfaces/router.html#onerror) and can be intercepted by the `onError` hook.
 
 ## AbortSignal
 
@@ -566,6 +607,8 @@ export const useBookCatalog = defineLoader(async (_route, { signal }) => {
   return books
 })
 ```
+
+This aligns with the future [Navigation API](https://github.com/WICG/navigation-api#navigation-monitoring-and-interception) and other web APIs that use the `AbortSignal` to cancel an ongoing invocation.
 
 ## SSR
 
@@ -584,23 +627,28 @@ export const useBookCollection = defineLoader(
 )
 ```
 
-The configuration of `setupDataFetchingGuard()` depends on the SSR configuration:
+The configuration of `setupDataFetchingGuard()` depends on the SSR configuration, here is an example with vite-ssg:
 
 ```ts
 import { ViteSSG } from 'vite-ssg'
 import { setupDataFetchingGuard } from 'vue-router'
 import App from './App.vue'
+import { routes } from './routes'
 
 export const createApp = ViteSSG(
   App,
   { routes },
   async ({ router, isClient, initialState }) => {
     // fetchedData will be populated during navigation
-    const fetchedData = setupDataFetchingGuard(
-      router,
-      isClient ? initialState.vueRouter : undefined
-    )
+    const fetchedData = setupDataFetchingGuard(router, {
+      initialData: isClient
+        ? // on the client we pass the initial state
+          initialState.vueRouter
+        : // on server we want to generate the initial state
+          undefined
+    })
 
+    // on the server, we serialize the fetchedData
     if (!isClient) {
       initialState.vueRouter = fetchedData
     }
@@ -608,15 +656,17 @@ export const createApp = ViteSSG(
 )
 ```
 
-Note that `setupDataFetchingGuard()` **must be called before `app.use(router)`**.
+Note that `setupDataFetchingGuard()` **should be called before `app.use(router)`** so it takes effect on the initial navigation. Otherwise a new navigation must be triggered after the navigation guard is added.
 
 ### Avoiding double fetch on the client
 
-One of the advantages of having an initial state is that we can avoid fetching on the client, in fact, loaders are **completely skipped** on the client if the initial state is provided. This means nested nested loaders **aren't executed either**. This could be confusing if we need to put side effects in data loaders. TBD: do we need to support this use case? We could allow it by having a `force` option on the loader and passing the initial state in the second argument of the loader.
+One of the advantages of having an initial state is that we can avoid fetching on the client, in fact, loaders are **completely skipped** on the client if the initial state is provided. This means nested loaders **aren't executed either**. Since data loaders shouldn't contain side effects besides data fetching, this shouldn't be a problem. Note that any loader **without a key** won't be serialized and will always be executed on both client and server.
+
+<!-- TBD: do we need to support this use case? We could allow it by having a `force` option on the loader and passing the initial state in the second argument of the loader. -->
 
 ## Performance
 
-When fetching large data sets, it's convenient to mark the fetched data as _raw_ before returning it:
+**When fetching large data sets**, it's convenient to mark the fetched data as _raw_ before returning it:
 
 ```ts
 export const useBookCatalog = defineLoader(async () => {
@@ -646,47 +696,29 @@ ideas:
 
 TODO: investigate how integrating with vue-apollo would look like
 
-### Nuxt.js
-
-```ts
-const useUserData = defineLoader(
-  async (route) => {
-    const user = await getUserById(route.params.id)
-    return user
-  },
-  {
-    createDataEntry() {
-      return {
-        data: useState('user', ref()),
-        pending: ref(false),
-        error: ref(),
-        isReady: false,
-        when: Date.now()
-      }
-    },
-    updateDataEntry(entry, data) {}
-  }
-)
-```
-
 ## Global API
 
-TBD: It's possible to access a global state of when data loaders are fetching (navigation or calling `refresh()`) as well as when the data fetching navigation guard is running (only when navigating).
+It's possible to access a global state of when data loaders are fetching (during navigation or when `refresh()` is called) as well as when the data fetching navigation guard is running (only when navigating).
 
-- `isFetchingData`: is any loader currently fetching data?
-- `isNavigationFetching`: is navigation being hold by a loader? (implies `isFetchingData.value === true`)
+- `isFetchingData: Ref<boolean>`: is any loader currently fetching data? e.g. calling the `refresh()` method of a loader
+- `isNavigationFetching: Ref<boolean>`: is navigation being hold by a loader? (implies `isFetchingData.value === true`). Calling the `refresh()` method of a loader doesn't change this state.
+
+TBD: is this worth it? Are any other functions needed?
 
 ## Limitations
 
 - Injections (`inject`/`provide`) cannot be used within a loader
-- Watchers and other composables can be used but **will be created in a detached effectScope** and therefore never be released. **This is why, using composables within loaders should be avoided**. Global composables like stores or other loaders can be used inside loaders as they do not rely on a local (component-bound) scope.
+- Watchers and other composables can be used but **will be created in a detached effectScope** and therefore never be released
+  - if `await` is used before calling a composable e.g. `watch()`, the scope **is not guaranteed**
+  - In practice, **this shouldn't be a problem** because there is **no need** to create composables within a loader
+- Global composables like pinia might need special handling (e.g. calling `setActivePinia(pinia)` in a [`beforeLoad()` hook](#todo))
 
 # Drawbacks
 
-This solution is not a silver bullet but I don't think one exists because of the different data fetching strategies and how they can define the architecture of the application and its UX.
+This solution is not a silver bullet but I don't think one exists because of the different data fetching strategies and how they can define the architecture of the application and its UX. However, I think it's possible to find a solution that is flexible enough to promote good practices and reduce the complexity of data fetching in applications.
 
-- Less intuitive than just awaiting something inside `setup()`
-- Requires an extra `<script>` tag but only for views. Is it feasible to add a macro `definePageLoader()`?
+- Less intuitive than just awaiting something inside `setup()`: but it's still possible to await inside `setup()`, it's just not connected to the navigation
+- Requires an extra `<script>` tag but only for views. A macro `definePageLoader()`/`defineLoader()` could be error-prone as it's very tempting to use reactive state declared within the component's `<script setup>` but that's not possible as the loader must be created outside of its `setup()` function
 
 # Alternatives
 
