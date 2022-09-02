@@ -1,7 +1,7 @@
 - Start Date: 2022-07-14
 - Target Major Version: Vue 3, Vue Router 4
 - Reference Issues:
-- Implementation PR:
+- Implementation PR: - https://github.com/posva/unplugin-vue-router/tree/main/src/data-fetching
 
 # Todo List
 
@@ -271,7 +271,7 @@ By default, loaders are executed as soon as possible, in parallel. This scenario
 
 Sometimes, requests depend on other fetched data (e.g. fetching additional user information). For these scenarios, we can simply import the other loaders and use them **within a different loader**:
 
-Call **and `await`** the loader inside the one that needs it, it will only be fetched once no matter how many times it is called used:
+Call **and `await`** the loader inside the one that needs it, it will only be fetched once no matter how many times it is called:
 
 ```ts
 // import the loader for user information
@@ -290,7 +290,7 @@ export const useUserCommonFriends = defineLoader(async (route) => {
 
 ### Nested invalidation
 
-Since `useUserData()` loader calls `useUserCommonFriends()`, if `useUserData()`'s cache expires or gets manually invalidated, it will also automatically invalidate `useUserCommonFriends()`.
+Since `useUserCommonFriends()` loader calls `useUserData()`, if `useUserData()`'s cache expires or gets manually invalidated, it will also automatically invalidate `useUserCommonFriends()`.
 
 Note that two loaders cannot use each other as that would create a _dead lock_.
 
@@ -519,9 +519,22 @@ const { data: user, pending, error } = useUserData()
 
 This patterns is useful to avoid blocking the navigation while _less important data_ is being fetched. It will display the page earlier while some of the parts of it are still loading and you are able to display loader indicators thanks to the `pending` property.
 
+Note this still allows for having different behavior during SSR and client side navigation, e.g.: if we want to wait for the loader during SSR but not during client side navigation:
+
+```ts
+export const useUserData = defineLoader(
+  async (route) => {
+    // ...
+  },
+  {
+    lazy: !import.env.SSR, // Vite
+    lazy: process.client, // NuxtJS
+)
+```
+
 Existing questions:
 
-- Should it be possible to await all pending loaders with `await allPendingLoaders()`? Is it useful for SSR. Otherwise we could always ignore lazy loaders in SSR. Do we need both? Do we need to selectively await some of them?
+- [~~Should it be possible to await all pending loaders with `await allPendingLoaders()`? Is it useful for SSR. Otherwise we could always ignore lazy loaders in SSR. Do we need both? Do we need to selectively await some of them?~~](https://github.com/vuejs/rfcs/discussions/460#discussioncomment-3532011)
 - Should we be able to transform a loader into a lazy version of it: `const useUserDataLazy = asLazyLoader(useUserData)`
 
 ## Controlling the navigation
