@@ -119,13 +119,13 @@ Loaders also have the advantage of behaving as singleton requests. This means th
 To setup the loaders, we first need to setup the navigation guards:
 
 ```ts
-import { setupDataFetchingGuard, createRouter } from 'vue-router'
+import { setupLoaderGuard, createRouter } from 'vue-router'
 
 const router = createRouter({
   // ...
 })
 
-setupDataFetchingGuard(router)
+setupLoaderGuard(router)
 ```
 
 Then, for each page exporting a loader, we need to add a meta property to the route:
@@ -225,18 +225,18 @@ const {
 } = useUserData()
 ```
 
-## `setupDataFetchingGuard()`
+## `setupLoaderGuard()`
 
-`setupDataFetchingGuard()` setups a navigation guard that handles all the loaders. In SPA, its usage is very simple:
+`setupLoaderGuard()` setups a navigation guard that handles all the loaders. In SPA, its usage is very simple:
 
 ```ts
-setupDataFetchingGuard(router)
+setupLoaderGuard(router)
 ```
 
 You can also pass a second argument for some global options. In [SSR](#ssr), you can also retrieve the fetchedData as its returned value:
 
 ```ts
-const fetchedData = setupDataFetchingGuard(
+const fetchedData = setupLoaderGuard(
   router, // the router instance for the app
   {
     // hook triggered before each loader is ran
@@ -577,10 +577,10 @@ The only difference between throwing an error and returning a `NavigationResult`
 
 ### Handling multiple navigation results
 
-Since navigation loaders can run in parallel, they can return different navigation results as well. In this case, you can decide which result should be used by providing a `selectNavigationResult()` method to `setupDataFetchingGuard()`:
+Since navigation loaders can run in parallel, they can return different navigation results as well. In this case, you can decide which result should be used by providing a `selectNavigationResult()` method to `setupLoaderGuard()`:
 
 ```ts
-setupDataFetchingGuard(router, {
+setupLoaderGuard(router, {
   selectNavigationResult(results) {
     // results is an array of the unwrapped results passed to `new NavigationResult()`
     return results.find((result) => result.name === 'not-found')
@@ -608,7 +608,7 @@ This aligns with the future [Navigation API](https://github.com/WICG/navigation-
 To support SSR we need to do two things:
 
 - Pass a `key` to each loader so that it can be serialized into an object later. Would an array work? I don't think the order of execution is guaranteed.
-- On the client side, pass the initial state to `setupDataFetchingGuard()`. The initial state is used once and discarded afterwards.
+- On the client side, pass the initial state to `setupLoaderGuard()`. The initial state is used once and discarded afterwards.
 
 ```ts
 export const useBookCollection = defineLoader(
@@ -620,11 +620,11 @@ export const useBookCollection = defineLoader(
 )
 ```
 
-The configuration of `setupDataFetchingGuard()` depends on the SSR configuration, here is an example with vite-ssg:
+The configuration of `setupLoaderGuard()` depends on the SSR configuration, here is an example with vite-ssg:
 
 ```ts
 import { ViteSSG } from 'vite-ssg'
-import { setupDataFetchingGuard } from 'vue-router'
+import { setupLoaderGuard } from 'vue-router'
 import App from './App.vue'
 import { routes } from './routes'
 
@@ -633,7 +633,7 @@ export const createApp = ViteSSG(
   { routes },
   async ({ router, isClient, initialState }) => {
     // fetchedData will be populated during navigation
-    const fetchedData = setupDataFetchingGuard(router, {
+    const fetchedData = setupLoaderGuard(router, {
       initialData: isClient
         ? // on the client we pass the initial state
           initialState.vueRouter
@@ -649,7 +649,7 @@ export const createApp = ViteSSG(
 )
 ```
 
-Note that `setupDataFetchingGuard()` **should be called before `app.use(router)`** so it takes effect on the initial navigation. Otherwise a new navigation must be triggered after the navigation guard is added.
+Note that `setupLoaderGuard()` **should be called before `app.use(router)`** so it takes effect on the initial navigation. Otherwise a new navigation must be triggered after the navigation guard is added.
 
 ### Avoiding double fetch on the client
 
