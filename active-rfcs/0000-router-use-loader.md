@@ -321,7 +321,7 @@ export const useUserCommonFriends = defineLoader(async (route) => {
 })
 ```
 
-In the example above we are exporting multiple loaders but we don't need to care about the order in which they are called nor try optimizing them because they are only called once and share the data.
+In the example above we are exporting multiple loaders but we don't need to care about the order in which they are called nor try optimizing them because **they are only called once and share the data**.
 
 **Caveat**: must call **and await** all loaders `useUserData()` at the top of the function. You cannot put a different regular `await` in between, it has to be wrapped with a `withDataContext()`:
 
@@ -493,7 +493,7 @@ const { data: user, pending, error } = useUserData()
 
 The arguments can be removed during the compilation step in production mode since they are only used for types and are ignored at runtime.
 
-## Non blocking data fetching
+## Non blocking data fetching (Lazy Loaders)
 
 Also known as [lazy async data in Nuxt](https://v3.nuxtjs.org/api/composables/use-async-data), loaders can be marked as lazy to **not block the navigation**.
 
@@ -702,10 +702,70 @@ TBD: is this worth it? Are any other functions needed?
 
 # Drawbacks
 
-- Less intuitive than just awaiting something inside `setup()` with `<Suspense>` but does not suffer from cascade fetching (nested calls wait for parents in some scenarios). Note it's still possible to await inside `setup()`, it's just not connected to the navigation.
+- At first, it looks less intuitive than just awaiting something inside `setup()` with `<Suspense>` [but it doesn't have its limitations](#limitations)
 - Requires an extra `<script>` tag but only for views. A macro `definePageLoader()`/`defineLoader()` could be error-prone as it's very tempting to use reactive state declared within the component's `<script setup>` but that's not possible as the loader must be created outside of its `setup()` function
 
 # Alternatives
+
+## Suspense
+
+Using Suspense is probably the first alternative that comes to mind and it has been considered as a solution for data fetching by implementing proofs of concepts. It however suffer from major drawbacks that are tied to its current design and is not a viable solution for data fetching.
+
+One could imagine being able to write something like:
+
+```vue
+<!-- src/pages/users.vue = /users -->
+<!-- Displays a list of all users -->
+<script setup>
+const userList = shallowRef(await fetchUserList())
+
+// manually expose a refresh function to be called whenever needed
+function refresh() {
+  userList.value = await fetchUserList()
+}
+</script>
+```
+
+Or when params are involved in the data fetching:
+
+```vue
+<!-- src/pages/users.[id].vue = /users/:id -->
+<!-- Displays a list of all users -->
+<script setup>
+const route = useRoute()
+const user = shallowRef(await fetchUserData(route.params.id))
+
+// manually expose a refresh function to be called whenever needed
+function refresh() {
+  user.value = await fetchUserData(route.params.id)
+}
+
+// hook into navigation instead of a watcher because we want to block the navigation
+onBeforeRouteUpdate(async (to) => {
+  // note how we need to use `to` and not `route` here
+  user.value = await fetchUserData(to.params.id)
+})
+</script>
+```
+
+One of the reasons to block the navigation while fetching is to align with the upcoming [Navigation API](https://github.com/WICG/navigation-api) which will show a spinning indicator (same as when entering a URL) on the browser UI while the navigation is blocked.
+
+This setup has many limitations:
+
+- Nested routes will force in some navigations a **sequential data fetching**: it's not possible to ensure an **optimal parallel fetching** in all cases
+- Manual data refreshing is necessary **unless you add a `key` attribute** to the `<RouterView>` which will force a remount of the component on navigation. This is not ideal because it will remount the component on every navigation, even when the data is the same. It's necessary if you want to do a `<transition>` but less flexible than the proposed solution which can also use a `key` if needed.
+- By putting the fetching logic within the `setup()` of the component we face other issues:
+
+  - No abstraction of the fetching logic => **code duplication** when fetching the same data in multiple components
+  - No native way to gather the same data fetching among multiple components using them: it requires using a store and extra logic to skip redundant fetches (see bottom of [Nested Invalidation](#nested-invalidation) )
+  - Requires mounting the upcoming page component (while the navigation is still blocked) which can be **expensive in terms of rendering** as we still need to render the old page while we _try to mount the new page_.
+
+- No native way of caching data, even for very simple cases (e.g. no refetching when fast traveling back and forward through browser UI)
+- Not possible to precisely read (or write) the loading state (see [vuejs/core#1347](https://github.com/vuejs/core/issues/1347)])
+
+On top of this it's important to note that this RFC doesn't limit you: you can still use Suspense for data fetching or even use both, **this API is completely tree shakable** and doesn't add any runtime overhead if you don't use it.
+
+## Other alternatives
 
 - Allowing blocking data loaders to return objects of properties:
 
@@ -740,7 +800,6 @@ TBD: is this worth it? Are any other functions needed?
 
   Is exposing every variable a good idea?
 
-- Using Suspense to natively handle `await` within `setup()`. This forces the router to concurrently render two pages to trigger the `async setup()` function. I don't think this is necessary as **it's already possible to use async setup** in page components for data fetching, it's just not integrated into the navigation.
 - Pass route properties instead of the whole `route` object:
 
   ```ts
