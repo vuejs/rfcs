@@ -84,7 +84,9 @@ There are currently too many ways of handling data fetching with vue-router and 
   - `beforeRouteEnter()`: non typed and non-ergonomic API with `next()`, requires a data store (pinia, vuex, apollo, etc)
   - using a watcher on `route.params...`: component renders without the data (doesn't work with SSR)
 
-The goal of this proposal is to provide a simple yet configurable way of defining data loading in your application that is easy to understand and use. It should also be compatible with SSR and allow extensibility. It should be adoptable by frameworks like Nuxt.js to provide an augmented data fetching layer.
+People are left with a low level API (navigation guards) to handle data fetching themselves. This is often a difficult problem to solve because it requires an extensive knowledge of the Router concepts and in reality, very few people know them.
+
+Thus, the goal of this proposal is to provide a simple yet configurable way of defining data loading in your application that is easy to understand and use. It should also be compatible with SSR and allow extensibility. It should be adoptable by frameworks like Nuxt.js to provide an augmented data fetching layer.
 
 There are features that are out of scope for this proposal but should be implementable in user-land thanks to an _extendable API_:
 
@@ -108,7 +110,7 @@ Ideally, this should be used alongside [unplugin-vue-router](https://github.com/
 - Adds a navigation guard that resolve loaders (should be moved to vue-router later)
 - Implements a `defineLoader()` composable (should be moved to vue-router later)
 
-`defineLoader()` takes a function that returns a promise (of data) and returns a composable that **can be used in any component**, not only in the one that defines it. We call these _loaders_. Loaders **must be exported by page components** in order for them to get picked up and executed during the navigation. They receive the target `route` as an argument and must return a Promise of an object of properties that will then be directly accessible **as refs** when calling the composable.
+`defineLoader()` takes a function that returns a promise (of data) and returns a composable that **can be used in any component**, not only in the one that defines it. We call these _loaders_. Loaders can be declared anywhere but **must be exported by page components** in order for them to get picked up and executed during the navigation. They receive the target `route` as an argument and must return a Promise of an object of properties that will then be directly accessible **as refs** when calling the composable.
 
 Limiting the loader access to only the target route, ensures that the data can be fetched when the user refresh the page. In enforces a good practice of correctly storing the necessary information in the route as params or query params to create sharable URLs. Within loaders there is no current instance and no access to `inject`/`provide` APIs.
 
@@ -436,7 +438,7 @@ const { user, post } = toRefs(data.value)
 
 ## Usage outside of page components
 
-Loaders can be **only exported from pages**. That's where the navigation guard picks them up, **but the page doesn't even need to use it** (invoke the composable returned by `defineLoader()`). It can be used in any component by importing the _returned composable_, even outside of the scope of the page components, by a parent.
+Loaders are picked up when exported from pages by a navigation guard, **but the page doesn't even need to use it** (invoke the composable returned by `defineLoader()`). It can be used in any component by importing the _returned composable_, even outside of the scope of the page components, even by a parent.
 
 On top of that, loaders can be **defined anywhere** and imported where using the data makes sense. This allows to define loaders in a separate `src/loaders` folder and reuse them across pages:
 
