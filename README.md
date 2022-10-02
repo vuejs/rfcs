@@ -10,7 +10,7 @@ implemented and reviewed via the normal GitHub pull request workflow.
 
 Some changes though are "substantial", and we ask that these be put
 through a bit of a design process and produce a consensus among the Vue
-core team and the community.
+[core team] and the community.
 
 ## The RFC life-cycle
 
@@ -105,7 +105,7 @@ into Vue.
 Once an RFC becomes active then authors may implement it and submit the
 feature as a pull request to the Vue repo. Becoming 'active' is not a rubber
 stamp, and in particular still does not mean the feature will ultimately
-be merged; it does mean that the core team has agreed to it in principle
+be merged; it does mean that the [core team] has agreed to it in principle
 and are amenable to merging it.
 
 Furthermore, the fact that a given RFC has been accepted and is
@@ -135,7 +135,7 @@ feel free to ask (e.g. by leaving a comment on the associated issue).
 ## Reviewing RFC's
 
 Members of the [core team] will attempt to review some set of open RFC
-pull requests on a regular basis. If a core team member believes an RFC PR is ready to be accepted into active status, they can approve the PR using GitHub's review feature to signal their approval of the RFC.
+pull requests on a regular basis. If a [core team] member believes an RFC PR is ready to be accepted into active status, they can approve the PR using GitHub's review feature to signal their approval of the RFC.
 
 **Vue's RFC process owes its inspiration to the [React RFC process], [Rust RFC process] and [Ember RFC process]**
 
