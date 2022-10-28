@@ -1,7 +1,7 @@
 - Start Date: 2022-07-14
 - Target Major Version: Vue 3, Vue Router 4
 - Reference Issues:
-- Implementation PR: - https://github.com/posva/unplugin-vue-router/tree/main/src/data-fetching
+- Implementation PR: - <https://github.com/posva/unplugin-vue-router/tree/main/src/data-fetching>
 
 # Todo List
 
@@ -60,10 +60,12 @@ const { data: user, pending, error, refresh } = useUserData()
 - `user`, `pending`, and `error` are refs and therefore reactive.
 - `refresh` is a function that can be called to force a refresh of the data without a new navigation.
 - `useUserData()` can be used in **any component**, not only in the one that defines it.
-- **Only page components** can export loaders but **loaders can be defined anywhere**.
+- Define and use Data Loaders **anywhere**. Export them **in page components** to attach them to pages.
 - Loaders smartly know which params/query params/hash they depend on to force a refresh when navigating:
-  - Going from `/users/2` to `/users/3` will refresh the data no matter how recent the other fetch was
-  - Going from `/users?name=fab` to `/users?name=fab#filters` checks if the current client side cache is recent enough to not fetch again
+  - Going from `/users/2` to `/users/3` will refresh the data no matter how recent the other fetch was because `useUserData` depends on `route.params.id`
+  - Going from `/users/2?name=fab` to `/users/2?name=fab#filters` will try to avoid fetching again as the `route.params.id` didn't change: it will check if the current client side cache expired and if it did, it will fetch again
+
+In each of these cases, **the data loaders blocks the navigation**, meaning it integrates transparently with SSR and any errors can be handled at the router level. On top of that, data loaders are deduped, which means that no mather how many times you use the same loader in different places, **it will still load the data just once**.
 
 The simplest of loaders can be defined in just one line and types will be automatically inferred:
 
@@ -912,3 +914,9 @@ Introduce this as part of [unplugin-vue-router](https://github.com/posva/unplugi
 - Add option for placeholder data?
 - What other operations might be necessary for users?
 - Is there a way to efficiently parse the exported properties in pages to filter out pages that have named exports but no loaders?
+
+<!-- 
+
+TODO: we could attach an effect scope it each loader, allowing craeting reactive variables that are automatically cleaned up when the loader is no longer used by collecting whenever the `useLoader()` fn is called and removing them when the component is unmounted, if the loader is not used anymore, remove the effect scope as well. This requires a way to create the variables so the user can pass a custom composable.
+
+ -->
