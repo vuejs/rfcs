@@ -292,6 +292,8 @@ export const useUserCommonFriends = defineLoader(async (route) => {
 })
 ```
 
+You will notice here that we have two different usages for `useUserData()`, one that returns all the necessary information we need _synchronously_, and a second version that returns the same data but _asynchronously_, in other words, a Promise. This allows to await for the data to be loaded so it can be used directly within the loader. Note you could `await` within `setup()` but **that would be unnecessary** as the loader is already awaited at the navigation layer.
+
 ### Nested invalidation
 
 Since `useUserCommonFriends()` loader calls `useUserData()`, if `useUserData()`'s cache expires or gets manually invalidated, it will also automatically invalidate `useUserCommonFriends()`.
@@ -917,6 +919,6 @@ Introduce this as part of [unplugin-vue-router](https://github.com/posva/unplugi
 
 <!-- 
 
-TODO: we could attach an effect scope it each loader, allowing craeting reactive variables that are automatically cleaned up when the loader is no longer used by collecting whenever the `useLoader()` fn is called and removing them when the component is unmounted, if the loader is not used anymore, remove the effect scope as well. This requires a way to create the variables so the user can pass a custom composable.
+TODO: we could attach an effect scope it each loader, allowing creating reactive variables that are automatically cleaned up when the loader is no longer used by collecting whenever the `useLoader()` fn is called and removing them when the component is unmounted, if the loader is not used anymore, remove the effect scope as well. This requires a way to create the variables so the user can pass a custom composable.
 
  -->
