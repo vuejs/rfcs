@@ -171,12 +171,12 @@ export default /*#__PURE__*/_defineComponent({
   setup(__props, { expose }) {
   expose();
 
-      const attrs = useAttrs<{ foo: number }>()
+      const attrs = useAttrs<{ bar: number }>()
 
 return { attrs, useAttrs, ref }
 }
 
-}, { attrs: {} as { foo: number }})"
+}, { attrs: {} as { bar: number }})"
 ```
 
 ## `defineCustomElement`
