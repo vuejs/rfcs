@@ -4,8 +4,8 @@
 - Implementation PR: [vuejs/core#7444](https://github.com/vuejs/core/pull/7444)
 
 # Summary
-Allow to infer `attrs` when passing type on the second param of `defineComponent` and `defineCustomElement`. 
-And in the `setup-script`,  passing generic type on the `useAttrs<T>` will infer `attrs` to `T`.
+Allowing to infer `attrs` by passing the second param of `defineComponent` or `defineCustomElement`. 
+And in the `setup-script`,  passing generic type in the `useAttrs<T>` will also infer `attrs` to `T`.
 
 I already published an npm package named [vue-ts-utils](https://github.com/rudy-xhd/vue-ts-utils), so that you can use `defineComponent` to infer attrs in advance.
 
@@ -98,17 +98,17 @@ const Comp = defineCustomElement({
 # Motivation
 This proposal is mainly to infer `attrs` using `defineComponent`.
 
-When using typescript in Vue3, the fallthrough attributes is unable to be used. It's not appropriate obviously that only one can be chosen from `typescript` and `the fallthrough attributes`. In most cases, we choose `typescript` and set attributes to `props` option instead of using the fallthrough attributes.
+When using typescript in Vue3, the fallthrough attributes is unable to be used. It's not appropriate obviously that only one can be chosen from `typescript` and `Fallthrough Attributes`. In most cases, we choose `typescript` and set attributes to `props` option instead of using the fallthrough attributes.
 
 Main scenes:
 
-- Wrapping an native component in a new component, such as `button`, `input`...
-- Wrapping a component from UI library in a new component, such as `el-button` from [element-plus](https://github.com/element-plus/element-plus).
+- Wrapping an native component in a new component, such as `button`. [Here is a demo to describe](https://github.com/rudy-xhd/vue-demo/tree/native-button).
+- Wrapping a component from UI library in a new component, such as `el-button` from `element-plus`. [Here is a demo to describe](https://github.com/rudy-xhd/vue-demo/tree/ui-button).
 
 # Detailed design
 
 ## `defineComponent`
-Due to typescript limitation from [microsoft/TypeScript#10571](https://github.com/microsoft/TypeScript/issues/10571), it's not possible to skip generics up to now in the `defineComponent` like below.
+Due to typescript limitation from [microsoft/TypeScript#10571](https://github.com/microsoft/TypeScript/issues/10571) and [stackoverflow/infer-type-argument-from-function-argument-in-typescript](https://stackoverflow.com/questions/57195611/infer-type-argument-from-function-argument-in-typescript), it's not possible to make generics partial in the `defineComponent` up to now.
 ```tsx
 // it's not work
 const Comp = defineComponent<Props, Attrs>({})
@@ -149,11 +149,7 @@ const comp = <Comp foo={'str'} bar={1} />
 
 At last I chosen the second way that passing `attrs` type to the second params of `defineComponent`, because I think the code of the component should not be involved just for type definition.
 
-
-The following below is the design details.
-- `attrs` is inferred to `{ class: unknown; style: unknown }` when the value of the second param is `undefined`
-- `attrs` is lower priority  than `props`.
-- [see for more detail cases](https://github.com/vuejs/core/pull/7444/files#diff-241bba82b0b4ebadd7a9c19ed82eed97283874b6d15ed32d62c05184e29ecb91R1195-R1306)
+> [see for more detail cases](https://github.com/vuejs/core/pull/7444/files#diff-241bba82b0b4ebadd7a9c19ed82eed97283874b6d15ed32d62c05184e29ecb91R1195)
 
 ## `useAttrs<T>`
 In the `setup-script`, the generic type of `useAttrs` will compile to the second param of `defineComponent`.
