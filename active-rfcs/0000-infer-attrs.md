@@ -108,7 +108,7 @@ Main scenes:
 # Detailed design
 
 ## `defineComponent`
-Due to typescript limitation from [microsoft/TypeScript#10571](https://github.com/microsoft/TypeScript/issues/10571), it's not possible to make generics partial in the `defineComponent` up to now. To be more clear, there is a similar question from [stackoverflow/infer-type-argument-from-function-argument-in-typescript](https://stackoverflow.com/questions/57195611/infer-type-argument-from-function-argument-in-typescript)
+Due to typescript limitation from [microsoft/TypeScript#10571](https://github.com/microsoft/TypeScript/issues/10571), it's not possible to make generics partial in the `defineComponent` up to now. To be more clear, there is a similar question from [stackoverflow/infer-type-argument-from-function-argument-in-typescript](https://stackoverflow.com/questions/57195611/infer-type-argument-from-function-argument-in-typescript).
 ```tsx
 // it's not work
 const Comp = defineComponent<Props, Attrs>({})
