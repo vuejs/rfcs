@@ -108,14 +108,14 @@ Main scenes:
 # Detailed design
 
 ## `defineComponent`
-Due to typescript limitation from [microsoft/TypeScript#10571](https://github.com/microsoft/TypeScript/issues/10571) and [stackoverflow/infer-type-argument-from-function-argument-in-typescript](https://stackoverflow.com/questions/57195611/infer-type-argument-from-function-argument-in-typescript), it's not possible to make generics partial in the `defineComponent` up to now.
+Due to typescript limitation from [microsoft/TypeScript#10571](https://github.com/microsoft/TypeScript/issues/10571), it's not possible to make generics partial in the `defineComponent` up to now. To be more clear, there is a similar question from [stackoverflow/infer-type-argument-from-function-argument-in-typescript](https://stackoverflow.com/questions/57195611/infer-type-argument-from-function-argument-in-typescript)
 ```tsx
 // it's not work
 const Comp = defineComponent<Props, Attrs>({})
 ```
 
 
-There still has two ways to be chosen.
+But there still has two ways to be chosen personally.
 
 ### 1. Defining the first param that already existing, just like [vuejs/rfcs#192](https://github.com/vuejs/rfcs/pull/192) did.
 ```tsx
