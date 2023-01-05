@@ -115,7 +115,7 @@ const Comp = defineComponent<Props, Attrs>({})
 ```
 
 
-But there still has two ways to be chosen personally.
+But there still has two ways to be chosen.
 
 ### 1. Defining the first param that already existing, just like [vuejs/rfcs#192](https://github.com/vuejs/rfcs/pull/192) did.
 ```tsx
