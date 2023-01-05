@@ -102,7 +102,7 @@ When using typescript in Vue3, the fallthrough attributes is unable to be used. 
 
 Main scenes:
 
-- Wrapping an native component in a new component, such as `button`. [Here is a demo to describe](https://github.com/rudy-xhd/vue-demo/tree/native-button).
+- Wrapping a native HTML element in a new component, such as `button`. [Here is a demo to describe](https://github.com/rudy-xhd/vue-demo/tree/native-button).
 - Wrapping a component from UI library in a new component, such as `el-button` from `element-plus`. [Here is a demo to describe](https://github.com/rudy-xhd/vue-demo/tree/ui-button).
 
 # Detailed design
