@@ -1,7 +1,7 @@
 - Start Date: 2022-02-13
 - Target Major Version: 3.x
 - Reference Issues: https://github.com/vuejs/core/issues/5218
-- Implementation PR:
+- Implementation PR: https://github.com/vuejs/core/pull/5738
 
 # Summary
 
@@ -85,7 +85,6 @@ We already have `<script setup>`, but some options still need to be set in norma
 
 The behavior of `defineOptions` is basically the same as `defineProps`.
 
-- `defineOptions` is only enabled in `<script setup>` and without normal script tag.
 - `defineOptions` is **compiler macros** only usable inside `<script setup>`. They do not need to be imported, and are compiled away when `<script setup>` is processed.
 - The options passed to `defineOptions` will be hoisted out of setup into module scope. Therefore, the options cannot reference local variables declared in setup scope. Doing so will result in a compile error. However, it _can_ reference imported bindings since they are in the module scope as well.
 - The options passed to `defineOptions` cannot contain `props`, `emits` and `expose` options.
@@ -106,4 +105,4 @@ This feature is opt-in. Existing SFC usage is unaffected.
 
 I made a very prototype plugin [unplugin-vue-define-options](https://github.com/sxzz/unplugin-vue-define-options).
 
-It supports Vite, Rollup, webpack, Vue CLI and ESBuild powered by [unplugin](https://github.com/unjs/unplugin).
+It supports Vite, Rollup, Webpack, Vue CLI and esbuild powered by [unplugin](https://github.com/unjs/unplugin).
