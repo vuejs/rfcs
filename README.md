@@ -16,24 +16,17 @@ through a bit of a design process and produce a consensus among the Vue
 
 An RFC goes through the following stages:
 
-- **Pending:** when the RFC is submitted as a PR.
-- **Active:** when an RFC PR is merged and undergoing implementation.
-- **Landed:** when an RFC's proposed changes are shipped in an actual release.
-- **Rejected:** when an RFC PR is closed without being merged.
-
-[Pending RFC List](https://github.com/vuejs/rfcs/pulls)
+- **Pending:** when the RFC is submitted as a discussion thread. We use discussions instead of Pull Requests as the former provides better discussion threading.
+- **Active:** when an RFC is acknowledged and undergoing implementation. The feature may be shipped as experimental during this phase.
+- **Landed:** when an RFC's proposed changes are shipped as stable in a release.
+- **Rejected:** when an RFC is officially rejected or dropped.
 
 ## When to follow this process
 
 You need to follow this process if you intend to make "substantial"
-changes to one of the projects listed below:
+changes to [Vue core](https://github.com/vuejs/core).
 
-- [Vue core](https://github.com/vuejs/vue)
-- [Vue Router](https://github.com/vuejs/vue-router)
-- [Vuex](https://github.com/vuejs/vuex)
-- [Vue CLI](https://github.com/vuejs/vue-cli)
-
-We are limiting the RFC process for these repos to test out the process in a more manageable fashion, and may expand it to cover more projects under the `vuejs` organization in the future. For now, if you wish to suggest changes to those other projects, please use their respective issue lists.
+We are limiting the RFC process to core to keep the workflow manageable. If you wish to suggest changes to those other projects, please use their respective issue lists.
 
 What constitutes a "substantial" change is evolving based on community norms, but may include the following:
 
@@ -83,15 +76,7 @@ into Vue.
 
     - Build consensus and integrate feedback in the discussion thread. RFCs that have broad support are much more likely to make progress than those that don't receive any comments.
 
-3.  If the proposal receives non-trivial interest from community members and generally positive feedback, you can prepare a Pull Request:
-
-    - Fork this repo.
-
-    - Create your proposal as `active-rfcs/0000-my-feature.md` (where "my-feature" is descriptive. don't assign an RFC number yet).
-
-    - Submit a pull request. Make sure to link to the discussion thread.
-
-4.  Eventually, the [core team] will decide whether the RFC is a candidate
+3.  Eventually, the [core team] will decide whether the RFC is a candidate
     for inclusion in Vue.
 
     - An RFC can be modified based upon feedback from the [core team] and community. Significant modifications may trigger a new final comment period.
@@ -100,11 +85,18 @@ into Vue.
 
     - An RFC may be accepted at the close of its final comment period. A [core team] member will merge the RFC's associated pull request, at which point the RFC will become 'active'.
 
+4.  If the proposal has been approved for inclusion, you can prepare a Pull Request:
+
+    - Fork this repo.
+
+    - Create your proposal as `active-rfcs/0000-my-feature.md` (where "my-feature" is descriptive. don't assign an RFC number yet).
+
+    - Submit a pull request. Make sure to link to the discussion thread.
+
 ## Details on Active RFCs
 
 Once an RFC becomes active then authors may implement it and submit the
-feature as a pull request to the Vue repo. Becoming 'active' is not a rubber
-stamp, and in particular still does not mean the feature will ultimately
+feature as a pull request to the Vue core repo. Becoming 'active' is not a rubber stamp, and in particular still does not mean the feature will ultimately
 be merged; it does mean that the [core team] has agreed to it in principle
 and are amenable to merging it.
 
