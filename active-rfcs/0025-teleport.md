@@ -216,7 +216,7 @@ If the children of `<teleport>` contain any components, their `this.$parent` pro
 </script>
 ```
 
-Similarly, using `inject` in `Child` should be able to inject any provided content from `Paren` or one of its ancestors.
+Similarly, using `inject` in `Child` should be able to inject any provided content from `Parent` or one of its ancestors.
 
 ### Updating
 
