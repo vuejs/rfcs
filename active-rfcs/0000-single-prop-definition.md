@@ -14,15 +14,15 @@ Provides a DX excellent props definition method for script setup.
 const propName = defineProp<T>()
 const propName = defineProp<T>(defaultValue)
 const propName = defineProp<T>(defaultValue, required)
-const propName = defineProp<T>(defaultValue, required, restOptions)
-const propName = defineProp<T>(defaultValue, required, restOptions, bindingName)
+const propName = defineProp<T>(defaultValue, options)
+const propName = defineProp<T>(defaultValue, options, bindingName)
 ```
 
 # Motivation
 
-We align the usage of prop with ref()/computed(), which can effectively improve the fluency of thinking when writing SFC.
+We align the usage of prop with `ref()` / `computed()`, which can effectively improve the fluency of thinking when writing SFC.
 
-On the other hand, the situation where people used to dislike .value is reversed, and now most people like .value based code. For me .value is a clear hint that the value is responsive, which actually reduces the mental load.
+On the other hand, the situation where people used to dislike `.value` is reversed, and now most people like `.value` based code. For me `.value` is a clear hint that the value is responsive, which actually reduces the mental load.
 
 # Detailed design
 
@@ -46,7 +46,7 @@ console.log(count.value, disabled.value)
 ```html
 <script setup>
 // Declare prop with options
-const count = defineProp(0, false, {
+const count = defineProp(0, {
   type: Number,
   validator: (value) => value < 20,
 })
