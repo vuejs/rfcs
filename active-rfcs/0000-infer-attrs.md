@@ -182,3 +182,7 @@ The type inferrence of `defineCustomElement` is the same as `defineComponent`.
 # Unresolved questions
 Naming suggestions or improvements on the API are welcome.
 
+
+# Updated
+Since slots option has aleady supported, I think attrs option may be more appropriate instead of using the second params as the rfcs said.
+
