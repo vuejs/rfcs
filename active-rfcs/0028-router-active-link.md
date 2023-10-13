@@ -72,8 +72,8 @@ const routes = [
       // empty child
       { path: '' },
       // child with id
-      { path: 'child/:id' },
-      { path: 'child-second/:id' }
+      { path: 'child/:id2' },
+      { path: 'child-second/:id2' }
     ]
   }
 ]
@@ -179,7 +179,7 @@ const routes = [
       // empty child
       { path: '' },
       // child with id
-      { path: 'child/:id', alias: 'c/:id' }
+      { path: 'child/:id2', alias: 'c/:id2' }
     ]
   }
 ]
@@ -215,7 +215,7 @@ const routes = [
     children: [
       // empty child
       { path: '', alias: ['alias', '/p_:id'], name: 'child' },
-      // child with absolute path. we need to add an `id` because the parent needs it
+      // child with absolute path. We need to add an `id` because the parent needs it
       { path: '/p_:id/absolute-a', alias: 'as-absolute-a' },
       // same as above but the alias is absolute
       { path: 'as-absolute-b', alias: '/p_:id/absolute-b' }
