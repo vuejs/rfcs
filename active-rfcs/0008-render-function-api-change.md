@@ -262,11 +262,10 @@ export default {
     const barDir = resolveDirective('bar')
 
     // <some-global-comp v-foo="x" v-bar="y" />
-    return withDirectives(
-      h(comp),
+    return withDirectives(h(comp), [
       [fooDir, this.x],
       [barDir, this.y]
-    )
+    ])
   }
 }
 ```
