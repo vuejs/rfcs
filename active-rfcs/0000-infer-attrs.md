@@ -1,7 +1,20 @@
 - Start Date: 2023-01-01
 - Target Major Version: 3.x
-- Reference Issues: [vuejs/core#3452](https://github.com/vuejs/core/issues/3452), [vuejs/core#5423](https://github.com/vuejs/core/issues/5423), [vuejs/core#6528](https://github.com/vuejs/core/discussions/6528)
-- Implementation PR: [vuejs/core#7444](https://github.com/vuejs/core/pull/7444)
+- Reference Issues:
+  - https://github.com/vuejs/core/issues/3452
+  - https://github.com/vuejs/core/issues/5423
+  - https://github.com/vuejs/core/discussions/6528
+  - https://github.com/vuejs/core/discussions/7546
+  - https://github.com/vuejs/core/discussions/7981
+  - https://github.com/vuejs/core/discussions/8264
+  - https://github.com/vuejs/core/discussions/8508
+  - https://github.com/vuejs/core/discussions/8620
+  - https://github.com/vuejs/core/discussions/8902
+  - https://github.com/vuejs/core/discussions/9272
+- Implementation PR: 
+  - https://github.com/vuejs/core/pull/7444
+  - https://github.com/vuejs/core/pull/9413
+  - Volar/vue-tsc
 
 # Summary
 Allowing to infer attrs by using `attrs` option of `defineComponent` or `defineCustomElement`. 
@@ -70,17 +83,29 @@ const Comp = defineComponent(
 ```vue
 // MyImg.vue
 <script setup lang="ts">
-import { type ImgHTMLAttributes } from 'vue';
-const attrs = defineAttrs<ImgHTMLAttributes>();
+const attrs = defineAttrs<{ bar?: number }>();
 </script>
 ```
-```vue
-// MyButton.vue
-<script setup lang="ts">
-import { Button } from 'element-plus';
-const attrs = defineAttrs<typeof Button>();
-</script>
+<details open>
+<summary>Complie Output: </summary>
+
+```tsx
+import { useAttrs as _useAttrs, defineComponent as _defineComponent } from 'vue'
+
+export default /*#__PURE__*/_defineComponent({
+  setup(__props, { expose: __expose }) {
+  __expose();
+
+      const attrs = _useAttrs()
+      
+return { attrs }
+}
+
+})
 ```
+
+</details>
+
 
 ## Using `defineCustomElement`
 ```tsx
@@ -102,9 +127,11 @@ This proposal is mainly to infer `attrs` using `defineComponent`.
 
 When using typescript in Vue3, the fallthrough attributes is unable to be used. It's not appropriate obviously that only one can be chosen from `typescript` and `Fallthrough Attributes`. In most cases, we choose `typescript` and set attributes to `props` option instead of using the fallthrough attributes.
 
-Main scenes:
+## Main scenes:
 
-- Wrapping a native HTML element in a new component, such as `img`. 
+### 1. Wrapping a native HTML element in a new component, such as `img`. 
+
+- Option Api
 ```tsx
 import { defineComponent, type ImgHTMLAttributes, type AttrsType } from 'vue';
 
@@ -128,7 +155,18 @@ const MyImg = defineComponent({
   e; // Event
 }}/>;
 ```
-- Wrapping a component from UI library in a new component, such as `el-button` from `element-plus`. 
+- Setup Script
+```vue
+// MyImg.vue
+<script setup lang="ts">
+import { type ImgHTMLAttributes } from 'vue';
+const attrs = defineAttrs<ImgHTMLAttributes>();
+</script>
+```
+
+### 2. Wrapping a component from UI library in a new component, such as `el-button` from `element-plus`. 
+
+- Option Api
 ```tsx
 import { defineComponent, type AttrsType } from 'vue';
 
@@ -165,6 +203,14 @@ const MyComp = defineComponent({
 }} />;
 ```
 
+- Setup Script
+```vue
+// MyButton.vue
+<script setup lang="ts">
+import { Button } from 'element-plus';
+const attrs = defineAttrs<typeof Button>();
+</script>
+```
 # Unresolved questions
 Naming suggestions or improvements on the API are welcome.
 
