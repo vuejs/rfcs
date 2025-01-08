@@ -13,7 +13,7 @@ Allow for tools to enforce strict children type for Slots, by allowing to descri
 const slots = defineSlots<{
   default: () => VNode[] // any VNODE
   foo: () => HTMLInputElement // single <input/>
-  foos: () => HTMLInputElement // multiple <input/>
+  foos: () => HTMLInputElement[] // multiple <input/>
   foo2: () => [HTMLInputElement, HTMLInputElement] // 2 <input/> allowed, error if children different than 2
   bar: () => SlotComponent<{ test: string }> // any Component with `test: string` prop
   baz: () => SlotComponent<{ test: string }, Comp> // Comp with `test: string` passed
