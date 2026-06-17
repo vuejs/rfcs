@@ -1,7 +1,7 @@
 - Start Date: 2026-06-17
 - Target Major Version: 3.x
 - Reference Issues: N/A
-- Implementation PR:
+- Implementation PR: https://github.com/vuejs/core/pull/14971
 
 # Summary
 
