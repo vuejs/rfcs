@@ -135,28 +135,14 @@ generate runtime comment VNodes.
 
 Comments do not affect the existing order-dependent semantics for attributes.
 Existing attribute and directive transforms can continue to apply the same
-attribute-order rules.
-
-<!-- prettier-ignore -->
-```html
-<div
-  v-bind="base"
-  // explicit class wins according to the existing merge rules
-  class="primary"
-/>
-```
-
-is equivalent to:
-
-```html
-<div v-bind="base" class="primary" />
-```
+attribute-order rules because in-tag line comments are represented through
+`ast.comments`.
 
 ## Invalid positions
 
 In-tag line comments are only valid between complete attributes. They are not
 valid inside tag names, attribute names, directive names, directive arguments,
-modifiers, or attribute values.
+modifiers, or quoted or unquoted attribute values.
 
 The following remain invalid or are parsed according to the existing error
 paths:
@@ -172,8 +158,7 @@ ass="x" />
 >
 ```
 
-Comment-like text inside quoted attribute values remains ordinary attribute
-text.
+Comment-like text inside attribute values remains ordinary attribute text.
 
 ## Template modes
 
@@ -233,8 +218,8 @@ Suggested tests:
   and `v-pre`;
 - `comments: true` and `comments: false` do not affect in-tag line comments in
   `ast.comments`;
-- unterminated tags, quoted attribute values, and codegen all keep their
-  specified behavior.
+- unterminated tags, attribute values, and codegen all keep their specified
+  behavior.
 
 # Drawbacks
 
