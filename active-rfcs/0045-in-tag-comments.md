@@ -152,10 +152,6 @@ is equivalent to:
 <div v-bind="base" class="primary" />
 ```
 
-Duplicate attribute checks also continue to work across comments, so
-`<div id="a" // still duplicate\n id="b" />` emits the same diagnostic as
-`<div id="a" id="b" />`.
-
 ## Invalid positions
 
 In-tag line comments are only valid between complete attributes. They are not
@@ -237,8 +233,8 @@ Suggested tests:
   and `v-pre`;
 - `comments: true` and `comments: false` do not affect in-tag line comments in
   `ast.comments`;
-- duplicate attributes, unterminated tags, quoted attribute values, and codegen
-  all keep their specified behavior.
+- unterminated tags, quoted attribute values, and codegen all keep their
+  specified behavior.
 
 # Drawbacks
 
