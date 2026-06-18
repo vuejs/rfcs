@@ -5,24 +5,24 @@
 
 # Summary
 
-Allow HTML comments to appear inside Vue opening tag attribute lists in the same
-syntactic positions as attributes. This enables line-level tooling directives,
-such as `@vue-expect-error`, to be placed next to the specific attribute or
-directive they apply to.
+Allow Vue-specific `//` line comments inside template opening tag attribute
+lists. This enables line-level tooling directives, such as `@vue-expect-error`,
+to be placed next to the specific attribute or directive they apply to.
 
-These comments are compile-time-only. They are represented in the template AST
-alongside attributes and directives, so tooling can inspect and preserve them,
-but they do not become runtime comments and do not alter attribute order or
-merging semantics.
+These comments are compile-time-only source annotations. They are collected in
+the template AST's `comments` property, but they are not inserted into
+`ElementNode.children` or `ElementNode.props`, do not become runtime comments,
+and do not alter attribute order or merging semantics.
 
 # Basic example
 
+<!-- prettier-ignore -->
 ```html
 <LegacySelect
   v-model="selectedId"
   :options="options"
 
-  <!-- @vue-expect-error legacy API accepts string IDs at runtime -->
+  // @vue-expect-error legacy API accepts string IDs at runtime
   :selected-id="selectedId"
 />
 ```
@@ -61,69 +61,91 @@ more props, listeners, `v-model` bindings, and ARIA attributes. Placing a
 JavaScript comment inside the directive expression only comments the expression
 value rather than the surrounding template attribute.
 
+Using `<!-- -->` for this feature would create another problem: Vue already has
+normal template comments and a `comments` compiler option that controls whether
+they are retained and generated. Giving the same visual syntax different rules
+inside opening tags would be confusing. A `//` line comment makes the feature
+explicitly Vue-specific and keeps it separate from HTML comments.
+
 The same syntax can document groups of attributes on a large component tag, but
 that is a secondary benefit. The primary goal is enabling line-level tooling
 directives in multi-line tags.
 
-The current parser behavior is also surprising. In Vue 3.5, a template like:
-
-```html
-<div <!-- note --> id="x"></div>
-```
-
-is not treated as a comment. The opening tag ends at the `>` in `-->`, so the
-compiler sees attributes named `<!--`, `note`, and `--`, while ` id="x">`
-becomes text content. Supporting in-tag comments makes this authoring mistake
-parse in the way users usually intended.
-
 # Detailed design
 
-An **in-tag comment** uses the same delimiters as an HTML comment, beginning with
-`<!--` and ending with `-->`, and appears while the Vue template tokenizer is
-parsing an opening tag's attribute list.
+An **in-tag line comment** starts with `//` while the Vue template tokenizer is
+parsing an opening tag's attribute list. The comment content continues until the
+next line terminator. The line terminator is then treated like whitespace and
+attribute-list parsing resumes.
 
-In-tag comments are allowed:
+In-tag line comments are allowed:
 
-- after the tag name and before the first attribute, with or without whitespace
-  after the tag name;
+- after the tag name and before the first attribute, once the tag name has been
+  separated by whitespace or a line terminator;
 - between complete attributes or directives;
-- after the last attribute and before `>` or `/>`.
+- after the last attribute, before the line that contains `>` or `/>`.
 
-For example, `<div<!-- note -->>` is valid and is parsed as a `div` element with
-an in-tag comment before the tag closes. The comment marks the end of the tag
-name and is not part of the tag name.
+For example:
 
-The comment is represented as a distinct AST node in `ElementNode.props`, not in
-`ElementNode.children`. It should record comment content and source location,
-and it should be distinguishable from both child comment nodes and prop nodes.
-The exact enum name is an implementation detail, but `ElementNode.props` should
-be widened from `AttributeNode | DirectiveNode` to include an in-tag comment
-node shape, for example `InTagCommentNode`.
+<!-- prettier-ignore -->
+```html
+<button
+  // native button state
+  type="button"
+  :disabled="pending"
 
-This also means the existing `comments` parser option does not affect in-tag
-comments. That option controls whether normal child comments are retained as
-comment nodes. In-tag comments are always retained in the AST because they are
-part of the element's source-level attribute list, but they do not produce
-codegen behavior. Transforms that inspect props must explicitly check the node
-kind and decide how to handle in-tag comments.
+  // accessibility
+  aria-live="polite"
+>
+  Save
+</button>
+```
 
-Tooling can interpret the comment content. For example, Vue language tools can
-treat an in-tag `@vue-expect-error` immediately before an attribute or directive
-as applying to that following prop entry. The compiler's responsibility is to
-preserve the node and source order; diagnostic semantics belong to AST
-consumers.
+Because the syntax is line-based, a tag close on the same line is part of the
+comment text. Authors should put the closing `>` or `/>` on a following line:
+
+<!-- prettier-ignore -->
+```html
+<Comp
+  // note
+/>
+```
+
+## AST representation
+
+In-tag line comments are collected in the template AST's `comments` property.
+They are not inserted into `ElementNode.children`, and they are not entries in
+`ElementNode.props`.
+
+Each comment entry should record at least:
+
+- the comment kind, so in-tag line comments can be distinguished from other
+  source comments if the AST later collects more comment forms;
+- the comment content without the leading `//`;
+- the source location of the full comment and content.
+
+The exact public type name is an implementation detail, but the AST should allow
+tooling to locate an in-tag line comment relative to the following attribute or
+directive. For example, Vue language tools can treat an in-tag
+`@vue-expect-error` immediately before an attribute or directive as applying to
+that following prop entry.
+
+The existing `comments` compiler option does not control in-tag line comments.
+That option applies to normal template comments and runtime comment generation.
+In-tag line comments are source annotations stored in `ast.comments`; they never
+generate runtime comment VNodes.
 
 ## Attribute semantics
 
 Comments do not affect the existing order-dependent semantics for attributes.
-Semantic passes that depend on prop order should explicitly distinguish in-tag
-comment nodes from attributes and directives, and apply order-dependent
-semantics only to attributes and directives. For example:
+Since comments are not inserted into `ElementNode.props`, existing attribute and
+directive transforms can continue to iterate props as attributes and directives.
 
+<!-- prettier-ignore -->
 ```html
 <div
   v-bind="base"
-  <!-- explicit class wins according to the existing merge rules -->
+  // explicit class wins according to the existing merge rules
   class="primary"
 />
 ```
@@ -135,27 +157,31 @@ is equivalent to:
 ```
 
 Duplicate attribute checks also continue to work across comments, so
-`<div id="a" <!-- still duplicate --> id="b" />` emits the same diagnostic as
+`<div id="a" // still duplicate\n id="b" />` emits the same diagnostic as
 `<div id="a" id="b" />`.
 
 ## Invalid positions
 
-In-tag comments are only valid between complete attributes. They are not valid
-inside attribute names, directive names, directive arguments, modifiers, or
-attribute values.
+In-tag line comments are only valid between complete attributes. They are not
+valid inside tag names, attribute names, directive names, directive arguments,
+modifiers, or attribute values.
 
 The following remain invalid or are parsed according to the existing error
 paths:
 
+<!-- prettier-ignore -->
 ```html
-<div cl<!-- no -->ass="x" />
-<div :[key<!-- no -->]="value" />
-<div id="a <!-- ordinary attribute text --> b" />
-<div id <!-- not between complete attributes --> ="a" />
-</div <!-- not an opening tag -->>
+<div cl// no
+ass="x" />
+<div :[key// no
+]="value" />
+<div id="a // ordinary attribute text" />
+</div // not an opening tag
+>
 ```
 
-Comment-like text inside quoted attribute values remains ordinary attribute text.
+Comment-like text inside quoted attribute values remains ordinary attribute
+text.
 
 ## Template modes
 
@@ -163,112 +189,102 @@ This proposal applies to source strings parsed by Vue's template compiler, such
 as SFC templates, inline string templates, and tooling paths that feed source
 into `@vue/compiler-dom` or `@vue/compiler-core`.
 
-It does not apply to in-DOM templates because browsers do not preserve comments
-inside an opening tag's attribute list. SFC block opening tags such as
-`<script setup lang="ts">` are also out of scope because they are SFC descriptor
-metadata, not template content.
+It does not apply to in-DOM templates because browsers do not preserve this
+syntax as Vue source. SFC block opening tags such as `<script setup lang="ts">`
+are also out of scope because they are SFC descriptor metadata, not template
+content.
 
 ## Error handling
 
-Unterminated in-tag comments should emit the same `EOF_IN_COMMENT` diagnostic as
-ordinary comments. Nested comments and malformed `<` sequences should follow the
-same diagnostics Vue already uses for ordinary comments, attribute names, and
-unquoted attribute values.
+Line comments end at a line terminator. If the opening tag itself is left
+unterminated after the comment, Vue should report the same diagnostics it
+already uses for unterminated tags or malformed attribute lists.
 
-## AST and code generation
+A single `/` that is not followed by another `/` should continue to use the
+existing self-closing-tag or malformed-attribute paths. Malformed `<` sequences
+inside the attribute list should also keep their existing diagnostics.
 
-In-tag comments are source-level nodes: parser consumers, language tools, and
-formatters can inspect or preserve them, but runtime codegen treats the element
-as if the comments were absent. This is what makes line-level
+## Code generation
+
+In-tag line comments are source-level annotations: parser consumers, language
+tools, and formatters can inspect or preserve them, but runtime codegen treats
+the element as if the comments were absent. This is what makes line-level
 `@vue-expect-error` possible without changing the generated render function.
 
-Transforms that iterate over `ElementNode.props` must explicitly check for
-in-tag comment nodes before handling an entry as an `AttributeNode` or
-`DirectiveNode`. A transform may use the comment for source-level tooling
-semantics, or explicitly do nothing when it only affects runtime behavior.
+# Implementation sketch
 
-## Implementation sketch
-
-The compiler tokenizer already has distinct states for scanning attribute names,
-attribute values, and normal comments. The implementation can add an in-tag
-comment state entered from the attribute-list scanning states when the tokenizer
-sees `<!--`.
+The compiler tokenizer already has distinct states for scanning tag names,
+attribute names, attribute values, and normal comments. The implementation can
+recognize `//` from opening-tag attribute-list states and append a comment entry
+to `ast.comments`.
 
 At minimum:
 
-- from the tag-name scanning state, detect `<!--` after consuming at least one
-  tag-name character, finalize the tag name, create an in-tag comment node, then
-  return to `BeforeAttrName`;
-- from `BeforeAttrName`, detect `<!--`, consume through the next `-->`, create
-  an in-tag comment node, then return to `BeforeAttrName`;
-- from `AfterAttrName`, allow `<!--` only after finalizing the current attribute
-  as a no-value attribute, create an in-tag comment node, then return to
-  `BeforeAttrName`;
-- never enter this state from `BeforeAttrValue`, attribute value states,
-  directive argument states, or closing-tag states;
-- do not call the existing `oncomment` callback for in-tag comments as child
-  comments. Instead, the parser should append the in-tag comment node to the
-  current element's `props` list.
+- from `BeforeAttrName`, detect `//`, consume through the next line terminator,
+  create an in-tag line comment entry, then return to `BeforeAttrName`;
+- after a complete attribute or directive has been finalized, allow the same
+  `//` handling before the next attribute;
+- never enter this state from tag-name scanning, attribute-name scanning,
+  `BeforeAttrValue`, attribute value states, directive argument states, or
+  closing-tag states;
+- do not call the existing `oncomment` callback for in-tag line comments as
+  child comments;
+- do not append these comments to `ElementNode.children` or `ElementNode.props`.
 
-The public compiler AST shape changes by widening `ElementNode.props`.
+The public compiler AST shape changes by adding an `ast.comments` property.
+`ElementNode.props` does not need to be widened for this feature.
 
 Suggested tests:
 
-- `@vue-expect-error` before an attribute or directive is preserved in
-  `ElementNode.props` before that prop entry;
-- comments immediately after the tag name, before/between/after attributes, and
-  in self-closing tags;
+- `// @vue-expect-error` before an attribute or directive is preserved in
+  `ast.comments` with source location before that prop entry;
+- comments before, between, and after attributes, including self-closing tags;
 - comments around static attributes, directives, shorthands, dynamic arguments,
   and `v-pre`;
-- `comments: true` and `comments: false` both retain in-tag comments in
-  `ElementNode.props`;
-- duplicate attributes, unterminated comments, quoted attribute values, and
-  codegen all keep their specified behavior;
-- transforms that iterate props explicitly distinguish in-tag comments from
-  attributes and directives.
+- `comments: true` and `comments: false` do not affect in-tag line comments in
+  `ast.comments`;
+- duplicate attributes, unterminated tags, quoted attribute values, and codegen
+  all keep their specified behavior;
+- `ElementNode.children` and `ElementNode.props` do not contain in-tag line
+  comments.
 
 # Drawbacks
 
-This further separates Vue template syntax from native HTML and must be
-documented as compile-time syntax that is not available in in-DOM templates.
+This is Vue-specific syntax and must be documented as compile-time syntax that
+is not available in in-DOM templates.
 
 It adds complexity to the HTML tokenizer, especially around attribute states
 that already handle malformed and IDE-partial input.
 
-The compiler AST needs a new prop-list node kind. Vue transforms and ecosystem
+The compiler AST needs a new `comments` collection. Vue tooling and ecosystem
 parsers, formatters, syntax highlighters, and language tools will need to
-recognize it instead of assuming every `ElementNode.props` entry is an attribute
-or directive.
-
-There is a very small behavior change for templates that currently contain
-comment-like text inside opening tags. Such templates are already malformed and
-currently produce surprising attributes or text. This proposal changes them to
-the behavior authors almost certainly intended.
+recognize it if they want to support this syntax.
 
 # Alternatives
 
 Keep the current behavior. Users can continue placing comments before the whole
 element or relying on blank lines and attribute ordering. This avoids parser and
-ecosystem churn, but leaves long component tags without local documentation.
+ecosystem churn, but it does not provide line-level directives for individual
+attributes or directives.
 
-Allow comments only in SFC templates and not in other string-template compiler
-entry points. This would reduce the in-DOM confusion slightly, but it would make
-compiler behavior depend on where the same source string came from.
+Use `<!-- -->` inside opening tags. This matches normal template comments, but
+it breaks the expectation that Vue templates remain close to HTML parser syntax
+and gives visually identical comments different `comments` option behavior
+depending on where they appear.
 
-Treat in-tag comments as whitespace and discard them during parsing. This would
-avoid changing the AST shape, but it would make the feature much less useful for
-language tools and formatters that need to preserve comments in the attribute
-list.
+Treat in-tag annotations as whitespace and discard them during parsing. This
+would avoid changing the AST shape, but it would make the feature much less
+useful for language tools and formatters that need source locations.
+
+Insert in-tag comments into `ElementNode.props` or `ElementNode.children`. This
+would preserve source order locally, but it would force prop or child transforms
+to handle nodes that are not actually props or children. A top-level
+`ast.comments` collection keeps the annotation side-channel explicit.
 
 Keep `@vue-expect-error` as an element-level comment before the whole tag. This
-avoids new syntax inside opening tags, but it loses the line-level precision
-needed when only one attribute or directive in a large multi-line tag is
-expected to fail type checking.
-
-Introduce a Vue-specific attribute comment syntax such as `v-comment`,
-`# comment`, or `// comment`. These alternatives would avoid overloading HTML
-comments, but they would create new syntax that is harder to explain and less
-consistent with the rest of Vue templates.
+avoids syntax inside opening tags, but it loses the line-level precision needed
+when only one attribute or directive in a large multi-line tag is expected to
+fail type checking.
 
 Use JavaScript comments inside directive expressions:
 
@@ -277,7 +293,7 @@ Use JavaScript comments inside directive expressions:
 ```
 
 This only works for JavaScript-bearing attributes and does not allow commenting
-groups of attributes.
+the surrounding template attribute or directive.
 
 # Adoption strategy
 
@@ -286,19 +302,13 @@ to compile the same way, and no codemod is required.
 
 Documentation should add a short note to the template syntax guide:
 
-- comments between child nodes can be preserved or removed according to the
+- normal template comments can be preserved or removed according to the
   compiler's `comments` option;
-- comments inside opening tag attribute lists are represented in the AST as
-  compile-time annotations and never generate runtime comments;
-- tooling directives such as `@vue-expect-error` can use in-tag comments to
+- `//` comments inside opening tag attribute lists are compile-time annotations
+  collected in `ast.comments` and never generate runtime comments;
+- tooling directives such as `@vue-expect-error` can use in-tag line comments to
   apply to a specific following attribute or directive;
 - in-DOM templates do not support this syntax.
 
 Ecosystem projects should be notified before release so that parsers and
 formatters can update in the same minor release window where possible.
-
-# Unresolved questions
-
-Should Vue accept the same non-canonical comment forms as ordinary template
-comments, or should in-tag comments require the canonical `<!-- ... -->`
-form only?
