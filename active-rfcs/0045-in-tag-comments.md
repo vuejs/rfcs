@@ -10,9 +10,8 @@ lists. This enables line-level tooling directives, such as `@vue-expect-error`,
 to be placed next to the specific attribute or directive they apply to.
 
 These comments are compile-time-only source annotations. They are collected in
-the template AST's `comments` property, but they are not inserted into
-`ElementNode.children` or `ElementNode.props`, do not become runtime comments,
-and do not alter attribute order or merging semantics.
+the template AST's `comments` property, do not become runtime comments, and do
+not alter attribute order or merging semantics.
 
 # Basic example
 
@@ -114,9 +113,6 @@ comment text. Authors should put the closing `>` or `/>` on a following line:
 ## AST representation
 
 In-tag line comments are collected in the template AST's `comments` property.
-They are not inserted into `ElementNode.children`, and they are not entries in
-`ElementNode.props`.
-
 Each comment entry should record at least:
 
 - the comment kind, so in-tag line comments can be distinguished from other
@@ -138,8 +134,8 @@ generate runtime comment VNodes.
 ## Attribute semantics
 
 Comments do not affect the existing order-dependent semantics for attributes.
-Since comments are not inserted into `ElementNode.props`, existing attribute and
-directive transforms can continue to iterate props as attributes and directives.
+Existing attribute and directive transforms can continue to apply the same
+attribute-order rules.
 
 <!-- prettier-ignore -->
 ```html
@@ -228,11 +224,9 @@ At minimum:
   `BeforeAttrValue`, attribute value states, directive argument states, or
   closing-tag states;
 - do not call the existing `oncomment` callback for in-tag line comments as
-  child comments;
-- do not append these comments to `ElementNode.children` or `ElementNode.props`.
+  child comments.
 
 The public compiler AST shape changes by adding an `ast.comments` property.
-`ElementNode.props` does not need to be widened for this feature.
 
 Suggested tests:
 
@@ -244,9 +238,7 @@ Suggested tests:
 - `comments: true` and `comments: false` do not affect in-tag line comments in
   `ast.comments`;
 - duplicate attributes, unterminated tags, quoted attribute values, and codegen
-  all keep their specified behavior;
-- `ElementNode.children` and `ElementNode.props` do not contain in-tag line
-  comments.
+  all keep their specified behavior.
 
 # Drawbacks
 
@@ -276,10 +268,10 @@ Treat in-tag annotations as whitespace and discard them during parsing. This
 would avoid changing the AST shape, but it would make the feature much less
 useful for language tools and formatters that need source locations.
 
-Insert in-tag comments into `ElementNode.props` or `ElementNode.children`. This
-would preserve source order locally, but it would force prop or child transforms
-to handle nodes that are not actually props or children. A top-level
-`ast.comments` collection keeps the annotation side-channel explicit.
+Store in-tag comments inline with element props or children. This would preserve
+source order locally, but it would also mix source annotations into runtime
+structures. A top-level `ast.comments` collection keeps the annotation
+side-channel explicit.
 
 Keep `@vue-expect-error` as an element-level comment before the whole tag. This
 avoids syntax inside opening tags, but it loses the line-level precision needed
